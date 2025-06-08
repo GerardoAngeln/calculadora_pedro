@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculadora de Préstamo</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f1f1f1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background-color: #fff;
+      padding: 40px;
+      border-radius: 12px;
+      box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 28px;
+      margin-bottom: 30px;
+      color: #4CAF50;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 14px;
+      margin: 10px 0;
+      font-size: 18px;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover { opacity: 0.9; }
+
+    .btn-clear { background-color: #f44336; color: white; }
+    .btn-calc  { background-color: #4CAF50; color: white; }
+    .btn-pdf   { background-color: #2196F3; color: white; }
+
+    .result, .detail {
+      margin-top: 20px;
+      font-size: 16px;
+    }
+
+    .interest-breakdown {
+      margin-top: 10px;
+      text-align: left;
+      font-size: 14px;
+      color: #555;
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .interest-breakdown p { margin: 5px 0; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h1>Calculadora de Préstamo</h1>
+
+  <label for="loanAmount">Monto del préstamo (MXN)</label>
+  <input type="number" id="loanAmount" placeholder="Monto del préstamo" />
+
+  <label for="interestRate">Tasa de interés (%)</label>
+  <input type="number" id="interestRate" placeholder="Tasa de interés" />
+
+  <label for="monthsVencidos">Meses vencidos</label>
+  <input type="number" id="monthsVencidos" placeholder="Número de meses vencidos" min="1" />
+
+  <button class="btn-calc" onclick="calculateLoan()">Calcular</button>
+  <button class="btn-clear" onclick="clearFields()">Limpiar</button>
+  <button class="btn-pdf" onclick="exportToPDF()">Generar Ticket</button>
+
+  <div class="result" id="result"></div>
+  <div class="detail" id="interestDetail"></div>
+  <div class="interest-breakdown" id="interestBreakdown"></div>
+</div>
+
+<script>
+  function calculateLoan() {
+    const loanAmount = parseFloat(document.getElementById("loanAmount").value);
+    const interestRate = parseFloat(document.getElementById("interestRate").value);
+    const monthsVencidos = parseInt(document.getElementById("monthsVencidos").value);
+
+    if (isNaN(loanAmount) || isNaN(interestRate) || loanAmount <= 0 || interestRate < 0 || isNaN(monthsVencidos) || monthsVencidos <= 0) {
+      alert("Por favor, ingresa valores válidos.");
+      return;
+    }
+
+    let accumulatedAmount = loanAmount;
+    let totalInterest = 0;
+    let interestBreakdown = '';
+
+    for (let month = 1; month <= monthsVencidos; month++) {
+      const monthlyInterest = Math.floor(accumulatedAmount * (interestRate / 100));
+      totalInterest += monthlyInterest;
+      interestBreakdown += `<p>Mes ${month}: $${monthlyInterest} MXN</p>`;
+      accumulatedAmount = Math.floor(accumulatedAmount + monthlyInterest);
+    }
+
+    accumulatedAmount = Math.floor(accumulatedAmount);
+
+    const resultText = `Monto acumulado después de ${monthsVencidos} mes(es): $${accumulatedAmount} MXN`;
+    const interestDetailText = `Interés total generado: $${totalInterest} MXN`;
+
+    document.getElementById("result").innerHTML = resultText;
+    document.getElementById("interestDetail").innerHTML = interestDetailText;
+    document.getElementById("interestBreakdown").innerHTML = interestBreakdown;
+  }
+
+  function clearFields() {
+    document.getElementById("loanAmount").value = "";
+    document.getElementById("interestRate").value = "";
+    document.getElementById("monthsVencidos").value = "";
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("interestDetail").innerHTML = "";
+    document.getElementById("interestBreakdown").innerHTML = "";
+  }
+
+  async function exportToPDF() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+      orientation: "portrait",
+      unit: "mm",
+      format: [80, 200]
+    });
+
+    const loanAmount = document.getElementById("loanAmount").value;
+    const interestRate = document.getElementById("interestRate").value;
+    const monthsVencidos = document.getElementById("monthsVencidos").value;
+    const result = document.getElementById("result").innerText;
+    const interestDetail = document.getElementById("interestDetail").innerText;
+    const breakdownHTML = document.getElementById("interestBreakdown").innerHTML;
+
+    if (!loanAmount || !interestRate || !monthsVencidos || !result) {
+      alert("Primero calcula el préstamo.");
+      return;
+    }
+
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = breakdownHTML;
+    const breakdownLines = Array.from(tempDiv.querySelectorAll("p")).map(p => p.textContent);
+
+    const now = new Date();
+    const fecha = now.toLocaleDateString("es-MX");
+    const hora = now.toLocaleTimeString("es-MX", { hour: '2-digit', minute: '2-digit' });
+
+    let y = 10;
+    const line = "------------------------------";
+
+    // Encabezado
+    doc.setFont("courier", "bold");
+    doc.setFontSize(12);
+    doc.text("TICKET PRESTAMO", 22, y);
+    y += 6;
+
+    doc.setFont("courier", "normal");
+    doc.setFontSize(9);
+    doc.text(`Fecha: ${fecha} ${hora}`, 10, y);
+    y += 6;
+    doc.text(line, 10, y);
+    y += 5;
+
+    // Datos de entrada
+    doc.text(`Monto: $${loanAmount} MXN`, 10, y);
+    y += 5;
+    doc.text(`Interés: ${interestRate}%`, 10, y);
+    y += 5;
+    doc.text(`Meses: ${monthsVencidos}`, 10, y);
+    y += 6;
+    doc.text(line, 10, y);
+    y += 6;
+
+    // Monto acumulado y total interés en dos líneas, negrita y alineado a la izquierda
+    doc.setFont("courier", "bold");
+    doc.setFontSize(10);
+    doc.text(`MONTO ACUMULADO DESPUÉS`, 10, y);
+    y += 6;
+    doc.text(`DE ${monthsVencidos} MES(ES): $${Math.floor(parseFloat(result.match(/\$(\d+)/)[1]))} MXN`, 10, y);
+    y += 8;
+    doc.text(`INTERÉS TOTAL GENERADO:`, 10, y);
+    y += 6;
+    const totalInterest = interestDetail.match(/\$(\d+)/)[1];
+    doc.text(`$${totalInterest} MXN`, 10, y);
+    y += 8;
+
+    doc.setFont("courier", "normal");
+    doc.setFontSize(9);
+    doc.text(line, 10, y);
+    y += 5;
+
+    // Desglose mensual
+    doc.setFont("courier", "italic");
+    doc.text("Desglose mensual:", 10, y);
+    y += 5;
+    breakdownLines.forEach(linea => {
+      if (y > 190) {
+        doc.addPage([80, 200]);
+        y = 10;
+      }
+      doc.text(linea.trim(), 10, y);
+      y += 4;
+    });
+
+    // Pie
+    y += 8;
+    doc.setFont("courier", "normal");
+    doc.setFontSize(8);
+    doc.text(line, 10, y);
+    y += 4;
+    doc.text("Gracias por su preferencia", 10, y);
+
+    doc.save("ticket-prestamo.pdf");
+  }
+</script>
+
+</body>
+</html>
