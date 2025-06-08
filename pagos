@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SISTEMA DE CONTROL DE PAGOS</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #e3f2fd; /* azul claro */
+      margin: 0;
+      padding: 0;
+      color: #0d47a1;
+    }
+    header {
+      background: #64b5f6;
+      color: white;
+      text-align: center;
+      padding: 1rem;
+      font-weight: bold;
+      font-size: 1.5rem;
+      text-transform: uppercase;
+    }
+    main {
+      padding: 1rem;
+      max-width: 600px;
+      margin: auto;
+    }
+    .form-group {
+      margin-bottom: 1rem;
+    }
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    input, select {
+      width: 100%;
+      padding: 0.5rem;
+      border: 1px solid #90caf9;
+      border-radius: 4px;
+      font-size: 1rem;
+      box-sizing: border-box;
+      color: #0d47a1;
+    }
+    button {
+      display: block;
+      width: 100%;
+      padding: 0.75rem;
+      margin-bottom: 1rem;
+      background: #2196f3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 1rem;
+      text-transform: uppercase;
+      transition: background 0.3s ease;
+    }
+    button:hover {
+      background: #0d47a1;
+    }
+    .message {
+      margin: 0.5rem 0;
+      font-weight: bold;
+      min-height: 1.2rem;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 1rem;
+      background: white;
+      color: #0d47a1;
+      font-size: 0.9rem;
+    }
+    th, td {
+      border: 1px solid #90caf9;
+      padding: 0.5rem;
+      text-align: center;
+    }
+    th {
+      background: #64b5f6;
+      color: white;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+    .btn-eliminar {
+      background: #ef5350;
+      border: none;
+      color: white;
+      padding: 0.3rem 0.6rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background 0.3s ease;
+    }
+    .btn-eliminar:hover {
+      background: #b71c1c;
+    }
+    /* Modales */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      overflow: auto;
+      background-color: rgba(0,0,0,0.4);
+      padding-top: 60px;
+    }
+    .modal-content {
+      background-color: #e3f2fd;
+      margin: 5% auto;
+      padding: 20px;
+      border: 1px solid #2196f3;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 8px;
+      color: #0d47a1;
+      position: relative;
+      box-shadow: 0 0 15px rgba(33, 150, 243, 0.5);
+    }
+    .close {
+      color: #0d47a1;
+      position: absolute;
+      top: 10px;
+      right: 20px;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+      user-select: none;
+    }
+    .close:hover {
+      color: #0d47a1;
+    }
+    /* Notificacion */
+    .snackbar {
+      visibility: hidden;
+      min-width: 250px;
+      background-color: #2196f3;
+      color: white;
+      text-align: center;
+      border-radius: 4px;
+      padding: 1rem;
+      position: fixed;
+      z-index: 1100;
+      left: 50%;
+      bottom: 30px;
+      font-size: 1rem;
+      transform: translateX(-50%);
+    }
+    .snackbar.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 3s;
+    }
+    .snackbar.success {
+      background-color: #4caf50;
+    }
+    .snackbar.error {
+      background-color: #f44336;
+    }
+    @keyframes fadein {
+      from {bottom: 0; opacity: 0;}
+      to {bottom: 30px; opacity: 1;}
+    }
+    @keyframes fadeout {
+      from {bottom: 30px; opacity: 1;}
+      to {bottom: 0; opacity: 0;}
+    }
+  </style>
+</head>
+<body>
+
+<header>SISTEMA DE CONTROL DE PAGOS</header>
+
+<main>
+
+  <form id="formAgregarCliente">
+    <div class="form-group">
+      <label for="nombreCliente">Nombre del cliente</label>
+      <input type="text" id="nombreCliente" required />
+    </div>
+    <div class="form-group">
+      <label for="telefonoCliente">Telefono</label>
+      <input type="text" id="telefonoCliente" required pattern="[0-9]{7,15}" title="Solo numeros, minimo 7 digitos" />
+    </div>
+    <div class="form-group">
+      <label for="saldoInicial">Saldo inicial</label>
+      <input type="number" id="saldoInicial" required min="0" step="0.01" />
+    </div>
+    <div class="form-group">
+      <label for="conceptoCliente">Concepto</label>
+      <input type="text" id="conceptoCliente" required pattern="[a-zA-Z0-9\s]+" title="Solo letras y numeros, sin acentos" />
+    </div>
+    <button type="submit">Agregar cliente</button>
+    <p class="message" id="mensajeCliente"></p>
+  </form>
+
+  <button onClick="mostrarClientes()">CLIENTES</button>
+  <button onClick="abrirModal('modalAbono')">ABONO</button>
+  <button onClick="abrirModal('modalCobradores')">COBRADORES</button>
+  <button onClick="mostrarEstadoCuenta()">ESTADOS DE CUENTA</button>
+
+  <section id="resultado" style="margin-top:2rem;"></section>
+</main>
+
+<!-- Modal Abono -->
+<div id="modalAbono" class="modal">
+  <div class="modal-content">
+    <span class="close" onClick="cerrarModal('modalAbono')">&times;</span>
+    <h3>Registrar Abono</h3>
+    <form id="formAbono">
+      <div class="form-group">
+        <label for="clienteAbono">Cliente</label>
+        <select id="clienteAbono" required></select>
+      </div>
+      <div class="form-group">
+        <label for="saldoActual">Saldo actual</label>
+        <input type="text" id="saldoActual" readonly value="$0.00" />
+      </div>
+      <div class="form-group">
+        <label for="montoAbono">Monto del abono</label>
+        <input type="number" id="montoAbono" min="0.01" step="0.01" required />
+      </div>
+      <div class="form-group">
+        <label for="cobradorAbono">Cobrador</label>
+        <select id="cobradorAbono" required></select>
+      </div>
+      <button type="submit">Registrar abono</button>
+      <p class="message" id="mensajeAbono"></p>
+    </form>
+  </div>
+</div>
+
+<!-- Modal Cobradores -->
+<div id="modalCobradores" class="modal">
+  <div class="modal-content">
+    <span class="close" onClick="cerrarModal('modalCobradores')">&times;</span>
+    <h3>Administrar Cobradores</h3>
+    <form id="formAgregarCobrador">
+      <div class="form-group">
+        <label for="nombreCobrador">Nombre cobrador</label>
+        <input type="text" id="nombreCobrador" required pattern="[a-zA-Z0-9\s]+" title="Solo letras y numeros, sin acentos" />
+      </div>
+      <button type="submit">Agregar cobrador</button>
+      <p class="message" id="mensajeCobrador"></p>
+    </form>
+    <div id="listaCobradores" style="margin-top: 1rem;"></div>
+  </div>
+</div>
+
+<!-- Notificacion -->
+<div id="notificacion" class="snackbar"><span id="notificacionTexto"></span></div>
+
+<!-- jsPDF desde CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script>
+  let clientes = [];
+  let movimientos = [];
+  let cobradores = [];
+  let clienteIdCounter = 1;
+  let movimientoIdCounter = 1;
+  let cobradorIdCounter = 1;
+
+  function guardarDatos() {
+    localStorage.setItem('clientes', JSON.stringify(clientes));
+    localStorage.setItem('movimientos', JSON.stringify(movimientos));
+    localStorage.setItem('cobradores', JSON.stringify(cobradores));
+    localStorage.setItem('clienteIdCounter', clienteIdCounter);
+    localStorage.setItem('movimientoIdCounter', movimientoIdCounter);
+    localStorage.setItem('cobradorIdCounter', cobradorIdCounter);
+  }
+
+  function cargarDatos() {
+    clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+    movimientos = JSON.parse(localStorage.getItem('movimientos')) || [];
+    cobradores = JSON.parse(localStorage.getItem('cobradores')) || [];
+    clienteIdCounter = parseInt(localStorage.getItem('clienteIdCounter')) || 1;
+    movimientoIdCounter = parseInt(localStorage.getItem('movimientoIdCounter')) || 1;
+    cobradorIdCounter = parseInt(localStorage.getItem('cobradorIdCounter')) || 1;
+  }
+
+  cargarDatos();
+
+  // Agregar cliente
+  document.getElementById('formAgregarCliente').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('nombreCliente').value.trim();
+    const telefono = document.getElementById('telefonoCliente').value.trim();
+    const saldoInicial = parseFloat(document.getElementById('saldoInicial').value);
+    const concepto = document.getElementById('conceptoCliente').value.trim();
+
+    const mensaje = document.getElementById('mensajeCliente');
+
+    if (!nombre || !telefono || isNaN(saldoInicial) || saldoInicial < 0 || !concepto) {
+      mensaje.textContent = 'Complete todos los campos correctamente';
+      mensaje.style.color = 'red';
+      return;
+    }
+
+    // Crear cliente
+    const nuevoCliente = {
+      id: clienteIdCounter++,
+      nombre: nombre,
+      telefono: telefono
+    };
+    clientes.push(nuevoCliente);
+
+    // Crear movimiento inicial
+    movimientos.push({
+      idMovimiento: movimientoIdCounter++,
+      idCliente: nuevoCliente.id,
+      nombreCliente: nombre,
+      saldo: saldoInicial,
+      fechaHora: new Date().toLocaleString(),
+      cobrador: 'Inicial',
+      concepto: concepto
+    });
+
+    guardarDatos();
+    mensaje.textContent = 'Cliente agregado con éxito';
+    mensaje.style.color = 'green';
+    this.reset();
+  });
+
+  // Mostrar clientes
+  function mostrarClientes() {
+    if (clientes.length === 0) {
+      mostrarNotificacion('No hay clientes registrados', 'error');
+      return;
+    }
+    let html = '<table><thead><tr><th>ID</th><th>Nombre</th><th>Teléfono</th><th>Saldo Actual</th><th>Acciones</th></tr></thead><tbody>';
+
+    clientes.forEach(c => {
+      let saldo = 0;
+      movimientos.forEach(m => {
+        if (m.idCliente === c.id) saldo += m.saldo;
+      });
+      html += `<tr>
+        <td>${c.id}</td>
+        <td>${c.nombre}</td>
+        <td>${c.telefono}</td>
+        <td>$${saldo.toFixed(2)}</td>
+        <td><button class="btn-eliminar" onclick="eliminarCliente(${c.id})">Eliminar</button></td>
+      </tr>`;
+    });
+    html += '</tbody></table>';
+    document.getElementById('resultado').innerHTML = html;
+  }
+
+  function eliminarCliente(id) {
+    if (!confirm('¿Está seguro de eliminar este cliente y todos sus movimientos?')) return;
+    clientes = clientes.filter(c => c.id !== id);
+    movimientos = movimientos.filter(m => m.idCliente !== id);
+    guardarDatos();
+    mostrarClientes();
+    mostrarNotificacion('Cliente eliminado', 'success');
+  }
+
+  // Mostrar estado de cuenta (todos los movimientos)
+  function mostrarEstadoCuenta() {
+    if (movimientos.length === 0) {
+      mostrarNotificacion('No hay movimientos registrados', 'error');
+      return;
+    }
+    let html = '<table><thead><tr><th>ID Movimiento</th><th>Cliente</th><th>Concepto</th><th>Saldo</th><th>Fecha y Hora</th><th>Cobrador</th></tr></thead><tbody>';
+
+    movimientos.forEach(m => {
+      html += `<tr>
+        <td>${m.idMovimiento}</td>
+        <td>${m.nombreCliente}</td>
+        <td>${m.concepto}</td>
+        <td>${m.saldo >= 0 ? '+' : ''}$${m.saldo.toFixed(2)}</td>
+        <td>${m.fechaHora}</td>
+        <td>${m.cobrador}</td>
+      </tr>`;
+    });
+
+    html += '</tbody></table>';
+    document.getElementById('resultado').innerHTML = html;
+  }
+
+  // Abrir modal
+  function abrirModal(id) {
+    document.getElementById(id).style.display = 'block';
+
+    if (id === 'modalAbono') {
+      cargarClientesEnSelect();
+      cargarCobradoresEnSelect();
+      document.getElementById('saldoActual').value = '$0.00';
+      document.getElementById('montoAbono').value = '';
+      document.getElementById('mensajeAbono').textContent = '';
+    }
+    if (id === 'modalCobradores') {
+      mostrarCobradores();
+      document.getElementById('mensajeCobrador').textContent = '';
+      document.getElementById('nombreCobrador').value = '';
+    }
+  }
+
+  // Cerrar modal
+  function cerrarModal(id) {
+    document.getElementById(id).style.display = 'none';
+  }
+
+  // Cargar clientes en select para abono
+  function cargarClientesEnSelect() {
+    const select = document.getElementById('clienteAbono');
+    select.innerHTML = '<option value="">Seleccione cliente</option>';
+    clientes.forEach(c => {
+      select.innerHTML += `<option value="${c.id}">${c.nombre}</option>`;
+    });
+  }
+
+  // Cargar cobradores en select para abono
+  function cargarCobradoresEnSelect() {
+    const select = document.getElementById('cobradorAbono');
+    select.innerHTML = '<option value="">Seleccione cobrador</option>';
+    cobradores.forEach(c => {
+      select.innerHTML += `<option value="${c.nombre}">${c.nombre}</option>`;
+    });
+  }
+
+  // Al cambiar cliente en abono, mostrar saldo actual
+  document.getElementById('clienteAbono').addEventListener('change', function() {
+    const idCliente = parseInt(this.value);
+    if (!idCliente) {
+      document.getElementById('saldoActual').value = '$0.00';
+      return;
+    }
+    let saldo = 0;
+    movimientos.forEach(m => {
+      if (m.idCliente === idCliente) saldo += m.saldo;
+    });
+    document.getElementById('saldoActual').value = '$' + saldo.toFixed(2);
+  });
+
+  // Registrar abono
+  document.getElementById('formAbono').addEventListener('submit', function(e) {
+    e.preventDefault();
+
+    const idCliente = parseInt(document.getElementById('clienteAbono').value);
+    const monto = parseFloat(document.getElementById('montoAbono').value);
+    const cobrador = document.getElementById('cobradorAbono').value;
+
+    const mensaje = document.getElementById('mensajeAbono');
+
+    if (!idCliente || isNaN(monto) || monto <= 0 || !cobrador) {
+      mensaje.textContent = 'Por favor complete todos los campos';
+      mensaje.style.color = 'red';
+      return;
+    }
+
+    const cliente = clientes.find(c => c.id === idCliente);
+    if (!cliente) {
+      mensaje.textContent = 'Cliente no encontrado';
+      mensaje.style.color = 'red';
+      return;
+    }
+
+    let saldoActual = 0;
+    movimientos.forEach(m => {
+      if (m.idCliente === idCliente) saldoActual += m.saldo;
+    });
+
+    if (monto > saldoActual) {
+      mensaje.textContent = 'El monto del abono no puede ser mayor al saldo actual';
+      mensaje.style.color = 'red';
+      return;
+    }
+
+    const fechaHora = new Date().toLocaleString();
+
+    movimientos.push({
+      idMovimiento: movimientoIdCounter++,
+      idCliente: idCliente,
+      nombreCliente: cliente.nombre,
+      saldo: -monto,
+      fechaHora: fechaHora,
+      cobrador: cobrador,
+      concepto: 'Abono'
+    });
+
+    guardarDatos();
+
+    // Calcular nuevo saldo después del abono
+    let nuevoSaldo = 0;
+    movimientos.forEach(m => {
+      if (m.idCliente === idCliente) nuevoSaldo += m.saldo;
+    });
+
+    // Generar PDF ticket incluyendo nuevo saldo
+    const abonoDatos = {
+      nombreCliente: cliente.nombre,
+      fechaHora: fechaHora,
+      cobrador: cobrador,
+      concepto: 'Abono',
+      monto: monto,
+      saldoActual: nuevoSaldo
+    };
+    generarTicketPDF(abonoDatos);
+
+    mensaje.textContent = 'Abono registrado con éxito';
+    mensaje.style.color = 'green';
+    this.reset();
+    document.getElementById('saldoActual').value = '$0.00';
+
+    setTimeout(() => {
+      cerrarModal('modalAbono');
+      mostrarEstadoCuenta();
+      mostrarNotificacion('Abono registrado', 'success');
+    }, 1500);
+  });
+
+  // Agregar cobrador
+  document.getElementById('formAgregarCobrador').addEventListener('submit', function(e) {
+    e.preventDefault();
+    const nombre = document.getElementById('nombreCobrador').value.trim();
+    const mensaje = document.getElementById('mensajeCobrador');
+
+    if (!nombre) {
+      mensaje.textContent = 'Ingrese nombre del cobrador';
+      mensaje.style.color = 'red';
+      return;
+    }
+
+    if (cobradores.find(c => c.nombre.toLowerCase() === nombre.toLowerCase())) {
+      mensaje.textContent = 'El cobrador ya existe';
+      mensaje.style.color = 'red';
+      return;
+    }
+
+    cobradores.push({ id: cobradorIdCounter++, nombre: nombre });
+    guardarDatos();
+    mostrarCobradores();
+
+    mensaje.textContent = 'Cobrador agregado';
+    mensaje.style.color = 'green';
+    this.reset();
+  });
+
+  // Mostrar cobradores en lista dentro modal
+  function mostrarCobradores() {
+    const lista = document.getElementById('listaCobradores');
+    if (cobradores.length === 0) {
+      lista.innerHTML = '<p>No hay cobradores registrados</p>';
+      return;
+    }
+    let html = '<ul>';
+    cobradores.forEach(c => {
+      html += `<li>${c.nombre} <button class="btn-eliminar" onclick="eliminarCobrador(${c.id})">Eliminar</button></li>`;
+    });
+    html += '</ul>';
+    lista.innerHTML = html;
+  }
+
+  function eliminarCobrador(id) {
+    if (!confirm('¿Está seguro de eliminar este cobrador?')) return;
+    cobradores = cobradores.filter(c => c.id !== id);
+    guardarDatos();
+    mostrarCobradores();
+    mostrarNotificacion('Cobrador eliminado', 'success');
+  }
+
+  // Generar ticket PDF con jsPDF
+  async function generarTicketPDF(abono) {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({
+      unit: 'pt',
+      format: [226, 400], // 80mm ancho aprox en puntos
+    });
+
+    const margin = 10;
+    let y = margin;
+
+    doc.setFont('helvetica');
+    doc.setFontSize(10);
+
+    // Encabezado
+    doc.text("SISTEMA DE CONTROL DE PAGOS", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+    y += 20;
+
+    doc.text("TICKET DE ABONO", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+    y += 20;
+
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, doc.internal.pageSize.getWidth() - margin, y);
+    y += 10;
+
+    doc.setFontSize(9);
+    doc.text(`Cliente: ${abono.nombreCliente}`, margin, y);
+    y += 15;
+    doc.text(`Fecha: ${abono.fechaHora}`, margin, y);
+    y += 15;
+    doc.text(`Cobrador: ${abono.cobrador}`, margin, y);
+    y += 15;
+    doc.text(`Concepto: ${abono.concepto}`, margin, y);
+    y += 15;
+    doc.text(`Monto Abono: $${abono.monto.toFixed(2)}`, margin, y);
+    y += 15;
+    doc.text(`Saldo Actual: $${abono.saldoActual.toFixed(2)}`, margin, y);
+    y += 20;
+
+    doc.setLineWidth(0.5);
+    doc.line(margin, y, doc.internal.pageSize.getWidth() - margin, y);
+    y += 20;
+
+    doc.text("Gracias por su pago", doc.internal.pageSize.getWidth() / 2, y, { align: 'center' });
+    y += 20;
+
+    doc.output('dataurlnewwindow');
+  }
+
+  // Mostrar notificaciones estilo snackbar
+  function mostrarNotificacion(mensaje, tipo = 'info') {
+    const noti = document.getElementById('notificacion');
+    const texto = document.getElementById('notificacionTexto');
+    texto.textContent = mensaje;
+    noti.className = 'snackbar show';
+    if (tipo === 'success') {
+      noti.classList.add('success');
+      noti.classList.remove('error');
+    } else if (tipo === 'error') {
+      noti.classList.add('error');
+      noti.classList.remove('success');
+    } else {
+      noti.classList.remove('success', 'error');
+    }
+    setTimeout(() => {
+      noti.className = 'snackbar';
+    }, 3500);
+  }
+</script>
+
+</body>
+</html>
