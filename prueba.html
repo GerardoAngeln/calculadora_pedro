@@ -92,7 +92,7 @@
 </head>
 <body>
   <div class="container">
-    <h1 id="title">Calculadora de Prestamo</h1>
+    <h1 id="title" ondblclick="clearFields()">Calculadora de Prestamo</h1>
     <label for="clientName">Nombre del cliente</label>
     <input type="text" id="clientName" placeholder="Nombre del cliente" />
 
@@ -105,7 +105,7 @@
     <label for="monthsVencidos">Meses vencidos</label>
     <input type="number" id="monthsVencidos" placeholder="Numero de meses vencidos" min="1" />
 
-    <label for="startDate">Fecha inicial del prestamo</label>
+    <label for="startDate">Fecha inicial del prestamo (opcional)</label>
     <input type="date" id="startDate" />
 
     <button id="calculateBtn" onclick="calculateLoan()">Calcular</button>
@@ -141,6 +141,10 @@
     return newDate;
   }
 
+  function formatMoney(amount) {
+    return amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
   let lastCalculation = null;
 
   function calculateLoan() {
@@ -150,35 +154,55 @@
     const monthsVencidos = parseInt(document.getElementById("monthsVencidos").value);
     const startDateInput = document.getElementById("startDate").value;
 
-    if (!clientName || isNaN(loanAmount) || isNaN(interestRate) || isNaN(monthsVencidos) || !startDateInput) {
-      alert("Por favor completa todos los campos correctamente.");
+    if (!clientName || isNaN(loanAmount) || isNaN(interestRate) || isNaN(monthsVencidos)) {
+      alert("Por favor completa todos los campos correctamente, excepto la fecha que es opcional.");
       return;
     }
 
-    const startDate = new Date(startDateInput + "T00:00:00");
-    const startDateStr = formatDateLong(startDate);
-    let accumulatedAmount = loanAmount;
     let breakdownHTML = "";
     let breakdownArray = [];
+    let accumulatedAmount = loanAmount;
+    let startDateStr = "";
 
-    for (let month = 1; month <= monthsVencidos; month++) {
-      let interest = Math.floor(accumulatedAmount * (interestRate / 100));
-      accumulatedAmount = Math.floor(accumulatedAmount + interest);
-      const dueDate = addMonths(startDate, month);
-      breakdownHTML += `<p>Mes ${month}: $${interest} MXN <span>${formatDateLong(dueDate)}</span></p>`;
-      breakdownArray.push({ month, interest, dueDate: formatDateLong(dueDate) });
+    if (startDateInput) {
+      const startDate = new Date(startDateInput + "T00:00:00");
+      startDateStr = formatDateLong(startDate);
+      for (let month = 1; month <= monthsVencidos; month++) {
+        let interest = Math.floor(accumulatedAmount * (interestRate / 100));
+        accumulatedAmount = Math.floor(accumulatedAmount + interest);
+        const dueDate = addMonths(startDate, month);
+        breakdownHTML += `<p>Mes ${month}: ${formatMoney(interest)} <span>${formatDateLong(dueDate)}</span></p>`;
+        breakdownArray.push({ month, interest, dueDate: formatDateLong(dueDate) });
+      }
+    } else {
+      // Sin fecha: calcular acumulado total compuesto
+      for (let month = 1; month <= monthsVencidos; month++) {
+        let interest = accumulatedAmount * (interestRate / 100);
+        accumulatedAmount += interest;
+        // Guardamos detalle sin fechas (fecha vacía)
+        breakdownArray.push({ month, interest, dueDate: "" });
+        breakdownHTML += `<p>Mes ${month}: ${formatMoney(interest)}</p>`;
+      }
+      accumulatedAmount = Math.floor(accumulatedAmount);
     }
 
     document.getElementById("result").innerHTML = `
       Cliente: ${clientName}<br>
-      Fecha inicial del prestamo: ${startDateStr}<br>
-      Monto acumulado despues de ${monthsVencidos} mes(es): $${accumulatedAmount} MXN
+      ${startDateStr ? "Fecha inicial del prestamo: " + startDateStr + "<br>" : ""}
+      Meses vencidos: ${monthsVencidos}<br>
+      Monto acumulado despues de ${monthsVencidos} mes(es): ${formatMoney(accumulatedAmount)}
     `;
+
     document.getElementById("interestBreakdown").innerHTML = breakdownHTML;
 
     lastCalculation = {
-      clientName, startDateStr, loanAmount,
-      monthsVencidos, breakdownArray, accumulatedAmount
+      clientName,
+      startDateStr,
+      loanAmount,
+      monthsVencidos,
+      breakdownArray,
+      accumulatedAmount,
+      hasDate: !!startDateInput
     };
   }
 
@@ -189,8 +213,13 @@
     }
 
     const {
-      clientName, startDateStr, loanAmount,
-      monthsVencidos, breakdownArray, accumulatedAmount
+      clientName,
+      startDateStr,
+      loanAmount,
+      monthsVencidos,
+      breakdownArray,
+      accumulatedAmount,
+      hasDate
     } = lastCalculation;
 
     const doc = new jsPDF({ unit: 'pt', format: [226, 400] });
@@ -217,30 +246,46 @@
     y += 30;
     doc.setFont("helvetica", "normal");
     doc.text(`Cliente: ${clientName}`, left, y); y += 16;
-    doc.text(`Fecha inicio: ${startDateStr}`, left, y); y += 16;
-    doc.text(`Monto inicial: $${loanAmount} MXN`, left, y); y += 16;
+    if (hasDate) {
+      doc.text(`Fecha inicio: ${startDateStr}`, left, y); y += 16;
+    }
+    doc.text(`Monto inicial: ${formatMoney(loanAmount)}`, left, y); y += 16;
     doc.text(`Meses vencidos: ${monthsVencidos}`, left, y); y += 25;
 
-    doc.setFont("helvetica", "bold");
-    doc.text("Detalle de intereses:", left, y); y += 18;
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9);
+    if (hasDate) {
+      doc.setFont("helvetica", "bold");
+      doc.text("Detalle de intereses:", left, y); y += 18;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9);
 
-    breakdownArray.forEach(item => {
-      doc.text(`Mes ${item.month}: $${item.interest} MXN`, left, y);
-      doc.text(item.dueDate, right, y, { align: "right" });
-      y += 14;
-    });
+      breakdownArray.forEach(item => {
+        doc.text(`Mes ${item.month}: ${formatMoney(item.interest)}`, left, y);
+        doc.text(item.dueDate, right, y, { align: "right" });
+        y += 14;
+      });
 
-    y += 70;
+      y += 20;
+    }
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
-    doc.text(`TOTAL A LIQUIDAR: $${accumulatedAmount} MXN`, left, y);
+    doc.text(`TOTAL A LIQUIDAR: ${formatMoney(accumulatedAmount)}`, left, y);
 
-    // Abrir el PDF en una nueva pestaña
     window.open(doc.output('bloburl'), '_blank');
+  }
+
+  function clearFields() {
+    document.getElementById("clientName").value = "";
+    document.getElementById("loanAmount").value = "";
+    document.getElementById("interestRate").value = "";
+    document.getElementById("monthsVencidos").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("result").innerHTML = "";
+    document.getElementById("interestBreakdown").innerHTML = "";
+    lastCalculation = null;
   }
 </script>
 </body>
 </html>
+
 
