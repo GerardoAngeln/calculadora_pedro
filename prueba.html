@@ -61,16 +61,24 @@
         width: 100%;
         padding: 12px;
         margin-top: 15px;
-        background-color: #4CAF50;
-        color: white;
         border: none;
         border-radius: 8px;
         font-size: 16px;
         cursor: pointer;
         transition: background-color 0.3s;
+        color: white;
     }
-    button:hover {
+    button#calculateBtn {
+        background-color: #4CAF50;
+    }
+    button#calculateBtn:hover {
         background-color: #45a049;
+    }
+    button#downloadBtn {
+        background-color: #f44336; /* rojo */
+    }
+    button#downloadBtn:hover {
+        background-color: #d32f2f;
     }
     .result, .detail {
         margin-top: 20px;
@@ -127,7 +135,8 @@
     <label for="startDate">Fecha inicial del prestamo</label>
     <input type="date" id="startDate" />
 
-    <button onClick="calculateLoan()">Calcular</button>
+    <button id="calculateBtn" onClick="calculateLoan()">Calcular</button>
+    <button id="downloadBtn" onClick="downloadPDF()">Generar comprobante</button>
 
     <div class="result" id="result"></div>
     <div class="detail" id="interestDetail"></div>
@@ -160,7 +169,6 @@
         return newDate;
     }
 
-    // Reinicia campos al hacer doble click en el título
     let clickCount = 0;
     const title = document.getElementById("title");
     title.addEventListener('click', () => {
@@ -180,6 +188,8 @@
             clickCount = 0;
         }, 500);
     });
+
+    let lastCalculation = null;
 
     function calculateLoan() {
         var clientName = document.getElementById("clientName").value.trim();
@@ -225,7 +235,7 @@
 
             var dueDate = addMonths(startDate, month);
 
-            interestBreakdown += "<p>Mes " + month + ": $" + monthlyInterest + " MXN de interes acumulado. <span>" + formatDateLong(dueDate) + "</span></p>";
+            interestBreakdown += "<p>Mes " + month + ": $" + monthlyInterest + " MXN <span>" + formatDateLong(dueDate) + "</span></p>";
 
             interestBreakdownArr.push({
                 month: month,
@@ -238,13 +248,27 @@
             "Fecha inicial del prestamo: " + startDateStr + "<br>" +
             "Monto acumulado despues de " + monthsVencidos + " mes(es): $" + accumulatedAmount + " MXN";
 
-        var interestDetailText = "Interes total generado durante " + monthsVencidos + " mes(es): $" + totalInterest + " MXN";
-
         document.getElementById("result").innerHTML = resultText;
-        document.getElementById("interestDetail").innerHTML = interestDetailText;
+        document.getElementById("interestDetail").innerHTML = "";
         document.getElementById("interestBreakdown").innerHTML = interestBreakdown;
 
-        // Generar PDF automáticamente al calcular
+        lastCalculation = {
+            clientName,
+            startDateStr,
+            loanAmount,
+            monthsVencidos,
+            interestBreakdownArr,
+            totalInterest,
+            accumulatedAmount
+        };
+    }
+
+    function downloadPDF() {
+        if (!lastCalculation) {
+            alert("Por favor realiza primero un cálculo.");
+            return;
+        }
+        const { clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, totalInterest, accumulatedAmount } = lastCalculation;
         generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, totalInterest, accumulatedAmount);
     }
 
@@ -310,8 +334,7 @@
 
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
-        doc.text(`Interes total: $${totalInterest} MXN`, leftMargin, yPos);
-        yPos += 18;
+        // Aquí eliminamos la línea del interés total (no la mostramos)
         doc.text(`Monto acumulado: $${accumulatedAmount} MXN`, leftMargin, yPos);
 
         doc.save("Comprobante_Prestamo.pdf");
