@@ -75,7 +75,7 @@
         background-color: #45a049;
     }
     button#downloadBtn {
-        background-color: #f44336; /* rojo */
+        background-color: #f44336;
     }
     button#downloadBtn:hover {
         background-color: #d32f2f;
@@ -99,19 +99,6 @@
         float: right;
         font-weight: 600;
         color: #4CAF50;
-    }
-    @media (max-width: 400px) {
-        .container {
-            max-width: 100%;
-            padding: 15px;
-        }
-        h1 {
-            font-size: 20px;
-        }
-        input[type="number"], input[type="text"], input[type="date"], button {
-            font-size: 14px;
-            padding: 10px;
-        }
     }
 </style>
 </head>
@@ -269,10 +256,10 @@
             return;
         }
         const { clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, totalInterest, accumulatedAmount } = lastCalculation;
-        generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, totalInterest, accumulatedAmount);
+        generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, accumulatedAmount);
     }
 
-    function generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, totalInterest, accumulatedAmount) {
+    function generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, accumulatedAmount) {
         const doc = new jsPDF({
             unit: 'pt',
             format: [226, 400]
@@ -282,8 +269,8 @@
         const rightMargin = 211;
         let yPos = 30;
 
-        // Encabezado con fondo verde y texto blanco centrado en 2 lineas
-        doc.setFillColor(76, 175, 80); // verde #4CAF50
+        // Encabezado
+        doc.setFillColor(76, 175, 80);
         doc.rect(0, 0, 226, 80, 'F');
 
         doc.setTextColor(255, 255, 255);
@@ -294,18 +281,16 @@
         doc.text("PRESTAMO", 113, yPos, { align: "center" });
 
         yPos += 22;
-        // Fecha y hora actual centrados debajo del título en blanco también
         const now = new Date();
         const currentDateTime = now.toLocaleDateString('es-MX') + " " + now.toLocaleTimeString('es-MX');
         doc.setFontSize(10);
         doc.text(`Fecha y hora: ${currentDateTime}`, 113, yPos, { align: "center" });
 
-        // Reset color para contenido
+        // Datos del préstamo
         doc.setTextColor(0, 0, 0);
         doc.setFontSize(11);
         yPos += 30;
 
-        // Datos generales
         doc.setFont("helvetica", "normal");
         doc.text(`Cliente: ${clientName}`, leftMargin, yPos);
         yPos += 16;
@@ -316,7 +301,7 @@
         doc.text(`Meses vencidos: ${monthsVencidos}`, leftMargin, yPos);
         yPos += 25;
 
-        // Detalle intereses
+        // Detalle de intereses
         doc.setFont("helvetica", "bold");
         doc.text("Detalle de intereses:", leftMargin, yPos);
         yPos += 18;
@@ -330,12 +315,13 @@
             yPos += 14;
         });
 
-        yPos += 10;
+        // Espacio de 5 renglones
+        yPos += 70;
 
+        // TOTAL A LIQUIDAR
         doc.setFont("helvetica", "bold");
         doc.setFontSize(12);
-        // Aquí eliminamos la línea del interés total (no la mostramos)
-        doc.text(`Monto acumulado: $${accumulatedAmount} MXN`, leftMargin, yPos);
+        doc.text(`TOTAL A LIQUIDAR: $${accumulatedAmount} MXN`, leftMargin, yPos);
 
         doc.save("Comprobante_Prestamo.pdf");
     }
@@ -343,3 +329,4 @@
 
 </body>
 </html>
+
