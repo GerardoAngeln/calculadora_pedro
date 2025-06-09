@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calculadora de Prestamo</title>
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background-color: #f1f1f1;
+        margin: 0;
+        padding: 10px;
+    }
+    .container {
+        background-color: #fff;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        max-width: 360px;
+        margin: 0 auto;
+        text-align: left;
+        font-size: 14px;
+    }
+    h1 {
+        font-size: 22px;
+        margin-bottom: 20px;
+        color: #4CAF50;
+        text-align: center;
+        cursor: pointer;
+        font-weight: bold;
+        padding: 10px 0;
+        border-radius: 8px;
+        background-color: #4CAF50;
+        color: white;
+        user-select: none;
+        transition: background-color 0.3s;
+    }
+    h1:hover {
+        background-color: #45a049;
+    }
+    label {
+        font-weight: 600;
+        display: block;
+        margin-top: 10px;
+    }
+    input[type="number"], input[type="text"], input[type="date"] {
+        width: 100%;
+        padding: 8px 10px;
+        margin-top: 4px;
+        border: 1.8px solid #ddd;
+        border-radius: 6px;
+        font-size: 14px;
+        box-sizing: border-box;
+        transition: border-color 0.3s;
+    }
+    input[type="number"]:focus, input[type="text"]:focus, input[type="date"]:focus {
+        border-color: #4CAF50;
+        outline: none;
+    }
+    button {
+        width: 100%;
+        padding: 12px;
+        margin-top: 15px;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+        color: white;
+    }
+    button#calculateBtn {
+        background-color: #4CAF50;
+    }
+    button#calculateBtn:hover {
+        background-color: #45a049;
+    }
+    button#downloadBtn {
+        background-color: #f44336;
+    }
+    button#downloadBtn:hover {
+        background-color: #d32f2f;
+    }
+    .result, .detail {
+        margin-top: 20px;
+        color: #333;
+        font-weight: bold;
+    }
+    .interest-breakdown {
+        margin-top: 15px;
+        max-height: 180px;
+        overflow-y: auto;
+        color: #555;
+        font-size: 13px;
+    }
+    .interest-breakdown p {
+        margin: 5px 0;
+    }
+    .interest-breakdown span {
+        float: right;
+        font-weight: 600;
+        color: #4CAF50;
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+    <h1 id="title">Calculadora de Prestamo</h1>
+
+    <label for="clientName">Nombre del cliente</label>
+    <input type="text" id="clientName" placeholder="Nombre del cliente" />
+
+    <label for="loanAmount">Monto del prestamo (MXN)</label>
+    <input type="number" id="loanAmount" placeholder="Monto del prestamo" />
+
+    <label for="interestRate">Tasa de interes (%)</label>
+    <input type="number" id="interestRate" placeholder="Tasa de interes" />
+
+    <label for="monthsVencidos">Meses vencidos</label>
+    <input type="number" id="monthsVencidos" placeholder="Numero de meses vencidos" min="1" />
+
+    <label for="startDate">Fecha inicial del prestamo</label>
+    <input type="date" id="startDate" />
+
+    <button id="calculateBtn" onClick="calculateLoan()">Calcular</button>
+    <button id="downloadBtn" onClick="downloadPDF()">Generar comprobante</button>
+
+    <div class="result" id="result"></div>
+    <div class="detail" id="interestDetail"></div>
+    <div class="interest-breakdown" id="interestBreakdown"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script>
+    const { jsPDF } = window.jspdf;
+
+    const monthNames = [
+        "ENERO", "FEBRERO", "MARZO", "ABRIL", "MAYO", "JUNIO",
+        "JULIO", "AGOSTO", "SEPTIEMBRE", "OCTUBRE", "NOVIEMBRE", "DICIEMBRE"
+    ];
+
+    function formatDateLong(dateObj) {
+        let d = dateObj.getDate();
+        let m = monthNames[dateObj.getMonth()];
+        let y = dateObj.getFullYear();
+        return d + " " + m + " " + y;
+    }
+
+    function addMonths(date, count) {
+        let newDate = new Date(date.getTime());
+        let day = newDate.getDate();
+        newDate.setMonth(newDate.getMonth() + count);
+        if (newDate.getDate() !== day) {
+            newDate.setDate(1);
+        }
+        return newDate;
+    }
+
+    let clickCount = 0;
+    const title = document.getElementById("title");
+    title.addEventListener('click', () => {
+        clickCount++;
+        if (clickCount === 2) {
+            document.getElementById("clientName").value = "";
+            document.getElementById("loanAmount").value = "";
+            document.getElementById("interestRate").value = "";
+            document.getElementById("monthsVencidos").value = "";
+            document.getElementById("startDate").value = "";
+            document.getElementById("result").innerHTML = "";
+            document.getElementById("interestDetail").innerHTML = "";
+            document.getElementById("interestBreakdown").innerHTML = "";
+            clickCount = 0;
+        }
+        setTimeout(() => {
+            clickCount = 0;
+        }, 500);
+    });
+
+    let lastCalculation = null;
+
+    function calculateLoan() {
+        var clientName = document.getElementById("clientName").value.trim();
+        var loanAmount = parseFloat(document.getElementById("loanAmount").value);
+        var interestRate = parseFloat(document.getElementById("interestRate").value);
+        var monthsVencidos = parseInt(document.getElementById("monthsVencidos").value);
+        var startDateInput = document.getElementById("startDate").value;
+
+        if (!clientName) {
+            alert("Por favor ingresa el nombre del cliente.");
+            return;
+        }
+        if (isNaN(loanAmount) || loanAmount <= 0) {
+            alert("Por favor ingresa un monto valido.");
+            return;
+        }
+        if (isNaN(interestRate) || interestRate < 0) {
+            alert("Por favor ingresa una tasa de interes valida.");
+            return;
+        }
+        if (isNaN(monthsVencidos) || monthsVencidos <= 0) {
+            alert("Por favor ingresa un numero valido de meses vencidos.");
+            return;
+        }
+        if (!startDateInput) {
+            alert("Por favor selecciona una fecha inicial del prestamo.");
+            return;
+        }
+
+        var startDate = new Date(startDateInput + "T00:00:00");
+
+        var accumulatedAmount = loanAmount;
+        var totalInterest = 0;
+        var interestBreakdown = "";
+        var interestBreakdownArr = [];
+
+        var startDateStr = formatDateLong(startDate);
+
+        for (var month = 1; month <= monthsVencidos; month++) {
+            var monthlyInterest = Math.floor(accumulatedAmount * (interestRate / 100));
+            totalInterest += monthlyInterest;
+            accumulatedAmount = Math.floor(accumulatedAmount + monthlyInterest);
+
+            var dueDate = addMonths(startDate, month);
+
+            interestBreakdown += "<p>Mes " + month + ": $" + monthlyInterest + " MXN <span>" + formatDateLong(dueDate) + "</span></p>";
+
+            interestBreakdownArr.push({
+                month: month,
+                interest: monthlyInterest,
+                dueDate: formatDateLong(dueDate)
+            });
+        }
+
+        var resultText = "Cliente: " + clientName + "<br>" +
+            "Fecha inicial del prestamo: " + startDateStr + "<br>" +
+            "Monto acumulado despues de " + monthsVencidos + " mes(es): $" + accumulatedAmount + " MXN";
+
+        document.getElementById("result").innerHTML = resultText;
+        document.getElementById("interestDetail").innerHTML = "";
+        document.getElementById("interestBreakdown").innerHTML = interestBreakdown;
+
+        lastCalculation = {
+            clientName,
+            startDateStr,
+            loanAmount,
+            monthsVencidos,
+            interestBreakdownArr,
+            totalInterest,
+            accumulatedAmount
+        };
+    }
+
+    function downloadPDF() {
+        if (!lastCalculation) {
+            alert("Por favor realiza primero un cálculo.");
+            return;
+        }
+        const { clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, totalInterest, accumulatedAmount } = lastCalculation;
+        generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, accumulatedAmount);
+    }
+
+    function generatePDF(clientName, startDateStr, loanAmount, monthsVencidos, interestBreakdownArr, accumulatedAmount) {
+        const doc = new jsPDF({
+            unit: 'pt',
+            format: [226, 400]
+        });
+
+        const leftMargin = 15;
+        const rightMargin = 211;
+        let yPos = 30;
+
+        // Encabezado
+        doc.setFillColor(76, 175, 80);
+        doc.rect(0, 0, 226, 80, 'F');
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(16);
+        doc.setFont("helvetica", "bold");
+        doc.text("COMPROBANTE DE", 113, yPos, { align: "center" });
+        yPos += 22;
+        doc.text("PRESTAMO", 113, yPos, { align: "center" });
+
+        yPos += 22;
+        const now = new Date();
+        const currentDateTime = now.toLocaleDateString('es-MX') + " " + now.toLocaleTimeString('es-MX');
+        doc.setFontSize(10);
+        doc.text(`Fecha y hora: ${currentDateTime}`, 113, yPos, { align: "center" });
+
+        // Datos del préstamo
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(11);
+        yPos += 30;
+
+        doc.setFont("helvetica", "normal");
+        doc.text(`Cliente: ${clientName}`, leftMargin, yPos);
+        yPos += 16;
+        doc.text(`Fecha inicio: ${startDateStr}`, leftMargin, yPos);
+        yPos += 16;
+        doc.text(`Monto inicial: $${loanAmount} MXN`, leftMargin, yPos);
+        yPos += 16;
+        doc.text(`Meses vencidos: ${monthsVencidos}`, leftMargin, yPos);
+        yPos += 25;
+
+        // Detalle de intereses
+        doc.setFont("helvetica", "bold");
+        doc.text("Detalle de intereses:", leftMargin, yPos);
+        yPos += 18;
+
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+
+        interestBreakdownArr.forEach(item => {
+            doc.text(`Mes ${item.month}: $${item.interest} MXN`, leftMargin, yPos);
+            doc.text(item.dueDate, rightMargin, yPos, { align: "right" });
+            yPos += 14;
+        });
+
+        // Espacio de 5 renglones
+        yPos += 70;
+
+        // TOTAL A LIQUIDAR
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(12);
+        doc.text(`TOTAL A LIQUIDAR: $${accumulatedAmount} MXN`, leftMargin, yPos);
+
+        doc.save("Comprobante_Prestamo.pdf");
+    }
+</script>
+
+</body>
+</html>
