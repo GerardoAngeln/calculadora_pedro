@@ -87,22 +87,18 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    /* Tabla y scroll horizontal */
-    .table-container {
-      overflow-x: auto;
-      -webkit-overflow-scrolling: touch;
+    table {
+      width: 100%;
       margin-top: 10px;
-    }
-    .table-container table {
-      min-width: 700px;
       border-collapse: collapse;
-      font-size: 14px;
+      font-size: 12px;
+      table-layout: fixed;
     }
     table, th, td {
       border: 1px solid #ccc;
     }
     th, td {
-      padding: 4px 6px;
+      padding: 4px;
       text-align: center;
       overflow-wrap: break-word;
       white-space: nowrap;
@@ -110,19 +106,11 @@
     th.saldoInicial, td.saldoInicial {
       text-align: left;
     }
+    th, td {
+      padding: 4px 6px;
+    }
     th {
       font-weight: 600;
-    }
-    /* Ajustes para movil */
-    @media (max-width: 600px) {
-      .table-container table {
-        font-size: 11px;
-      }
-      .table-container th,
-      .table-container td {
-        padding: 3px 5px;
-        white-space: nowrap;
-      }
     }
     .modal {
       display: none;
@@ -157,6 +145,39 @@
     }
     #abonoModal button:hover {
       background-color: #45a049;
+    }
+
+    /* Estilos para que la tabla sea responsiva y se vea mejor en móviles */
+    @media (max-width: 600px) {
+      table, thead, tbody, th, td, tr {
+        display: block;
+      }
+      thead tr {
+        display: none; /* ocultamos el encabezado en móvil */
+      }
+      tr {
+        margin-bottom: 15px;
+        border: 1px solid #ccc;
+        padding: 10px;
+        border-radius: 6px;
+        background: #fafafa;
+      }
+      td {
+        text-align: right;
+        padding-left: 50%;
+        position: relative;
+        white-space: normal;
+      }
+      td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 15px;
+        width: 45%;
+        padding-left: 10px;
+        font-weight: 600;
+        text-align: left;
+        white-space: nowrap;
+      }
     }
   </style>
 </head>
@@ -257,41 +278,22 @@
       startDateStr = formatDateLong(startDate);
 
       for (let month = 1; month <= monthsVencidos; month++) {
-        let interest = Math.floor(accumulatedAmount * (interestRate / 100));
-        let abono = 0;
+        let fechaVencimiento = addMonths(startDate, month);
+        let saldoIni = accumulatedAmount;
+        let interes = saldoIni * (interestRate / 100);
+        let abono = 0; // por default 0, se puede ajustar con función abonar
         let fechaAbono = "";
-
-        let saldoInicial = accumulatedAmount;
-        accumulatedAmount = Math.floor(accumulatedAmount + interest - abono);
-        const dueDate = addMonths(startDate, month);
+        let saldoFin = saldoIni + interes - abono;
+        accumulatedAmount = saldoFin;
 
         breakdownArray.push({
           mes: month,
-          interes: interest,
-          abono: abono,
-          fechaAbono: fechaAbono,
-          saldoInicial: saldoInicial,
-          saldoFinal: accumulatedAmount,
-          fechaVencimiento: formatDateLong(dueDate)
-        });
-      }
-    } else {
-      startDateStr = "NO ESPECIFICADA";
-      for (let month = 1; month <= monthsVencidos; month++) {
-        let interest = Math.floor(accumulatedAmount * (interestRate / 100));
-        let abono = 0;
-        let fechaAbono = "";
-        let saldoInicial = accumulatedAmount;
-        accumulatedAmount = Math.floor(accumulatedAmount + interest - abono);
-
-        breakdownArray.push({
-          mes: month,
-          interes: interest,
-          abono: abono,
-          fechaAbono: fechaAbono,
-          saldoInicial: saldoInicial,
-          saldoFinal: accumulatedAmount,
-          fechaVencimiento: "-"
+          saldoIni,
+          interes,
+          abono,
+          fechaAbono,
+          saldoFin,
+          fechaVencimiento
         });
       }
     }
@@ -303,123 +305,141 @@
       monthsVencidos,
       startDateStr,
       breakdownArray,
-      totalToPay: accumulatedAmount
+      totalALiquidar: accumulatedAmount
     };
 
     renderResult(lastCalculation);
   }
 
-  function renderResult(data) {
+  function renderResult(calc) {
     const resultDiv = document.getElementById("result");
-
     let html = `
-      <div><strong>Cliente:</strong> ${data.clientName}</div>
-      <div><strong>Monto del prestamo:</strong> $${formatMoney(data.loanAmount)} MXN</div>
-      <div><strong>Tasa de interes:</strong> ${data.interestRate}%</div>
-      <div><strong>Meses vencidos:</strong> ${data.monthsVencidos}</div>
-      <div><strong>Fecha inicial:</strong> ${data.startDateStr}</div>
-      <div class="table-container">
-        <table>
-          <thead>
-            <tr>
-              <th>Mes</th>
-              <th>Saldo inicial</th>
-              <th>Interes</th>
-              <th>Abono</th>
-              <th>Saldo final</th>
-              <th>Fecha de vencimiento</th>
-            </tr>
-          </thead>
-          <tbody>
+      <div><strong>Cliente:</strong> ${calc.clientName}</div>
+      <div><strong>Monto del prestamo:</strong> $${formatMoney(calc.loanAmount)} MXN</div>
+      <div><strong>Tasa de interes:</strong> ${calc.interestRate}%</div>
+      <div><strong>Meses vencidos:</strong> ${calc.monthsVencidos}</div>
+      <div><strong>Fecha inicial:</strong> ${calc.startDateStr || "No especificada"}</div>
     `;
 
-    data.breakdownArray.forEach((item, idx) => {
-      html += `
-        <tr>
-          <td>${item.mes}</td>
-          <td class="saldoInicial">${item.saldoInicial}</td>
-          <td>${item.interes}</td>
-          <td>${item.abono}</td>
-          <td>${item.saldoFinal}</td>
-          <td>${item.fechaVencimiento}</td>
-        </tr>
+    if (calc.breakdownArray.length > 0) {
+      html += `<table>
+        <thead>
+          <tr>
+            <th>Mes</th>
+            <th>Saldo Inicial</th>
+            <th>Interes</th>
+            <th>Abono</th>
+            <th>Fecha Abono</th>
+            <th>Saldo Final</th>
+            <th>Vencimiento</th>
+          </tr>
+        </thead>
+        <tbody>
       `;
-    });
 
-    html += `
-          </tbody>
-        </table>
-      </div>
-      <div class="highlight"><strong>Total a liquidar:</strong> $${formatMoney(data.totalToPay)} MXN</div>
-    `;
+      calc.breakdownArray.forEach((row, i) => {
+        html += `<tr>
+          <td data-label="Mes">${row.mes}</td>
+          <td data-label="Saldo Inicial">$${formatMoney(row.saldoIni)}</td>
+          <td data-label="Interes">$${formatMoney(row.interes)}</td>
+          <td data-label="Abono">$${formatMoney(row.abono)}</td>
+          <td data-label="Fecha Abono">${row.fechaAbono}</td>
+          <td data-label="Saldo Final">$${formatMoney(row.saldoFin)}</td>
+          <td data-label="Vencimiento">${formatDateShort(row.fechaVencimiento.toISOString().substring(0,10))}</td>
+        </tr>`;
+      });
 
+      html += "</tbody></table>";
+      html += `<div class="highlight">Total a liquidar: $${formatMoney(calc.totalALiquidar)} MXN</div>`;
+    }
     resultDiv.innerHTML = html;
   }
 
   function downloadPDF() {
     if (!lastCalculation) {
-      alert("Primero debes calcular el prestamo.");
+      alert("Primero realiza el calculo.");
       return;
     }
 
-    const doc = new jsPDF('p', 'mm', 'letter');
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text("Comprobante de prestamo", 105, 20, null, null, "center");
+    const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+    const marginLeft = 40;
+    let yPos = 50;
 
+    doc.setFontSize(18);
+    doc.setTextColor(76, 175, 80);
+    doc.text("Comprobante de Prestamo", marginLeft, yPos);
+
+    yPos += 30;
     doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Cliente: ${lastCalculation.clientName}`, 15, 35);
-    doc.text(`Monto del prestamo: $${formatMoney(lastCalculation.loanAmount)} MXN`, 15, 43);
-    doc.text(`Tasa de interes: ${lastCalculation.interestRate}%`, 15, 51);
-    doc.text(`Meses vencidos: ${lastCalculation.monthsVencidos}`, 15, 59);
-    doc.text(`Fecha inicial: ${lastCalculation.startDateStr}`, 15, 67);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Cliente: ${lastCalculation.clientName}`, marginLeft, yPos);
+    yPos += 18;
+    doc.text(`Monto del prestamo: $${formatMoney(lastCalculation.loanAmount)} MXN`, marginLeft, yPos);
+    yPos += 18;
+    doc.text(`Tasa de interes: ${lastCalculation.interestRate}%`, marginLeft, yPos);
+    yPos += 18;
+    doc.text(`Meses vencidos: ${lastCalculation.monthsVencidos}`, marginLeft, yPos);
+    yPos += 18;
+    doc.text(`Fecha inicial: ${lastCalculation.startDateStr || "No especificada"}`, marginLeft, yPos);
 
-    // Prepare table data for autoTable
-    const tableColumnHeaders = ["Mes", "Saldo inicial", "Interes", "Abono", "Saldo final", "Fecha de vencimiento"];
-    const tableRows = lastCalculation.breakdownArray.map(item => [
-      item.mes,
-      `$${formatMoney(item.saldoInicial)}`,
-      `$${formatMoney(item.interes)}`,
-      `$${formatMoney(item.abono)}`,
-      `$${formatMoney(item.saldoFinal)}`,
-      item.fechaVencimiento
+    yPos += 30;
+
+    const rows = lastCalculation.breakdownArray.map(row => [
+      row.mes.toString(),
+      `$${formatMoney(row.saldoIni)}`,
+      `$${formatMoney(row.interes)}`,
+      `$${formatMoney(row.abono)}`,
+      row.fechaAbono || "",
+      `$${formatMoney(row.saldoFin)}`,
+      formatDateShort(row.fechaVencimiento.toISOString().substring(0,10))
     ]);
 
     doc.autoTable({
-      head: [tableColumnHeaders],
-      body: tableRows,
-      startY: 75,
-      styles: { fontSize: 9, cellPadding: 2 },
-      headStyles: { fillColor: [76, 175, 80] },
+      head: [[
+        'Mes',
+        'Saldo\nIni',
+        'Interes',
+        'Abono',
+        'Fecha\nAbono',
+        'Saldo\nFin',
+        'Vencimiento'
+      ]],
+      body: rows,
+      startY: yPos,
+      styles: { fontSize: 8, cellPadding: 3, overflow: 'linebreak' },
+      headStyles: { fillColor: [76, 175, 80], textColor: 'white', valign: 'middle' },
       columnStyles: {
-        1: { halign: 'right' },
-        2: { halign: 'right' },
-        3: { halign: 'right' },
-        4: { halign: 'right' },
-      }
+        0: { cellWidth: 25 },
+        1: { cellWidth: 40 },
+        2: { cellWidth: 35 },
+        3: { cellWidth: 35 },
+        4: { cellWidth: 40 },
+        5: { cellWidth: 40 },
+        6: { cellWidth: 55 },
+      },
+      theme: 'striped',
+      margin: { left: marginLeft, right: marginLeft }
     });
 
-    // Calculate Y position for total a liquidar, below the table
-    let finalY = doc.lastAutoTable.finalY || 75;
-
+    yPos = doc.lastAutoTable.finalY + 15;
     doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total a liquidar: $${formatMoney(lastCalculation.totalToPay)} MXN`, 15, finalY + 10);
+    doc.setTextColor(0, 0, 0);
+    doc.text(`Total a liquidar: $${formatMoney(lastCalculation.totalALiquidar)} MXN`, marginLeft, yPos);
 
-    doc.save(`comprobante_prestamo_${lastCalculation.clientName.replace(/\s+/g,'_').toLowerCase()}.pdf`);
+    doc.save("comprobante_prestamo.pdf");
   }
 
+  // Funciones para abono - si quieres las reactivar me avisas
+
+  // Limpiar campos y resultados al dar doble click en titulo
   function clearFields() {
-    if(confirm("¿Quieres limpiar todos los campos?")) {
-      document.getElementById("clientName").value = "";
-      document.getElementById("loanAmount").value = "";
-      document.getElementById("interestRate").value = "";
-      document.getElementById("monthsVencidos").value = "";
-      document.getElementById("startDate").value = "";
-      document.getElementById("result").innerHTML = "";
-      lastCalculation = null;
-    }
+    document.getElementById("clientName").value = "";
+    document.getElementById("loanAmount").value = "";
+    document.getElementById("interestRate").value = "";
+    document.getElementById("monthsVencidos").value = "";
+    document.getElementById("startDate").value = "";
+    document.getElementById("result").innerHTML = "";
+    lastCalculation = null;
   }
 </script>
 </body>
