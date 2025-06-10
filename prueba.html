@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Calculadora de Prestamo con Abonos</title>
+  <title>Calculadora de Prestamo</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
   <style>
@@ -87,13 +87,16 @@
       font-weight: bold;
       margin-top: 10px;
     }
-    table {
-      width: 100%;
+    /* Tabla y scroll horizontal */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
       margin-top: 10px;
+    }
+    .table-container table {
+      min-width: 700px;
       border-collapse: collapse;
-      font-size: 12px;
-      table-layout: fixed;
-      cursor: pointer;
+      font-size: 14px;
     }
     table, th, td {
       border: 1px solid #ccc;
@@ -106,6 +109,20 @@
     }
     th.saldoInicial, td.saldoInicial {
       text-align: left;
+    }
+    th {
+      font-weight: 600;
+    }
+    /* Ajustes para movil */
+    @media (max-width: 600px) {
+      .table-container table {
+        font-size: 11px;
+      }
+      .table-container th,
+      .table-container td {
+        padding: 3px 5px;
+        white-space: nowrap;
+      }
     }
     .modal {
       display: none;
@@ -122,7 +139,7 @@
       padding: 20px;
       border-radius: 10px;
       width: 90%;
-      max-width: 320px;
+      max-width: 300px;
     }
     .modal-content input {
       width: 100%;
@@ -170,11 +187,11 @@
   <!-- Modal para abono -->
   <div class="modal" id="abonoModal">
     <div class="modal-content">
-      <h3>Registrar abono - Mes <span id="mesSeleccionado"></span></h3>
+      <h3>Registrar abono</h3>
       <label>Fecha del abono:</label>
       <input type="date" id="abonoFecha" />
       <label>Monto del abono:</label>
-      <input type="number" id="abonoMonto" min="0" />
+      <input type="number" id="abonoMonto" />
       <button onclick="guardarAbono()">Guardar</button>
     </div>
   </div>
@@ -194,6 +211,14 @@
     return d + " " + m + " " + y;
   }
 
+  function formatDateShort(dateStr) {
+    if (!dateStr) return "";
+    let d = dateStr.substring(8,10);
+    let m = dateStr.substring(5,7);
+    let y = dateStr.substring(0,4);
+    return `${d}/${m}/${y}`;
+  }
+
   function addMonths(date, count) {
     let newDate = new Date(date.getTime());
     let day = newDate.getDate();
@@ -209,8 +234,7 @@
   }
 
   let lastCalculation = null;
-  let abonos = {};
-  let mesAbonoSeleccionado = null;
+  let selectedMonth = null;
 
   function calculateLoan() {
     const clientName = document.getElementById("clientName").value.trim();
@@ -224,9 +248,6 @@
       return;
     }
 
-    abonos = abonos || {};
-    mesAbonoSeleccionado = null;
-
     let breakdownArray = [];
     let accumulatedAmount = loanAmount;
     let startDateStr = "";
@@ -237,8 +258,8 @@
 
       for (let month = 1; month <= monthsVencidos; month++) {
         let interest = Math.floor(accumulatedAmount * (interestRate / 100));
-        let abono = abonos[month]?.monto || 0;
-        let fechaAbono = abonos[month]?.fecha || "";
+        let abono = 0;
+        let fechaAbono = "";
 
         let saldoInicial = accumulatedAmount;
         accumulatedAmount = Math.floor(accumulatedAmount + interest - abono);
@@ -246,31 +267,31 @@
 
         breakdownArray.push({
           mes: month,
-          saldoInicial: saldoInicial,
           interes: interest,
           abono: abono,
           fechaAbono: fechaAbono,
+          saldoInicial: saldoInicial,
           saldoFinal: accumulatedAmount,
-          dueDate: formatDateLong(dueDate)
+          fechaVencimiento: formatDateLong(dueDate)
         });
       }
     } else {
+      startDateStr = "NO ESPECIFICADA";
       for (let month = 1; month <= monthsVencidos; month++) {
         let interest = Math.floor(accumulatedAmount * (interestRate / 100));
-        let abono = abonos[month]?.monto || 0;
-        let fechaAbono = abonos[month]?.fecha || "";
-
+        let abono = 0;
+        let fechaAbono = "";
         let saldoInicial = accumulatedAmount;
         accumulatedAmount = Math.floor(accumulatedAmount + interest - abono);
 
         breakdownArray.push({
           mes: month,
-          saldoInicial: saldoInicial,
           interes: interest,
           abono: abono,
           fechaAbono: fechaAbono,
+          saldoInicial: saldoInicial,
           saldoFinal: accumulatedAmount,
-          dueDate: ""
+          fechaVencimiento: "-"
         });
       }
     }
@@ -285,191 +306,118 @@
       totalToPay: accumulatedAmount
     };
 
-    mostrarResultado(lastCalculation);
+    renderResult(lastCalculation);
   }
 
-  function mostrarResultado(calc) {
+  function renderResult(data) {
     const resultDiv = document.getElementById("result");
+
     let html = `
-      <div><strong>Cliente:</strong> ${calc.clientName}</div>
-      <div><strong>Monto del prestamo:</strong> $${formatMoney(calc.loanAmount)} MXN</div>
-      <div><strong>Tasa de interes:</strong> ${calc.interestRate}%</div>
-      <div><strong>Meses vencidos:</strong> ${calc.monthsVencidos}</div>
-      <div><strong>Fecha inicial:</strong> ${calc.startDateStr || "No especificada"}</div>
-      <table id="tablaDesglose">
-        <thead>
-          <tr>
-            <th>Mes</th>
-            <th>Saldo inicial</th>
-            <th>Interes</th>
-            <th>Abono</th>
-            <th>Fecha abono</th>
-            <th>Saldo final</th>
-            <th>Fecha vencimiento</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div><strong>Cliente:</strong> ${data.clientName}</div>
+      <div><strong>Monto del prestamo:</strong> $${formatMoney(data.loanAmount)} MXN</div>
+      <div><strong>Tasa de interes:</strong> ${data.interestRate}%</div>
+      <div><strong>Meses vencidos:</strong> ${data.monthsVencidos}</div>
+      <div><strong>Fecha inicial:</strong> ${data.startDateStr}</div>
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th>Saldo inicial</th>
+              <th>Interes</th>
+              <th>Abono</th>
+              <th>Saldo final</th>
+              <th>Fecha de vencimiento</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
 
-    calc.breakdownArray.forEach(item => {
+    data.breakdownArray.forEach((item, idx) => {
       html += `
-        <tr data-mes="${item.mes}">
+        <tr>
           <td>${item.mes}</td>
-          <td style="text-align:left;">$${formatMoney(item.saldoInicial)}</td>
-          <td>$${formatMoney(item.interes)}</td>
-          <td>$${formatMoney(item.abono)}</td>
-          <td>${item.fechaAbono || ""}</td>
-          <td>$${formatMoney(item.saldoFinal)}</td>
-          <td>${item.dueDate || ""}</td>
+          <td class="saldoInicial">${item.saldoInicial}</td>
+          <td>${item.interes}</td>
+          <td>${item.abono}</td>
+          <td>${item.saldoFinal}</td>
+          <td>${item.fechaVencimiento}</td>
         </tr>
       `;
     });
 
     html += `
-        </tbody>
-      </table>
-      <div class="highlight"><strong>Total a liquidar:</strong> $${formatMoney(calc.totalToPay)} MXN</div>
+          </tbody>
+        </table>
+      </div>
+      <div class="highlight"><strong>Total a liquidar:</strong> $${formatMoney(data.totalToPay)} MXN</div>
     `;
 
     resultDiv.innerHTML = html;
-
-    // Quitar la leyenda para abonar (no la añadimos)
-
-    // Agregar evento click en filas para abrir modal abono
-    const rows = document.querySelectorAll("#tablaDesglose tbody tr");
-    rows.forEach(row => {
-      row.style.cursor = "pointer";
-      row.onclick = () => {
-        mesAbonoSeleccionado = parseInt(row.dataset.mes);
-        document.getElementById("mesSeleccionado").textContent = mesAbonoSeleccionado;
-        document.getElementById("abonoMonto").value = abonos[mesAbonoSeleccionado]?.monto || "";
-        document.getElementById("abonoFecha").value = abonos[mesAbonoSeleccionado]?.fecha || "";
-        document.getElementById("abonoModal").style.display = "flex";
-      };
-    });
   }
 
-  function guardarAbono() {
-    const monto = parseFloat(document.getElementById("abonoMonto").value);
-    const fecha = document.getElementById("abonoFecha").value;
-
-    if (isNaN(monto) || monto < 0) {
-      alert("Ingresa un monto valido para el abono");
-      return;
-    }
-
-    abonos[mesAbonoSeleccionado] = { monto, fecha };
-    document.getElementById("abonoModal").style.display = "none";
-
-    // Recalcular con abonos
-    calculateLoan();
-  }
-
-  // Cerrar modal si da click fuera del contenido
-  window.onclick = function(event) {
-    const modal = document.getElementById("abonoModal");
-    if (event.target === modal) {
-      modal.style.display = "none";
-    }
-  };
-
-  // Generar comprobante PDF y abrir en ventana nueva
   function downloadPDF() {
     if (!lastCalculation) {
-      alert("Primero realiza un calculo.");
+      alert("Primero debes calcular el prestamo.");
       return;
     }
 
-    const { clientName, loanAmount, interestRate, monthsVencidos, startDateStr, breakdownArray, totalToPay } = lastCalculation;
+    const doc = new jsPDF('p', 'mm', 'letter');
+    doc.setFontSize(14);
+    doc.setFont("helvetica", "bold");
+    doc.text("Comprobante de prestamo", 105, 20, null, null, "center");
 
-    const doc = new jsPDF({
-      orientation: 'portrait',
-      unit: 'mm',
-      format: 'letter'  // Tamaño carta: 216mm x 279mm approx
-    });
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "normal");
+    doc.text(`Cliente: ${lastCalculation.clientName}`, 15, 35);
+    doc.text(`Monto del prestamo: $${formatMoney(lastCalculation.loanAmount)} MXN`, 15, 43);
+    doc.text(`Tasa de interes: ${lastCalculation.interestRate}%`, 15, 51);
+    doc.text(`Meses vencidos: ${lastCalculation.monthsVencidos}`, 15, 59);
+    doc.text(`Fecha inicial: ${lastCalculation.startDateStr}`, 15, 67);
 
-    // Estilos encabezado
-    doc.setFillColor(76, 175, 80); // verde
-    doc.rect(0, 0, 216, 25, 'F');
-    doc.setTextColor(255, 255, 255);
-    doc.setFontSize(18);
-    doc.text("COMPROBANTE DE PAGO", 108, 16, null, null, "center");
-
-    doc.setTextColor(0, 0, 0);
-    doc.setFontSize(13);
-    let y = 35;
-    doc.text(`Cliente: ${clientName}`, 14, y);
-    y += 10;
-    doc.text(`Monto del prestamo: $${formatMoney(loanAmount)} MXN`, 14, y);
-    y += 10;
-    doc.text(`Tasa de interes: ${interestRate}%`, 14, y);
-    y += 10;
-    doc.text(`Meses vencidos: ${monthsVencidos}`, 14, y);
-    y += 10;
-    doc.text(`Fecha inicial: ${startDateStr || "No especificada"}`, 14, y);
-
-    y += 15;
-
-    // Tabla
-    const headers = [
-      "Mes",
-      "Saldo inicial",
-      "Interes",
-      "Abono",
-      "Fecha abono",
-      "Saldo final",
-      "Fecha vencimiento"
-    ];
-
-    const rows = breakdownArray.map(row => [
-      row.mes.toString(),
-      `$${formatMoney(row.saldoInicial)}`,
-      `$${formatMoney(row.interes)}`,
-      `$${formatMoney(row.abono)}`,
-      row.fechaAbono || "",
-      `$${formatMoney(row.saldoFinal)}`,
-      row.dueDate || ""
+    // Prepare table data for autoTable
+    const tableColumnHeaders = ["Mes", "Saldo inicial", "Interes", "Abono", "Saldo final", "Fecha de vencimiento"];
+    const tableRows = lastCalculation.breakdownArray.map(item => [
+      item.mes,
+      `$${formatMoney(item.saldoInicial)}`,
+      `$${formatMoney(item.interes)}`,
+      `$${formatMoney(item.abono)}`,
+      `$${formatMoney(item.saldoFinal)}`,
+      item.fechaVencimiento
     ]);
 
     doc.autoTable({
-      startY: y,
-      head: [headers],
-      body: rows,
-      styles: { fontSize: 10, cellPadding: 3 },
-      headStyles: { fillColor: [76, 175, 80], textColor: 255 },
+      head: [tableColumnHeaders],
+      body: tableRows,
+      startY: 75,
+      styles: { fontSize: 9, cellPadding: 2 },
+      headStyles: { fillColor: [76, 175, 80] },
       columnStyles: {
-        0: { cellWidth: 14 },
-        1: { cellWidth: 30 },
-        2: { cellWidth: 22 },
-        3: { cellWidth: 22 },
-        4: { cellWidth: 30 },
-        5: { cellWidth: 30 },
-        6: { cellWidth: 30 }
-      },
-      theme: 'striped',
-      margin: { left: 14, right: 14 }
+        1: { halign: 'right' },
+        2: { halign: 'right' },
+        3: { halign: 'right' },
+        4: { halign: 'right' },
+      }
     });
 
-    // Total a liquidar abajo
-    let finalY = doc.lastAutoTable.finalY || (y + rows.length * 8 + 10);
-    finalY += 15;
-    doc.setFontSize(15);
-    doc.setFont("helvetica", "bold");
-    doc.text(`Total a liquidar: $${formatMoney(totalToPay)} MXN`, 14, finalY);
+    // Calculate Y position for total a liquidar, below the table
+    let finalY = doc.lastAutoTable.finalY || 75;
 
-    // Abrir en nueva ventana
-    window.open(doc.output('bloburl'), '_blank');
+    doc.setFontSize(12);
+    doc.setFont("helvetica", "bold");
+    doc.text(`Total a liquidar: $${formatMoney(lastCalculation.totalToPay)} MXN`, 15, finalY + 10);
+
+    doc.save(`comprobante_prestamo_${lastCalculation.clientName.replace(/\s+/g,'_').toLowerCase()}.pdf`);
   }
 
   function clearFields() {
-    if (confirm("¿Quieres borrar todos los campos?")) {
+    if(confirm("¿Quieres limpiar todos los campos?")) {
       document.getElementById("clientName").value = "";
       document.getElementById("loanAmount").value = "";
       document.getElementById("interestRate").value = "";
       document.getElementById("monthsVencidos").value = "";
       document.getElementById("startDate").value = "";
       document.getElementById("result").innerHTML = "";
-      abonos = {};
       lastCalculation = null;
     }
   }
