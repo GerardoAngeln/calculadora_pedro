@@ -12,6 +12,7 @@
       background-color: #f1f1f1;
       margin: 0;
       padding: 10px;
+      overflow-x: hidden; /* quitar scroll horizontal global */
     }
     .container {
       background-color: #fff;
@@ -87,13 +88,24 @@
       font-weight: bold;
       margin-top: 10px;
     }
+
+    /* Envuelve solo la tabla para scroll horizontal */
+    .table-wrapper {
+      max-width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
     table {
       width: 100%;
-      margin-top: 10px;
       border-collapse: collapse;
       font-size: 12px;
       table-layout: fixed;
       cursor: pointer;
+      white-space: nowrap; /* evitar que las palabras se rompan */
     }
     table, th, td {
       border: 1px solid #ccc;
@@ -101,8 +113,6 @@
     th, td {
       padding: 4px 6px;
       text-align: center;
-      overflow-wrap: break-word;
-      white-space: nowrap;
     }
     th.saldoInicial, td.saldoInicial {
       text-align: left;
@@ -142,18 +152,22 @@
       background-color: #45a049;
     }
 
-    /* Adaptación móvil para tabla */
-    @media (max-width: 600px) {
-      #result {
-        overflow-x: auto;
+    /* Media query para dispositivos móviles */
+    @media (max-width: 480px) {
+      .container {
+        padding: 10px;
+        font-size: 12px;
       }
-      #result table {
-        table-layout: auto !important; /* Ajusta ancho según contenido */
+      input, button {
+        font-size: 12px;
+        padding: 8px;
       }
-      #result th,
-      #result td {
-        white-space: normal !important; /* Permite que el texto se quiebre en varias líneas */
-        word-wrap: break-word;
+      h1 {
+        font-size: 18px;
+        padding: 8px;
+      }
+      table {
+        font-size: 10px;
       }
     }
   </style>
@@ -300,37 +314,44 @@
       totalToPay: accumulatedAmount
     };
 
-    mostrarResultado(lastCalculation);
+    renderResult();
   }
 
-  function mostrarResultado(calc) {
+  function renderResult() {
     const resultDiv = document.getElementById("result");
+    if (!lastCalculation) {
+      resultDiv.innerHTML = "";
+      return;
+    }
+
     let html = `
-      <div><strong>Cliente:</strong> ${calc.clientName}</div>
-      <div><strong>Monto del prestamo:</strong> $${formatMoney(calc.loanAmount)} MXN</div>
-      <div><strong>Tasa de interes:</strong> ${calc.interestRate}%</div>
-      <div><strong>Meses vencidos:</strong> ${calc.monthsVencidos}</div>
-      <div><strong>Fecha inicial:</strong> ${calc.startDateStr || "No especificada"}</div>
-      <table id="tablaDesglose">
-        <thead>
-          <tr>
-            <th>Mes</th>
-            <th>Saldo inicial</th>
-            <th>Interes</th>
-            <th>Abono</th>
-            <th>Fecha abono</th>
-            <th>Saldo final</th>
-            <th>Fecha vencimiento</th>
-          </tr>
-        </thead>
-        <tbody>
+      <div><strong>Cliente:</strong> ${lastCalculation.clientName}</div>
+      <div><strong>Monto del préstamo:</strong> $${formatMoney(lastCalculation.loanAmount)} MXN</div>
+      <div><strong>Tasa de interés:</strong> ${lastCalculation.interestRate}%</div>
+      <div><strong>Meses vencidos:</strong> ${lastCalculation.monthsVencidos}</div>
+      <div><strong>Fecha inicial:</strong> ${lastCalculation.startDateStr || "No especificada"}</div>
+
+      <div class="table-wrapper">
+        <table>
+          <thead>
+            <tr>
+              <th>Mes</th>
+              <th class="saldoInicial">Saldo Inicial</th>
+              <th>Interés</th>
+              <th>Abono</th>
+              <th>Fecha Abono</th>
+              <th>Saldo Final</th>
+              <th>Fecha Vencimiento</th>
+            </tr>
+          </thead>
+          <tbody>
     `;
 
-    calc.breakdownArray.forEach(item => {
+    lastCalculation.breakdownArray.forEach(item => {
       html += `
-        <tr data-mes="${item.mes}">
+        <tr onclick="openAbonoModal(${item.mes})" title="Click para registrar abono">
           <td>${item.mes}</td>
-          <td style="text-align:left;">$${formatMoney(item.saldoInicial)}</td>
+          <td class="saldoInicial">$${formatMoney(item.saldoInicial)}</td>
           <td>$${formatMoney(item.interes)}</td>
           <td>$${formatMoney(item.abono)}</td>
           <td>${item.fechaAbono || ""}</td>
@@ -341,63 +362,59 @@
     });
 
     html += `
-        </tbody>
-      </table>
-      <div class="highlight"><strong>Total a liquidar:</strong> $${formatMoney(calc.totalToPay)} MXN</div>
+          </tbody>
+        </table>
+      </div>
+      <div class="highlight">Total a liquidar: $${formatMoney(lastCalculation.totalToPay)} MXN</div>
     `;
 
     resultDiv.innerHTML = html;
+  }
 
-    // Agregar evento click en filas para abrir modal abono
-    const rows = document.querySelectorAll("#tablaDesglose tbody tr");
-    rows.forEach(row => {
-      row.style.cursor = "pointer";
-      row.onclick = () => {
-        mesAbonoSeleccionado = parseInt(row.dataset.mes);
-        document.getElementById("mesSeleccionado").textContent = mesAbonoSeleccionado;
-        document.getElementById("abonoMonto").value = abonos[mesAbonoSeleccionado]?.monto || "";
-        document.getElementById("abonoFecha").value = abonos[mesAbonoSeleccionado]?.fecha || "";
-        document.getElementById("abonoModal").style.display = "flex";
-      };
-    });
+  function openAbonoModal(mes) {
+    mesAbonoSeleccionado = mes;
+    const modal = document.getElementById("abonoModal");
+    document.getElementById("mesSeleccionado").textContent = mes;
+    document.getElementById("abonoFecha").value = "";
+    document.getElementById("abonoMonto").value = "";
+    modal.style.display = "flex";
   }
 
   function guardarAbono() {
-    const monto = parseFloat(document.getElementById("abonoMonto").value);
     const fecha = document.getElementById("abonoFecha").value;
-
+    const monto = parseFloat(document.getElementById("abonoMonto").value);
+    if (!fecha) {
+      alert("Por favor ingresa la fecha del abono.");
+      return;
+    }
     if (isNaN(monto) || monto < 0) {
-      alert("Ingresa un monto válido para el abono.");
+      alert("Por favor ingresa un monto válido para el abono.");
       return;
     }
 
-    abonos[mesAbonoSeleccionado] = {
-      monto: monto,
-      fecha: fecha
-    };
-
+    abonos[mesAbonoSeleccionado] = { fecha, monto };
     document.getElementById("abonoModal").style.display = "none";
     calculateLoan();
   }
 
   window.onclick = function(event) {
     const modal = document.getElementById("abonoModal");
-    if (event.target === modal) {
+    if (event.target == modal) {
       modal.style.display = "none";
     }
-  };
+  }
 
+  // Limpiar campos sin confirmación al dar doble click en el título
   function clearFields() {
-    if (confirm("¿Quieres limpiar todos los campos y resultados?")) {
-      document.getElementById("clientName").value = "";
-      document.getElementById("loanAmount").value = "";
-      document.getElementById("interestRate").value = "";
-      document.getElementById("monthsVencidos").value = "";
-      document.getElementById("startDate").value = "";
-      document.getElementById("result").innerHTML = "";
-      abonos = {};
-      lastCalculation = null;
-    }
+    document.getElementById("clientName").value = "";
+    document.getElementById("loanAmount").value = "";
+    document.getElementById("interestRate").value = "";
+    document.getElementById("monthsVencidos").value = "";
+    document.getElementById("startDate").value = "";
+    abonos = {};
+    mesAbonoSeleccionado = null;
+    lastCalculation = null;
+    document.getElementById("result").innerHTML = "";
   }
 
   function downloadPDF() {
@@ -454,7 +471,8 @@
     doc.setFontSize(12);
     doc.text(`Total a liquidar: $${formatMoney(lastCalculation.totalToPay)} MXN`, 14, finalY + 10);
 
-    doc.save(`comprobante_${lastCalculation.clientName.replace(/\s+/g, '_')}.pdf`);
+    // Abrir PDF en nueva pestaña en lugar de descargar
+    window.open(doc.output('bloburl'), '_blank');
   }
 </script>
 </body>
