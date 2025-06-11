@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Tanda con multa acumulada</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 10px;
+    background: #f4f4f4;
+  }
+  h2, h3 {
+    text-align: center;
+  }
+  form, table {
+    width: 100%;
+    max-width: 480px;
+    margin: 10px auto;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px #ccc;
+  }
+  label {
+    display: block;
+    margin-bottom: 6px;
+  }
+  input[type="number"],
+  input[type="text"],
+  input[type="date"],
+  select {
+    width: 100%;
+    padding: 8px;
+    margin-bottom: 12px;
+    border-radius: 4px;
+    border: 1px solid #aaa;
+    box-sizing: border-box;
+  }
+  button {
+    background-color: #28a745;
+    color: white;
+    border: none;
+    padding: 10px;
+    font-size: 1rem;
+    border-radius: 4px;
+    width: 100%;
+    cursor: pointer;
+    margin-bottom: 15px;
+  }
+  button:hover {
+    background-color: #218838;
+  }
+  table {
+    border-collapse: collapse;
+    margin-bottom: 15px;
+  }
+  th, td {
+    padding: 8px 5px;
+    border: 1px solid #ccc;
+    text-align: center;
+    font-size: 0.9rem;
+  }
+  tr.pagado-completo {
+    background-color: #d4edda;
+  }
+  #resumen {
+    max-width: 480px;
+    margin: 0 auto 20px;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    box-shadow: 0 0 8px #ccc;
+    font-size: 1rem;
+  }
+  @media (max-width: 520px) {
+    table, form {
+      font-size: 0.85rem;
+    }
+    th, td {
+      padding: 6px 3px;
+    }
+  }
+</style>
+</head>
+<body>
+
+<h2>Configuración de la Tanda</h2>
+<form id="configTanda">
+  <label for="numParticipantes">Número de participantes:</label>
+  <input type="number" id="numParticipantes" min="1" max="20" required value="3" />
+
+  <label for="frecuencia">Frecuencia:</label>
+  <select id="frecuencia">
+    <option value="DIARIO" selected>Diario</option>
+    <option value="SEMANAL">Semanal</option>
+    <option value="QUINCENAL">Quincenal</option>
+    <option value="MENSUAL">Mensual</option>
+  </select>
+
+  <label for="fechaInicio">Fecha inicial:</label>
+  <input type="date" id="fechaInicio" required value="2025-06-09" />
+
+  <label for="monto">Monto por pago:</label>
+  <input type="number" id="monto" min="1" step="0.01" value="100" required />
+
+  <label for="multaInput">Multa diaria (dejar 0 si no aplica multa):</label>
+  <input type="number" id="multaInput" min="0" step="0.01" value="10" />
+
+  <button type="submit">Continuar</button>
+</form>
+
+<form id="formParticipantes" style="display:none;">
+  <h3>Ingrese nombres de los participantes</h3>
+  <div id="nombresInputs"></div>
+  <button type="submit">Generar tanda</button>
+</form>
+
+<div id="tandaLista" style="display:none;">
+  <h3>Lista de pagos</h3>
+  <table>
+    <thead id="tablaHead"></thead>
+    <tbody id="tablaBody"></tbody>
+  </table>
+  <div id="resumen"></div>
+  <button onclick="reiniciarTanda()">Reiniciar tanda</button>
+</div>
+
+<script>
+  let participantes = [];
+  let fechasPago = [];
+  let frecuencia = "DIARIO";
+  let numPagos = 0;
+  let montoPorPago = 100;
+  let fechaInicial = null;
+  let multaDiaria = 0;
+
+  // Para prueba: fecha “hoy” fija en 2025-06-11 (puedes cambiar para probar)
+  const fechaHoy = new Date("2025-06-11");
+
+  document.getElementById("configTanda").addEventListener("submit", function(e){
+    e.preventDefault();
+    const num = parseInt(document.getElementById("numParticipantes").value);
+    frecuencia = document.getElementById("frecuencia").value;
+    fechaInicial = document.getElementById("fechaInicio").value;
+    montoPorPago = parseFloat(document.getElementById("monto").value);
+    multaDiaria = parseFloat(document.getElementById("multaInput").value);
+
+    if(!fechaInicial || num < 1) {
+      alert("Debe ingresar todos los datos correctamente");
+      return;
+    }
+
+    numPagos = num;
+    fechasPago = calcularFechasPago(fechaInicial, numPagos, frecuencia);
+
+    const contenedor = document.getElementById("nombresInputs");
+    contenedor.innerHTML = "";
+    for(let i=0; i<num; i++){
+      contenedor.innerHTML += `<label for="nombre${i}">Nombre participante ${i+1}:</label><input type="text" id="nombre${i}" name="nombre${i}" required />`;
+    }
+
+    document.getElementById("configTanda").style.display = "none";
+    document.getElementById("formParticipantes").style.display = "block";
+  });
+
+  function calcularFechasPago(fechaInicioStr, cantidad, tipo) {
+    const fechas = [];
+    const base = new Date(fechaInicioStr);
+    for(let i=0; i<cantidad; i++){
+      let nuevaFecha = new Date(base);
+      switch(tipo){
+        case "DIARIO": nuevaFecha.setDate(base.getDate() + i); break;
+        case "SEMANAL": nuevaFecha.setDate(base.getDate() + i*7); break;
+        case "QUINCENAL": nuevaFecha.setDate(base.getDate() + i*15); break;
+        case "MENSUAL": nuevaFecha.setMonth(base.getMonth() + i); break;
+      }
+      fechas.push(nuevaFecha);
+    }
+    return fechas;
+  }
+
+  document.getElementById("formParticipantes").addEventListener("submit", function(e){
+    e.preventDefault();
+    participantes = [];
+    const formInputs = document.querySelectorAll("#nombresInputs input");
+    formInputs.forEach(input => {
+      participantes.push({
+        nombre: input.value.trim(),
+        pagos: fechasPago.map(fecha => ({
+          fechaProgramada: fecha.toISOString().slice(0,10),
+          pagado: false
+        }))
+      });
+    });
+
+    document.getElementById("formParticipantes").style.display = "none";
+    document.getElementById("tandaLista").style.display = "block";
+
+    mostrarTabla();
+    mostrarResumen();
+  });
+
+  function mostrarTabla() {
+    const head = document.getElementById("tablaHead");
+    const body = document.getElementById("tablaBody");
+
+    head.innerHTML = `<tr><th>Participante</th>` +
+      fechasPago.map(f => {
+        const d = new Date(f);
+        return `<th>${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getFullYear()).toString().slice(2)}</th>`;
+      }).join('') + `</tr>`;
+
+    body.innerHTML = participantes.map((p, idx) => {
+      return `<tr${p.pagos.every(pg => pg.pagado) ? ' class="pagado-completo"' : ''}><td>${p.nombre}</td>` +
+        p.pagos.map((pago, i) => {
+          return `<td><input type="checkbox" onchange="togglePago(${idx},${i}, this)" ${pago.pagado ? 'checked' : ''} /></td>`;
+        }).join('') + `</tr>`;
+    }).join('');
+  }
+
+  function togglePago(partIdx, pagoIdx, checkbox) {
+    participantes[partIdx].pagos[pagoIdx].pagado = checkbox.checked;
+    mostrarTabla();
+    mostrarResumen();
+  }
+
+  function calcularMultaAcumulada(pago) {
+    if (pago.pagado || multaDiaria <= 0) return 0;
+    const fechaPago = new Date(pago.fechaProgramada);
+    const diffTime = fechaHoy - fechaPago;  // usa fecha fija hoy para test
+    if (diffTime <= 0) return 0;
+    const diffDias = Math.floor(diffTime / (1000*60*60*24));
+    return diffDias * multaDiaria;
+  }
+
+  function mostrarResumen() {
+    const resumenDiv = document.getElementById("resumen");
+    resumenDiv.innerHTML = "";
+
+    if(participantes.length === 0) return;
+
+    // Nombre y monto total recibido de la primera persona
+    const primera = participantes[0];
+    let totalRecibido = 0;
+    primera.pagos.forEach(pago => {
+      if(pago.pagado) totalRecibido += montoPorPago;
+    });
+
+    // Calcular total recibido de los demás que ya marcaron pagos
+    for(let i=1; i<participantes.length; i++){
+      participantes[i].pagos.forEach(pago => {
+        if(pago.pagado) totalRecibido += montoPorPago;
+      });
+    }
+
+    // Buscar primer moroso con multa acumulada > 0
+    let primerMoroso = null;
+    for(let i = 0; i < participantes.length; i++){
+      const p = participantes[i];
+      for(let pago of p.pagos){
+        if(!pago.pagado){
+          const multa = calcularMultaAcumulada(pago);
+          if(multa > 0){
+            primerMoroso = {
+              nombre: p.nombre,
+              totalAPagar: montoPorPago + multa
+            };
+            break;
+          }
+        }
+      }
+      if(primerMoroso) break;
+    }
+
+    resumenDiv.innerHTML = `
+      <h3>Resumen</h3>
+      <p><b>${primera.nombre}:</b> Monto total a recibir: $${totalRecibido.toFixed(2)}</p>
+    `;
+
+    if(primerMoroso){
+      resumenDiv.innerHTML += `
+        <p><b>Multa pendiente:</b></p>
+        <p>${primerMoroso.nombre}: $${primerMoroso.totalAPagar.toFixed(2)}</p>
+      `;
+    }
+  }
+
+  function reiniciarTanda() {
+    participantes = [];
+    fechasPago = [];
+    document.getElementById("configTanda").style.display = "block";
+    document.getElementById("formParticipantes").style.display = "none";
+    document.getElementById("tandaLista").style.display = "none";
+    document.getElementById("tablaHead").innerHTML = "";
+    document.getElementById("tablaBody").innerHTML = "";
+    document.getElementById("resumen").innerHTML = "";
+    document.getElementById("configTanda").reset();
+    document.getElementById("formParticipantes").reset?.();
+  }
+</script>
+
+</body>
+</html>
