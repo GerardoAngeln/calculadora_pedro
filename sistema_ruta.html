@@ -118,6 +118,7 @@
         <button id="btnVentas"><i>💰</i>Ventas</button>
         <button id="btnConfig"><i>⚙️</i>Configuración</button>
         <button id="btnReportes"><i>📊</i>Reportes</button>
+        <button id="btnClientes"><i>👥</i>Clientes</button>
       </div>
     </div>
     <footer>© 2025 Sistema de Cobranza</footer>
@@ -127,6 +128,7 @@
   <div class="main-content">
     <header>
       <h1 id="tituloModulo">Módulo: Ruta</h1>
+      <div id="fechaHora" style="font-size: 0.95em; color: #555;"></div>
     </header>
 
     <!-- Módulos -->
@@ -149,6 +151,11 @@
       <h2>Reportes</h2>
       <p>Visualiza los reportes de ventas, cobranza y desempeño general.</p>
     </section>
+
+    <section id="modClientes" class="module">
+      <h2>Clientes</h2>
+      <p>Desde aquí se podrán administrar los clientes, sus datos y asignaciones.</p>
+    </section>
   </div>
 
   <script>
@@ -156,7 +163,8 @@
       btnRuta: 'modRuta',
       btnVentas: 'modVentas',
       btnConfig: 'modConfig',
-      btnReportes: 'modReportes'
+      btnReportes: 'modReportes',
+      btnClientes: 'modClientes'
     };
 
     const titulo = document.getElementById('tituloModulo');
@@ -175,6 +183,29 @@
         titulo.textContent = 'Módulo: ' + document.getElementById(id).textContent.trim();
       });
     });
+
+    // Función para actualizar fecha y hora
+    function actualizarFechaHora() {
+      const fechaHora = document.getElementById('fechaHora');
+      const ahora = new Date();
+
+      const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+
+      const diaSemana = diasSemana[ahora.getDay()];
+      const dia = ahora.getDate().toString().padStart(2, '0');
+      const mes = meses[ahora.getMonth()];
+      const año = ahora.getFullYear();
+
+      const horas = ahora.getHours().toString().padStart(2, '0');
+      const minutos = ahora.getMinutes().toString().padStart(2, '0');
+      const segundos = ahora.getSeconds().toString().padStart(2, '0');
+
+      fechaHora.textContent = `${diaSemana}, ${dia} ${mes} ${año} - ${horas}:${minutos}:${segundos}`;
+    }
+
+    setInterval(actualizarFechaHora, 1000);
+    actualizarFechaHora();
   </script>
 </body>
 </html>
