@@ -5,20 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema de Cobranza en Ruta</title>
   <style>
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: 'Segoe UI', sans-serif;
-    }
-
-    body {
-      display: flex;
-      height: 100vh;
-      background: #f5f6fa;
-      color: #333;
-      flex-direction: row;
-    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', sans-serif; }
+    body { display: flex; height: 100vh; background: #f5f6fa; color: #333; flex-direction: row; }
 
     /* Panel lateral */
     .sidebar {
@@ -31,125 +19,72 @@
       padding: 20px 0;
       transition: transform 0.3s ease-in-out;
     }
-
-    .sidebar h2 {
-      text-align: center;
-      font-size: 1.4em;
-      color: #444;
-      margin-bottom: 20px;
-    }
-
-    .menu {
-      display: flex;
-      flex-direction: column;
-    }
-
+    .sidebar h2 { text-align: center; font-size: 1.4em; color: #444; margin-bottom: 20px; }
+    .menu { display: flex; flex-direction: column; }
     .menu button {
-      background: none;
-      border: none;
-      padding: 14px 20px;
-      text-align: left;
-      font-size: 1em;
-      cursor: pointer;
-      transition: 0.3s;
-      color: #333;
+      background: none; border: none; padding: 14px 20px; text-align: left; font-size: 1em;
+      cursor: pointer; transition: 0.3s; color: #333;
     }
-
-    .menu button:hover, .menu button.active {
-      background: #e8f0fe;
-      color: #1a73e8;
-    }
-
-    .menu button i {
-      margin-right: 10px;
-    }
+    .menu button:hover, .menu button.active { background: #e8f0fe; color: #1a73e8; }
+    .menu button i { margin-right: 10px; }
 
     /* Área principal */
-    .main-content {
-      flex: 1;
-      padding: 30px;
-      overflow-y: auto;
-    }
-
-    .module {
-      display: none;
-      animation: fadeIn 0.3s ease-in-out;
-    }
-
-    .module.active {
-      display: block;
-    }
-
-    @keyframes fadeIn {
-      from {opacity: 0; transform: translateY(10px);}
-      to {opacity: 1; transform: translateY(0);}
-    }
-
+    .main-content { flex: 1; padding: 30px; overflow-y: auto; }
+    .module { display: none; animation: fadeIn 0.3s ease-in-out; }
+    .module.active { display: block; }
+    @keyframes fadeIn { from {opacity: 0; transform: translateY(10px);} to {opacity: 1; transform: translateY(0);} }
     header {
-      background: #fff;
-      padding: 15px 25px;
-      border-radius: 10px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      margin-bottom: 25px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: #fff; padding: 15px 25px; border-radius: 10px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 25px;
+      display: flex; justify-content: space-between; align-items: center;
     }
-
-    header h1 {
-      font-size: 1.3em;
-      color: #1a73e8;
-    }
-
-    footer {
-      text-align: center;
-      font-size: 0.9em;
-      padding: 10px;
-      color: #888;
-    }
+    header h1 { font-size: 1.3em; color: #1a73e8; }
+    footer { text-align: center; font-size: 0.9em; padding: 10px; color: #888; }
 
     /* Botón menú en móvil */
     .menu-toggle {
-      display: none;
-      position: absolute;
-      top: 15px;
-      left: 15px;
-      background: #1a73e8;
-      color: #fff;
-      border: none;
-      padding: 10px;
-      border-radius: 5px;
-      cursor: pointer;
-      z-index: 1000;
+      display: none; position: absolute; top: 15px; left: 15px;
+      background: #1a73e8; color: #fff; border: none; padding: 10px;
+      border-radius: 5px; cursor: pointer; z-index: 1000;
     }
 
     /* Responsive */
     @media (max-width: 768px) {
-      body {
-        flex-direction: column;
-      }
-
+      body { flex-direction: column; }
       .sidebar {
-        position: absolute;
-        top: 0;
-        left: 0;
-        height: 100%;
-        transform: translateX(-260px);
-        z-index: 999;
+        position: absolute; top: 0; left: 0; height: 100%;
+        transform: translateX(-260px); z-index: 999;
       }
-
-      .sidebar.active {
-        transform: translateX(0);
-      }
-
-      .menu-toggle {
-        display: block;
-      }
-
-      .main-content {
-        padding: 80px 20px 20px 20px;
-      }
+      .sidebar.active { transform: translateX(0); }
+      .menu-toggle { display: block; }
+      .main-content { padding: 80px 20px 20px 20px; }
     }
+
+    /* Estilos módulo Ventas */
+    #modVentas form {
+      max-width: 500px; margin: 0 auto 20px auto;
+      background: #fff; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #modVentas form div { display: flex; flex-direction: column; margin-bottom: 15px; }
+    #modVentas form label { margin-bottom: 5px; font-weight: 600; color: #333; }
+    #modVentas form input, #modVentas form select {
+      padding: 8px 10px; border: 1px solid #ccc; border-radius: 5px; font-size: 0.95em;
+    }
+    #modVentas form button {
+      width: 100%; padding: 10px; background: #1a73e8; color: #fff;
+      font-weight: 600; border: none; border-radius: 5px; cursor: pointer; transition: 0.3s;
+    }
+    #modVentas form button:hover { background: #155ab6; }
+
+    #listaVentas {
+      max-width: 600px; margin: 0 auto; background: #fff; padding: 15px;
+      border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+    }
+    #listaVentas ul { list-style: none; }
+    #listaVentas li { padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 0.95em; }
+    #listaVentas li:last-child { border-bottom: none; }
+    #imprimirTicket { margin-top:10px; padding:8px 15px; background:#1a73e8; color:#fff; border:none; border-radius:5px; cursor:pointer; }
+    #imprimirTicket:hover { background: #155ab6; }
   </style>
 </head>
 <body>
@@ -186,46 +121,48 @@
 
     <section id="modVentas" class="module">
       <h2>Registro de Ventas</h2>
-      
-      <!-- Formulario para nueva venta -->
-      <form id="formVenta" style="margin-bottom: 20px;">
-        <div style="margin-bottom:10px;">
+      <form id="formVenta">
+        <div>
           <label>Cliente:</label>
-          <input type="text" id="ventaCliente" placeholder="Nombre del cliente" required style="margin-left:10px;"/>
+          <select id="ventaCliente" required>
+            <option value="">-- Selecciona Cliente --</option>
+            <option value="Juan Pérez">Juan Pérez</option>
+            <option value="Karla López">Karla López</option>
+            <option value="Luis Martínez">Luis Martínez</option>
+          </select>
         </div>
-
-        <div style="margin-bottom:10px;">
+        <div>
           <label>Celular:</label>
-          <input type="tel" id="ventaCelular" placeholder="Número de celular" required style="margin-left:10px;"/>
+          <input type="tel" id="ventaCelular" placeholder="Número de celular" required/>
         </div>
-
-        <div style="margin-bottom:10px;">
+        <div>
           <label>Concepto:</label>
-          <input type="text" id="ventaConcepto" placeholder="Concepto de la venta" required style="margin-left:10px;"/>
+          <input type="text" id="ventaConcepto" placeholder="Concepto de la venta" required/>
         </div>
-
-        <div style="margin-bottom:10px;">
+        <div>
           <label>Monto:</label>
-          <input type="number" id="ventaMonto" placeholder="Monto total" required style="margin-left:10px;"/>
+          <input type="number" id="ventaMonto" placeholder="Monto total" required/>
         </div>
-
-        <div style="margin-bottom:10px;">
+        <div>
           <label>Anticipo:</label>
-          <input type="number" id="ventaAnticipo" placeholder="Anticipo" required style="margin-left:10px;"/>
+          <input type="number" id="ventaAnticipo" placeholder="Anticipo" required/>
         </div>
-
-        <div style="margin-bottom:10px;">
+        <div>
           <label>Asignar Cobrador:</label>
-          <input type="text" id="ventaCobrador" placeholder="Nombre del cobrador" required style="margin-left:10px;"/>
+          <select id="ventaCobrador" required>
+            <option value="">-- Selecciona Cobrador --</option>
+            <option value="Cobrador 1">Cobrador 1</option>
+            <option value="Cobrador 2">Cobrador 2</option>
+            <option value="Cobrador 3">Cobrador 3</option>
+          </select>
         </div>
-
-        <button type="submit" style="padding:5px 10px; cursor:pointer;">Aplicar Venta</button>
+        <button type="submit">Aplicar Venta</button>
       </form>
 
-      <!-- Lista de ventas -->
       <div id="listaVentas">
         <h3>Ventas registradas:</h3>
         <ul id="ventasUl"></ul>
+        <button id="imprimirTicket">Imprimir Ticket</button>
       </div>
     </section>
 
@@ -246,7 +183,7 @@
   </div>
 
   <script>
-    // Navegación entre módulos
+    // Navegación
     const botones = {
       btnRuta: 'modRuta',
       btnVentas: 'modVentas',
@@ -254,26 +191,17 @@
       btnReportes: 'modReportes',
       btnClientes: 'modClientes'
     };
-
     const titulo = document.getElementById('tituloModulo');
-
     Object.keys(botones).forEach(id => {
       document.getElementById(id).addEventListener('click', () => {
-        // Quitar clase activa de todos los botones
         Object.keys(botones).forEach(btn => {
           document.getElementById(btn).classList.remove('active');
           document.getElementById(botones[btn]).classList.remove('active');
         });
-
-        // Activar el seleccionado
         document.getElementById(id).classList.add('active');
         document.getElementById(botones[id]).classList.add('active');
         titulo.textContent = 'Módulo: ' + document.getElementById(id).textContent.trim();
-
-        // Cerrar sidebar en móvil
-        if(window.innerWidth <= 768){
-          document.querySelector('.sidebar').classList.remove('active');
-        }
+        if(window.innerWidth <= 768) sidebar.classList.remove('active');
       });
     });
 
@@ -281,62 +209,68 @@
     function actualizarFechaHora() {
       const fechaHora = document.getElementById('fechaHora');
       const ahora = new Date();
-
       const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
       const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-
       const diaSemana = diasSemana[ahora.getDay()];
       const dia = ahora.getDate().toString().padStart(2, '0');
       const mes = meses[ahora.getMonth()];
       const año = ahora.getFullYear();
-
-      const horas = ahora.getHours().toString().padStart(2, '0');
-      const minutos = ahora.getMinutes().toString().padStart(2, '0');
-      const segundos = ahora.getSeconds().toString().padStart(2, '0');
-
+      const horas = ahora.getHours().toString().padStart(2,'0');
+      const minutos = ahora.getMinutes().toString().padStart(2,'0');
+      const segundos = ahora.getSeconds().toString().padStart(2,'0');
       fechaHora.textContent = `${diaSemana}, ${dia} ${mes} ${año} - ${horas}:${minutos}:${segundos}`;
     }
-
     setInterval(actualizarFechaHora, 1000);
     actualizarFechaHora();
 
-    // Toggle del menú en móvil
+    // Toggle menú móvil
     const toggleBtn = document.querySelector('.menu-toggle');
     const sidebar = document.querySelector('.sidebar');
+    toggleBtn.addEventListener('click', () => sidebar.classList.toggle('active'));
 
-    toggleBtn.addEventListener('click', () => {
-      sidebar.classList.toggle('active');
-    });
-
-    // Módulo de Ventas
+    // Ventas
     const formVenta = document.getElementById('formVenta');
     const ventasUl = document.getElementById('ventasUl');
+    const btnImprimir = document.getElementById('imprimirTicket');
     let ventas = [];
 
     formVenta.addEventListener('submit', (e) => {
       e.preventDefault();
-
-      const cliente = document.getElementById('ventaCliente').value.trim();
+      const cliente = document.getElementById('ventaCliente').value;
       const celular = document.getElementById('ventaCelular').value.trim();
       const concepto = document.getElementById('ventaConcepto').value.trim();
       const monto = document.getElementById('ventaMonto').value.trim();
       const anticipo = document.getElementById('ventaAnticipo').value.trim();
-      const cobrador = document.getElementById('ventaCobrador').value.trim();
-
+      const cobrador = document.getElementById('ventaCobrador').value;
       if(!cliente || !celular || !concepto || !monto || !anticipo || !cobrador) return;
 
-      const venta = {
-        cliente, celular, concepto, monto, anticipo, cobrador,
-        fecha: new Date().toLocaleString()
-      };
-
+      const venta = { cliente, celular, concepto, monto, anticipo, cobrador, fecha: new Date().toLocaleString() };
       ventas.push(venta);
 
       const li = document.createElement('li');
       li.textContent = `${venta.fecha} - Cliente: ${venta.cliente} | Celular: ${venta.celular} | Concepto: ${venta.concepto} | Monto: $${venta.monto} | Anticipo: $${venta.anticipo} | Cobrador: ${venta.cobrador}`;
       ventasUl.appendChild(li);
-
       formVenta.reset();
+    });
+
+    // Imprimir ticket
+    btnImprimir.addEventListener('click', () => {
+      if(ventas.length === 0) { alert("No hay ventas para imprimir."); return; }
+      const ultimaVenta = ventas[ventas.length - 1];
+      let contenidoTicket = `
+        <h2 style="text-align:center;">💼 Ticket de Venta</h2>
+        <p><strong>Fecha:</strong> ${ultimaVenta.fecha}</p>
+        <p><strong>Cliente:</strong> ${ultimaVenta.cliente}</p>
+        <p><strong>Celular:</strong> ${ultimaVenta.celular}</p>
+        <p><strong>Concepto:</strong> ${ultimaVenta.concepto}</p>
+        <p><strong>Monto:</strong> $${ultimaVenta.monto}</p>
+        <p><strong>Anticipo:</strong> $${ultimaVenta.anticipo}</p>
+        <p><strong>Cobrador:</strong> ${ultimaVenta.cobrador}</p>
+      `;
+      const ventanaImpresion = window.open('', '', 'width=400,height=600');
+      ventanaImpresion.document.write(contenidoTicket);
+      ventanaImpresion.document.close();
+      ventanaImpresion.print();
     });
   </script>
 </body>
