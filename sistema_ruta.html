@@ -17,6 +17,7 @@
       height: 100vh;
       background: #f5f6fa;
       color: #333;
+      flex-direction: row;
     }
 
     /* Panel lateral */
@@ -28,6 +29,7 @@
       flex-direction: column;
       justify-content: space-between;
       padding: 20px 0;
+      transition: transform 0.3s ease-in-out;
     }
 
     .sidebar h2 {
@@ -105,9 +107,54 @@
       padding: 10px;
       color: #888;
     }
+
+    /* Botón menú en móvil */
+    .menu-toggle {
+      display: none;
+      position: absolute;
+      top: 15px;
+      left: 15px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      padding: 10px;
+      border-radius: 5px;
+      cursor: pointer;
+      z-index: 1000;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body {
+        flex-direction: column;
+      }
+
+      .sidebar {
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        transform: translateX(-260px);
+        z-index: 999;
+      }
+
+      .sidebar.active {
+        transform: translateX(0);
+      }
+
+      .menu-toggle {
+        display: block;
+      }
+
+      .main-content {
+        padding: 80px 20px 20px 20px;
+      }
+    }
   </style>
 </head>
 <body>
+
+  <button class="menu-toggle">☰</button>
 
   <!-- Panel lateral -->
   <div class="sidebar">
@@ -181,6 +228,11 @@
         document.getElementById(id).classList.add('active');
         document.getElementById(botones[id]).classList.add('active');
         titulo.textContent = 'Módulo: ' + document.getElementById(id).textContent.trim();
+
+        // Cerrar sidebar en móvil
+        if(window.innerWidth <= 768){
+          document.querySelector('.sidebar').classList.remove('active');
+        }
       });
     });
 
@@ -206,6 +258,14 @@
 
     setInterval(actualizarFechaHora, 1000);
     actualizarFechaHora();
+
+    // Toggle del menú en móvil
+    const toggleBtn = document.querySelector('.menu-toggle');
+    const sidebar = document.querySelector('.sidebar');
+
+    toggleBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('active');
+    });
   </script>
 </body>
 </html>
