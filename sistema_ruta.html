@@ -107,30 +107,12 @@
     <section id="modVentas" class="module">
       <h2>Registro de Ventas</h2>
       <form id="formVenta">
-        <div>
-          <label>Cliente:</label>
-          <select id="ventaCliente" required>
-            <option value="">-- Selecciona Cliente --</option>
-          </select>
-        </div>
-        <div>
-          <label>Celular:</label>
-          <input type="tel" id="ventaCelular" placeholder="Número de celular" required/>
-        </div>
-        <div>
-          <label>Concepto:</label>
-          <input type="text" id="ventaConcepto" placeholder="Concepto de la venta" required/>
-        </div>
-        <div>
-          <label>Monto:</label>
-          <input type="number" id="ventaMonto" placeholder="Monto total" required/>
-        </div>
-        <div>
-          <label>Anticipo:</label>
-          <input type="number" id="ventaAnticipo" placeholder="Anticipo" required/>
-        </div>
-        <div>
-          <label>Asignar Cobrador:</label>
+        <div><label>Cliente:</label><select id="ventaCliente" required><option value="">-- Selecciona Cliente --</option></select></div>
+        <div><label>Celular:</label><input type="tel" id="ventaCelular" placeholder="Número de celular" required/></div>
+        <div><label>Concepto:</label><input type="text" id="ventaConcepto" placeholder="Concepto de la venta" required/></div>
+        <div><label>Monto:</label><input type="number" id="ventaMonto" placeholder="Monto total" required/></div>
+        <div><label>Anticipo:</label><input type="number" id="ventaAnticipo" placeholder="Anticipo" required/></div>
+        <div><label>Asignar Cobrador:</label>
           <select id="ventaCobrador" required>
             <option value="">-- Selecciona Cobrador --</option>
             <option value="Cobrador 1">Cobrador 1</option>
@@ -160,14 +142,8 @@
     <section id="modClientes" class="module">
       <h2>Clientes</h2>
       <form id="formCliente">
-        <div>
-          <label>Nombre:</label>
-          <input type="text" id="clienteNombre" placeholder="Nombre del cliente" required/>
-        </div>
-        <div>
-          <label>Teléfono/Celular:</label>
-          <input type="tel" id="clienteTelefono" placeholder="Número de teléfono" required/>
-        </div>
+        <div><label>Nombre:</label><input type="text" id="clienteNombre" placeholder="Nombre del cliente" required/></div>
+        <div><label>Teléfono/Celular:</label><input type="tel" id="clienteTelefono" placeholder="Número de teléfono" required/></div>
         <button type="submit">Agregar Cliente</button>
       </form>
       <div id="listaClientes">
@@ -178,72 +154,72 @@
   </div>
 
   <script>
-    // Navegación entre módulos
-    const botones = { btnRuta:'modRuta', btnVentas:'modVentas', btnConfig:'modConfig', btnReportes:'modReportes', btnClientes:'modClientes' };
-    const titulo = document.getElementById('tituloModulo');
-    Object.keys(botones).forEach(id => {
-      document.getElementById(id).addEventListener('click', () => {
-        Object.keys(botones).forEach(btn => {
+    // Navegación
+    const botones={btnRuta:'modRuta',btnVentas:'modVentas',btnConfig:'modConfig',btnReportes:'modReportes',btnClientes:'modClientes'};
+    const titulo=document.getElementById('tituloModulo');
+    Object.keys(botones).forEach(id=>{
+      document.getElementById(id).addEventListener('click',()=>{
+        Object.keys(botones).forEach(btn=>{
           document.getElementById(btn).classList.remove('active');
           document.getElementById(botones[btn]).classList.remove('active');
         });
         document.getElementById(id).classList.add('active');
         document.getElementById(botones[id]).classList.add('active');
-        titulo.textContent = 'Módulo: ' + document.getElementById(id).textContent.trim();
-        if(window.innerWidth <= 768) sidebar.classList.remove('active');
+        titulo.textContent='Módulo: '+document.getElementById(id).textContent.trim();
+        if(window.innerWidth<=768) sidebar.classList.remove('active');
       });
     });
 
     // Fecha y hora
-    function actualizarFechaHora() {
-      const fechaHora = document.getElementById('fechaHora');
-      const ahora = new Date();
-      const diasSemana = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-      const meses = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
-      const diaSemana = diasSemana[ahora.getDay()];
-      const dia = ahora.getDate().toString().padStart(2,'0');
-      const mes = meses[ahora.getMonth()];
-      const año = ahora.getFullYear();
-      const horas = ahora.getHours().toString().padStart(2,'0');
-      const minutos = ahora.getMinutes().toString().padStart(2,'0');
-      const segundos = ahora.getSeconds().toString().padStart(2,'0');
-      fechaHora.textContent = `${diaSemana}, ${dia} ${mes} ${año} - ${horas}:${minutos}:${segundos}`;
+    function actualizarFechaHora(){
+      const fechaHora=document.getElementById('fechaHora');
+      const ahora=new Date();
+      const diasSemana=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+      const meses=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+      const diaSemana=diasSemana[ahora.getDay()];
+      const dia=ahora.getDate().toString().padStart(2,'0');
+      const mes=meses[ahora.getMonth()];
+      const año=ahora.getFullYear();
+      const horas=ahora.getHours().toString().padStart(2,'0');
+      const minutos=ahora.getMinutes().toString().padStart(2,'0');
+      const segundos=ahora.getSeconds().toString().padStart(2,'0');
+      fechaHora.textContent=`${diaSemana}, ${dia} ${mes} ${año} - ${horas}:${minutos}:${segundos}`;
     }
     setInterval(actualizarFechaHora,1000);
     actualizarFechaHora();
 
     // Toggle menú móvil
-    const toggleBtn = document.querySelector('.menu-toggle');
-    const sidebar = document.querySelector('.sidebar');
-    toggleBtn.addEventListener('click', () => sidebar.classList.toggle('active'));
+    const toggleBtn=document.querySelector('.menu-toggle');
+    const sidebar=document.querySelector('.sidebar');
+    toggleBtn.addEventListener('click',()=>sidebar.classList.toggle('active'));
 
     // Ventas
-    const formVenta = document.getElementById('formVenta');
-    const ventasUl = document.getElementById('ventasUl');
-    const btnImprimir = document.getElementById('imprimirTicket');
-    const selectClienteVentas = document.getElementById('ventaCliente');
-    let ventas = [];
-    formVenta.addEventListener('submit', (e)=>{
+    const formVenta=document.getElementById('formVenta');
+    const ventasUl=document.getElementById('ventasUl');
+    const btnImprimir=document.getElementById('imprimirTicket');
+    const selectClienteVentas=document.getElementById('ventaCliente');
+    let ventas=[];
+    formVenta.addEventListener('submit',e=>{
       e.preventDefault();
-      const cliente = selectClienteVentas.value;
-      const celular = document.getElementById('ventaCelular').value.trim();
-      const concepto = document.getElementById('ventaConcepto').value.trim();
-      const monto = document.getElementById('ventaMonto').value.trim();
-      const anticipo = document.getElementById('ventaAnticipo').value.trim();
-      const cobrador = document.getElementById('ventaCobrador').value;
-      const fecha = new Date().toLocaleString();
+      const cliente=selectClienteVentas.value;
+      const celular=document.getElementById('ventaCelular').value.trim();
+      const concepto=document.getElementById('ventaConcepto').value.trim();
+      const monto=document.getElementById('ventaMonto').value.trim();
+      const anticipo=document.getElementById('ventaAnticipo').value.trim();
+      const cobrador=document.getElementById('ventaCobrador').value;
+      const fecha=new Date().toLocaleString();
       if(!cliente||!celular||!concepto||!monto||!anticipo||!cobrador) return;
-      const venta = { cliente, celular, concepto, monto, anticipo, cobrador, fecha };
+      const venta={cliente,celular,concepto,monto,anticipo,cobrador,fecha};
       ventas.push(venta);
-      const li = document.createElement('li');
-      li.textContent = `${cliente} | Celular: ${celular} | Concepto: ${concepto} | Monto: $${monto} | Anticipo: $${anticipo} | Cobrador: ${cobrador}`;
+      const li=document.createElement('li');
+      li.textContent=`${fecha} | Cliente: ${cliente} | Cel: ${celular} | Concepto: ${concepto} | Monto: $${monto} | Anticipo: $${anticipo} | Cobrador: ${cobrador}`;
       ventasUl.appendChild(li);
       formVenta.reset();
     });
     btnImprimir.addEventListener('click',()=>{
       if(ventas.length===0){alert("No hay ventas para imprimir.");return;}
-      const ultimaVenta = ventas[ventas.length-1];
-      const contenidoTicket = `
+      const ultimaVenta=ventas[ventas.length-1];
+      const contenidoTicket=`
         <h2 style="text-align:center;">💼 Ticket de Venta</h2>
         <p><strong>Fecha:</strong> ${ultimaVenta.fecha}</p>
         <p><strong>Cliente:</strong> ${ultimaVenta.cliente}</p>
@@ -253,17 +229,17 @@
         <p><strong>Anticipo:</strong> $${ultimaVenta.anticipo}</p>
         <p><strong>Cobrador:</strong> ${ultimaVenta.cobrador}</p>
       `;
-      const ventanaImpresion = window.open('','', 'width=400,height=600');
+      const ventanaImpresion=window.open('','', 'width=400,height=600');
       ventanaImpresion.document.write(contenidoTicket);
       ventanaImpresion.document.close();
       ventanaImpresion.print();
     });
 
     // Clientes
-    const formCliente = document.getElementById('formCliente');
-    const clientesUl = document.getElementById('clientesUl');
-    let clientes = [];
-    formCliente.addEventListener('submit',(e)=>{
+    const formCliente=document.getElementById('formCliente');
+    const clientesUl=document.getElementById('clientesUl');
+    let clientes=[];
+    formCliente.addEventListener('submit',e=>{
       e.preventDefault();
       const nombre=document.getElementById('clienteNombre').value.trim();
       const telefono=document.getElementById('clienteTelefono').value.trim();
@@ -274,7 +250,7 @@
       formCliente.reset();
     });
 
-    function actualizarListaClientes() {
+    function actualizarListaClientes(){
       clientesUl.innerHTML='';
       selectClienteVentas.innerHTML='<option value="">-- Selecciona Cliente --</option>';
       clientes.forEach((c,index)=>{
@@ -283,6 +259,7 @@
           <strong>${c.nombre}</strong> | Tel: ${c.telefono}
           <button onclick="editarCliente(${index})" class="btnCliente">Editar</button>
           <button onclick="asignarUbicacion(${index})" class="btnCliente">Asignar Ubicación</button>
+          <button onclick="verUbicacion(${index})" class="btnCliente">Ver Ubicación</button>
         `;
         clientesUl.appendChild(li);
 
@@ -316,6 +293,12 @@
         (error)=>{alert("No se pudo obtener la ubicación: "+error.message);},
         {enableHighAccuracy:true, timeout:10000, maximumAge:0}
       );
+    }
+
+    window.verUbicacion=function(index){
+      const c=clientes[index];
+      if(c.ubicacion) { window.open(c.ubicacion,'_blank'); }
+      else { alert("Este cliente aún no tiene ubicación asignada."); }
     }
   </script>
 </body>
