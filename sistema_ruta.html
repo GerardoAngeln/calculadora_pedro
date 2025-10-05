@@ -71,8 +71,21 @@
     #listaVentas ul, #listaClientes ul { list-style: none; }
     #listaVentas li, #listaClientes li { padding: 8px 5px; border-bottom: 1px solid #eee; font-size: 0.95em; }
     #listaVentas li:last-child, #listaClientes li:last-child { border-bottom: none; }
-    #imprimirTicket, .btnCliente { margin-top:10px; padding:8px 15px; background:#1a73e8; color:#fff; border:none; border-radius:5px; cursor:pointer; }
-    #imprimirTicket:hover, .btnCliente:hover { background: #155ab6; }
+    #imprimirTicket { margin-top:10px; padding:8px 15px; background:#1a73e8; color:#fff; border:none; border-radius:5px; cursor:pointer; }
+    #imprimirTicket:hover { background: #155ab6; }
+
+    .btnCliente {
+      margin-left: 5px;
+      margin-top: 5px;
+      padding: 5px 10px;
+      background: #1a73e8;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 0.85em;
+    }
+    .btnCliente:hover { background: #155ab6; }
   </style>
 </head>
 <body>
@@ -257,9 +270,11 @@
         const li=document.createElement('li');
         li.innerHTML=`
           <strong>${c.nombre}</strong> | Tel: ${c.telefono}
-          <button onclick="editarCliente(${index})" class="btnCliente">Editar</button>
-          <button onclick="asignarUbicacion(${index})" class="btnCliente">Asignar Ubicación</button>
-          <button onclick="verUbicacion(${index})" class="btnCliente">Ver Ubicación</button>
+          <div>
+            <button onclick="editarCliente(${index})" class="btnCliente">Editar</button>
+            <button onclick="asignarUbicacion(${index})" class="btnCliente">Asignar Ubicación</button>
+            <button onclick="verUbicacion(${index})" class="btnCliente">Ver Ubicación</button>
+          </div>
         `;
         clientesUl.appendChild(li);
 
