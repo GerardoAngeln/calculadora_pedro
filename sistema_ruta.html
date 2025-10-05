@@ -34,10 +34,10 @@
   form button{width:100%;padding:10px;background:#1a73e8;color:#fff;font-weight:600;border:none;border-radius:5px;cursor:pointer;transition:0.3s;}
   form button:hover{background:#155ab6;}
 
-  #listaVentas,#listaClientes,#clientesRuta{max-width:600px;margin:0 auto;background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
-  #listaVentas ul,#listaClientes ul,#clientesRuta ul{list-style:none;}
-  #listaVentas li,#listaClientes li,#clientesRuta li{padding:8px 5px;border-bottom:1px solid #eee;font-size:0.95em;}
-  #listaVentas li:last-child,#listaClientes li:last-child,#clientesRuta li:last-child{border-bottom:none;}
+  #listaVentas,#listaClientes,#clientesRuta,#reporteAbonos{max-width:600px;margin:0 auto;background:#fff;padding:15px;border-radius:10px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
+  #listaVentas ul,#listaClientes ul,#clientesRuta ul,#listaAbonos{list-style:none;}
+  #listaVentas li,#listaClientes li,#clientesRuta li,#listaAbonos li{padding:8px 5px;border-bottom:1px solid #eee;font-size:0.95em;}
+  #listaVentas li:last-child,#listaClientes li:last-child,#clientesRuta li:last-child,#listaAbonos li:last-child{border-bottom:none;}
   #imprimirTicket{margin-top:10px;padding:8px 15px;background:#1a73e8;color:#fff;border:none;border-radius:5px;cursor:pointer;}
   #imprimirTicket:hover{background:#155ab6;}
 
@@ -122,8 +122,29 @@
 
 <!-- Módulo Reportes -->
 <section id="modReportes" class="module">
-  <h2>Reportes</h2>
-  <p>Visualiza los reportes de ventas, cobranza y desempeño general.</p>
+  <h2>Reportes de Abonos</h2>
+  <form id="formReporte">
+    <div><label>Cliente:</label>
+      <select id="filtroCliente"><option value="">Todos</option></select>
+    </div>
+    <div><label>Cobrador:</label>
+      <select id="filtroCobrador">
+        <option value="">Todos</option>
+        <option value="Cobrador 1">Cobrador 1</option>
+        <option value="Cobrador 2">Cobrador 2</option>
+        <option value="Cobrador 3">Cobrador 3</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;">
+      <div><label>Desde:</label><input type="date" id="fechaInicio"></div>
+      <div><label>Hasta:</label><input type="date" id="fechaFin"></div>
+    </div>
+    <button type="submit">Filtrar</button>
+  </form>
+  <div id="reporteAbonos" style="margin-top:15px;">
+    <h3>Resultados:</h3>
+    <ul id="listaAbonos"></ul>
+  </div>
 </section>
 
 <!-- Módulo Clientes -->
@@ -171,59 +192,52 @@
     const horas=ahora.getHours().toString().padStart(2,'0');
     const minutos=ahora.getMinutes().toString().padStart(2,'0');
     const segundos=ahora.getSeconds().toString().padStart(2,'0');
-    fechaHora.textContent=`${diaSemana}, ${dia} ${mes} ${año} - ${horas}:${minutos}:${segundos}`;
+    fechaHora.textContent=`${diaSemana}, ${dia} ${mes} ${año} | ${horas}:${minutos}:${segundos}`;
   }
   setInterval(actualizarFechaHora,1000);
   actualizarFechaHora();
 
-  // Toggle menú móvil
-  const toggleBtn=document.querySelector('.menu-toggle');
+  // Sidebar toggle móvil
   const sidebar=document.querySelector('.sidebar');
-  toggleBtn.addEventListener('click',()=>sidebar.classList.toggle('active'));
+  document.querySelector('.menu-toggle').addEventListener('click',()=>{sidebar.classList.toggle('active');});
 
   // Clientes
+  let clientes=[];
   const formCliente=document.getElementById('formCliente');
   const clientesUl=document.getElementById('clientesUl');
-  const selectClienteVentas=document.getElementById('ventaCliente');
-  let clientes=[];
   formCliente.addEventListener('submit',e=>{
     e.preventDefault();
     const nombre=document.getElementById('clienteNombre').value.trim();
     const telefono=document.getElementById('clienteTelefono').value.trim();
-    if(!nombre||!telefono)return;
-    const cliente={nombre,telefono,ubicacion:''};
-    clientes.push(cliente);
+    if(!nombre||!telefono){alert("Llena todos los campos");return;}
+    clientes.push({nombre,telefono,ubicacion:''});
     actualizarListaClientes();
     formCliente.reset();
   });
-
   function actualizarListaClientes(){
     clientesUl.innerHTML='';
-    selectClienteVentas.innerHTML='<option value="">-- Selecciona Cliente --</option>';
+    const ventaCliente=document.getElementById('ventaCliente');
+    ventaCliente.innerHTML='<option value="">-- Selecciona Cliente --</option>';
+    const filtroCliente=document.getElementById('filtroCliente');
+    filtroCliente.innerHTML='<option value="">Todos</option>';
     clientes.forEach((c,index)=>{
       const li=document.createElement('li');
-      li.innerHTML=`<strong>${c.nombre}</strong> | Tel: ${c.telefono}
-        <div>
-          <button onclick="editarCliente(${index})" class="btnCliente">Editar</button>
-          <button onclick="asignarUbicacion(${index})" class="btnCliente">Asignar Ubicación</button>
-          <button onclick="verUbicacion(${index})" class="btnCliente">Ver Ubicación</button>
-        </div>`;
+      li.innerHTML=`${c.nombre} | ${c.telefono} 
+        <button class="btnCliente" onclick="editarCliente(${index})">Editar</button>
+        <button class="btnCliente" onclick="asignarUbicacion(${index})">Asignar Ubicación</button>
+        <button class="btnCliente" onclick="verUbicacion(${index})">Ver Ubicación</button>`;
       clientesUl.appendChild(li);
-      const option=document.createElement('option');
-      option.value=c.nombre; option.textContent=c.nombre;
-      selectClienteVentas.appendChild(option);
+      const option1=document.createElement('option'); option1.value=c.nombre; option1.textContent=c.nombre; ventaCliente.appendChild(option1);
+      const option2=document.createElement('option'); option2.value=c.nombre; option2.textContent=c.nombre; filtroCliente.appendChild(option2);
     });
   }
-
   window.editarCliente=function(index){
-    const c=clientes[index];
-    const nuevoNombre=prompt("Editar nombre:",c.nombre);
-    const nuevoTelefono=prompt("Editar teléfono:",c.telefono);
+    const nuevoNombre=prompt("Nuevo nombre:",clientes[index].nombre);
+    const nuevoTelefono=prompt("Nuevo teléfono:",clientes[index].telefono);
     if(nuevoNombre) clientes[index].nombre=nuevoNombre.trim();
     if(nuevoTelefono) clientes[index].telefono=nuevoTelefono.trim();
     actualizarListaClientes();
   }
-
   window.asignarUbicacion=function(index){
     if(!navigator.geolocation){alert("Tu navegador no soporta geolocalización.");return;}
     navigator.geolocation.getCurrentPosition(pos=>{
@@ -235,7 +249,6 @@
       alert(`Ubicación asignada: ${mapsURL}`);
     },err=>{alert("No se pudo obtener la ubicación: "+err.message);},{enableHighAccuracy:true,timeout:10000,maximumAge:0});
   }
-
   window.verUbicacion=function(index){
     const c=clientes[index];
     if(c.ubicacion) window.open(c.ubicacion,'_blank');
@@ -260,7 +273,6 @@
     actualizarListaVentas();
     formVenta.reset();
   });
-
   function actualizarListaVentas(){
     ventasUl.innerHTML='';
     ventas.forEach((v,index)=>{
@@ -269,7 +281,6 @@
       ventasUl.appendChild(li);
     });
   }
-
   document.getElementById('imprimirTicket').addEventListener('click',()=>{
     if(ventas.length===0){alert("No hay ventas para imprimir");return;}
     const ultimaVenta=ventas[ventas.length-1];
@@ -289,11 +300,12 @@
 
   // Módulo Ruta
   let clientesAsignados=[];
+  let abonos=[];
   document.getElementById('rutaCobrador').addEventListener('change',e=>{
     const cobrador=e.target.value;
     const clientesRutaUl=document.getElementById('clientesRutaUl');
     clientesRutaUl.innerHTML='';
-    clientesAsignados=clientes.map(c=>({...c,saldo:Math.floor(Math.random()*1000)+100}));
+    clientesAsignados=clientes.map(c=>({...c,cobrador,saldo:Math.floor(Math.random()*1000)+100}));
     clientesAsignados.forEach((c,index)=>{
       const li=document.createElement('li');
       li.innerHTML=`<strong>${c.nombre} | Saldo: $${c.saldo}</strong>
@@ -306,24 +318,26 @@
       clientesRutaUl.appendChild(li);
     });
   });
-
   window.verUbicacionRuta=function(index){
     const c=clientesAsignados[index];
     if(c.ubicacion) window.open(c.ubicacion,'_blank');
     else alert("Este cliente aún no tiene ubicación asignada.");
   }
-
+  function agregarAbonoRegistro(c, concepto, abono, fecha){
+    abonos.push({cliente:c.nombre, cobrador:c.cobrador, concepto, abono, fecha});
+  }
   window.aplicarAbono=function(index){
     const c=clientesAsignados[index];
     const concepto=document.getElementById(`concepto${index}`).value.trim();
     const abono=parseFloat(document.getElementById(`abono${index}`).value);
     if(!concepto||isNaN(abono)||abono<=0){alert("Llena concepto y abono válido");return;}
     const saldoAnterior=c.saldo;
-    c.saldo-=abono; if(c.saldo<0)c.saldo=0;
-    document.getElementById(`concepto${index}`).value='';
-    document.getElementById(`abono${index}`).value='';
+    c.saldo-=abono;if(c.saldo<0)c.saldo=0;
     const li=document.getElementById('clientesRutaUl').children[index];
     li.querySelector('strong').textContent=`${c.nombre} | Saldo: $${c.saldo}`;
+    document.getElementById(`concepto${index}`).value='';
+    document.getElementById(`abono${index}`).value='';
+    agregarAbonoRegistro(c, concepto, abono, new Date());
     const contenidoTicket=`<h2 style="text-align:center;">💼 Comprobante de Pago</h2>
       <p><strong>Cliente:</strong> ${c.nombre}</p>
       <p><strong>Concepto:</strong> ${concepto}</p>
@@ -335,6 +349,40 @@
     ventanaImpresion.document.close();
     ventanaImpresion.print();
   }
+
+  // Reportes
+  function actualizarFiltroClientes(){
+    const filtroCliente=document.getElementById('filtroCliente');
+    filtroCliente.innerHTML='<option value="">Todos</option>';
+    clientes.forEach(c=>{
+      const option=document.createElement('option'); option.value=c.nombre; option.textContent=c.nombre; filtroCliente.appendChild(option);
+    });
+  }
+  actualizarFiltroClientes();
+  document.getElementById('formReporte').addEventListener('submit',e=>{
+    e.preventDefault();
+    const clienteSel=document.getElementById('filtroCliente').value;
+    const cobradorSel=document.getElementById('filtroCobrador').value;
+    const inicio=document.getElementById('fechaInicio').value?new Date(document.getElementById('fechaInicio').value):null;
+    const fin=document.getElementById('fechaFin').value?new Date(document.getElementById('fechaFin').value):null;
+    const lista=document.getElementById('listaAbonos');
+    lista.innerHTML='';
+    let filtrados=abonos.filter(a=>{
+      let ok=true;
+      if(clienteSel) ok=ok&&a.cliente===clienteSel;
+      if(cobradorSel) ok=ok&&a.cobrador===cobradorSel;
+      const fechaAbono=new Date(a.fecha);
+      if(inicio) ok=ok&&fechaAbono>=inicio;
+      if(fin) ok=ok&&fechaAbono<=fin;
+      return ok;
+    });
+    if(filtrados.length===0) lista.innerHTML='<li>No hay registros</li>';
+    filtrados.forEach(a=>{
+      const li=document.createElement('li');
+      li.textContent=`${new Date(a.fecha).toLocaleString()} | Cliente: ${a.cliente} | Cobrador: ${a.cobrador} | Concepto: ${a.concepto} | Abono: $${a.abono}`;
+      lista.appendChild(li);
+    });
+  });
 </script>
 </body>
 </html>
