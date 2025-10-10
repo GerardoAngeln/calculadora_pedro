@@ -1,732 +1,236 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Sistema de Cobranza en Ruta - Integrado</title>
-  <style>
-    * { box-sizing: border-box; margin:0; padding:0; font-family:'Segoe UI',sans-serif; }
-    body { display:flex; height:100vh; background:#f5f6fa; color:#333; flex-direction:column; }
-    .container { display:flex; flex:1; overflow:hidden; }
-    .sidebar { width:240px; background:#fff; box-shadow:2px 0 10px rgba(0,0,0,0.08); display:flex; flex-direction:column; justify-content:space-between; padding:20px 0; flex-shrink:0; }
-    .sidebar h2 { text-align:center; font-size:1.25rem; color:#444; margin-bottom:12px; }
-    .menu { display:flex; flex-direction:column; gap:4px; padding:0 6px; }
-    .menu button { background:none; border:none; padding:12px 14px; text-align:left; font-size:1rem; cursor:pointer; transition:0.18s; color:#333; border-radius:6px; }
-    .menu button:hover, .menu button.active { background:#e8f0fe; color:#1a73e8; }
-    .menu button i { margin-right:10px; }
-    .main-content { flex:1; padding:20px; overflow:auto; }
-    header { background:#fff; padding:10px 16px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.08); margin-bottom:16px; display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
-    header h1 { font-size:1.15rem; color:#1a73e8; }
-    #fechaHora { font-size:.95rem; color:#555; }
-    .module { display:none; animation:fadeIn .25s ease-in-out; }
-    .module.active { display:block; }
-    @keyframes fadeIn { from { opacity:0; transform:translateY(6px) } to { opacity:1; transform:none } }
-    .form-card { background:#fff; padding:16px; border-radius:10px; box-shadow:0 2px 10px rgba(0,0,0,0.06); max-width:900px; margin:0 auto 12px auto; }
-    form div { margin-bottom:10px; display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
-    label { font-weight:600; color:#333; font-size:.95rem; min-width:120px; }
-    input, select, textarea, button { padding:8px 10px; border-radius:6px; border:1px solid #ccc; font-size:.95rem; }
-    textarea { resize:vertical; min-height:70px; width:100%; }
-    ul { list-style:none; margin-top:10px; padding-left:0; max-height:360px; overflow:auto; }
-    li { padding:8px 6px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; gap:12px; align-items:center; }
-    .btn { background:#1a73e8; color:#fff; border:none; padding:8px 10px; border-radius:6px; cursor:pointer; }
-    .btn.secondary { background:#155ab6; }
-    .btn.small { padding:6px 8px; font-size:.9rem; border-radius:6px; }
-    .btnCliente { background:#1a73e8; color:#fff; border:none; padding:6px 8px; border-radius:6px; cursor:pointer; font-size:.85rem; margin-left:6px; }
-    .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
-    .col { flex:1; min-width:160px; }
-    .muted { color:#666; font-size:.95rem; }
-    #map { width:100%; height:320px; border-radius:8px; border:1px solid #ddd; margin-top:12px; }
-    @media(max-width:768px) {
-      .container { flex-direction:column; }
-      .sidebar { width:100%; display:flex; flex-direction:row; overflow-x:auto; gap:6px; padding:8px; }
-      .menu { flex-direction:row; gap:6px; }
-      .menu button { padding:8px 10px; white-space:nowrap; }
-      header { padding:10px; }
-      .form-card { margin: 0 8px 12px 8px; }
-      #map { height:240px; }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistema de Cobranza en Ruta</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+body{display:flex;height:100vh;background:#f5f6fa;color:#333;flex-direction:row;}
+.sidebar{width:240px;background:#fff;box-shadow:2px 0 10px rgba(0,0,0,0.08);display:flex;flex-direction:column;justify-content:space-between;padding:20px 0;}
+.sidebar h2{text-align:center;font-size:1.4em;color:#444;margin-bottom:20px;}
+.menu{display:flex;flex-direction:column;}
+.menu button{background:none;border:none;padding:14px 20px;text-align:left;font-size:1em;cursor:pointer;transition:0.3s;color:#333;}
+.menu button:hover, .menu button.active{background:#e8f0fe;color:#1a73e8;}
+.menu button i{margin-right:10px;}
+.main-content{flex:1;padding:30px;overflow-y:auto;}
+.module{display:none;animation:fadeIn 0.3s ease-in-out;}
+.module.active{display:block;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+header{background:#fff;padding:15px 25px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:25px;display:flex;justify-content:space-between;align-items:center;}
+header h1{font-size:1.3em;color:#1a73e8;}
+footer{text-align:center;font-size:0.9em;padding:10px;color:#888;}
+/* Formularios */
+.ventas-form,.clientes-form,.ruta-form{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
+.ventas-form input,.ventas-form select,.ventas-form textarea,
+.clientes-form input,.clientes-form select,.clientes-form textarea,
+.ruta-form input,.ruta-form select,.ruta-form textarea{padding:8px;border:1px solid #ccc;border-radius:5px;width:100%;}
+.ventas-form label,.clientes-form label,.ruta-form label{font-weight:bold;}
+.ventas-form button,.clientes-form button,.ruta-form button{background:#1a73e8;color:#fff;padding:10px;border:none;border-radius:5px;cursor:pointer;transition:0.3s;}
+.ventas-form button:hover,.clientes-form button:hover,.ruta-form button:hover{background:#155ab6;}
+#folioActual{font-weight:bold;text-align:center;margin-bottom:10px;}
+.ticket-preview{margin-top:15px;padding:10px;border:1px dashed #aaa;border-radius:5px;}
+/* Responsive */
+@media(max-width:768px){body{flex-direction:column}.sidebar{width:100%;display:flex;flex-direction:row;overflow-x:auto}.menu button{text-align:center;flex:1;}}
+</style>
 </head>
 <body>
-  <div class="container">
-    <div class="sidebar" aria-label="Sidebar">
-      <div>
-        <h2>💼 Cobranza Ruta</h2>
-        <nav class="menu" role="navigation" aria-label="Main menu">
-          <button id="btnRuta" class="active"><i>🧭</i><span>Ruta</span></button>
-          <button id="btnVentas"><i>💰</i><span>Ventas</span></button>
-          <button id="btnClientes"><i>👥</i><span>Clientes</span></button>
-          <button id="btnConfig"><i>⚙️</i><span>Configuración</span></button>
-          <button id="btnReportes"><i>📊</i><span>Reportes</span></button>
-        </nav>
-      </div>
-      <footer style="text-align:center; font-size:.9rem; color:#777; padding:8px 12px;">© 2025 Sistema de Cobranza</footer>
+
+<div class="sidebar">
+  <div>
+    <h2>💼 Cobranza Ruta</h2>
+    <div class="menu">
+      <button id="btnRuta" class="active"><i>🧭</i>Ruta</button>
+      <button id="btnVentas"><i>💰</i>Ventas</button>
+      <button id="btnClientes"><i>👤</i>Clientes</button>
+      <button id="btnConfig"><i>⚙️</i>Configuración</button>
+      <button id="btnReportes"><i>📊</i>Reportes</button>
     </div>
-
-    <main class="main-content">
-      <header>
-        <h1 id="tituloModulo">Módulo: Ruta</h1>
-        <div id="fechaHora" aria-live="polite"></div>
-      </header>
-
-      <!-- RUTA -->
-      <section id="modRuta" class="module active" aria-labelledby="tituloModulo">
-        <div class="form-card">
-          <h3>Ruta del día</h3>
-          <form id="formRuta">
-            <div class="row">
-              <div class="col">
-                <label for="rutaCobrador">Seleccionar Cobrador</label>
-                <select id="rutaCobrador"></select>
-              </div>
-              <div class="col">
-                <label for="filtroSaldo">Filtrar por saldo</label>
-                <select id="filtroSaldo">
-                  <option value="todos">Todos</option>
-                  <option value="pendiente">Con saldo pendiente</option>
-                  <option value="pagados">Sin saldo pendiente</option>
-                </select>
-              </div>
-              <div class="col">
-                <label>&nbsp;</label>
-                <div class="muted">Selecciona cobrador para cargar clientes asignados y ver mapa</div>
-              </div>
-            </div>
-          </form>
-          <div style="margin-top:12px;">
-            <h4>Clientes asignados</h4>
-            <ul id="clientesRutaUl" aria-live="polite"></ul>
-          </div>
-          <div id="map" role="region" aria-label="Mapa de clientes"></div>
-        </div>
-      </section>
-
-      <!-- VENTAS (nuevo diseño solicitado) -->
-      <section id="modVentas" class="module" aria-label="Ventas">
-        <div class="form-card">
-          <h3>Registro de Venta</h3>
-          <form id="formVentaNuevo">
-            <div class="row">
-              <div class="col">
-                <label for="fechaVenta">Fecha de venta</label>
-                <input id="fechaVenta" type="date" required />
-              </div>
-              <div class="col">
-                <label for="cobradorVenta">Asignar cobrador</label>
-                <select id="cobradorVenta" required></select>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="articulos">Artículos</label>
-                <input id="articulos" type="text" required />
-              </div>
-              <div class="col">
-                <label for="lugarEntrega">Lugar de entrega</label>
-                <input id="lugarEntrega" type="text" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="precio">Precio</label>
-                <input id="precio" type="number" step="0.01" />
-              </div>
-              <div class="col">
-                <label for="enganche">Enganche</label>
-                <input id="enganche" type="number" step="0.01" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="nombre">Nombre</label>
-                <input id="nombre" type="text" />
-              </div>
-              <div class="col">
-                <label for="domParticular">Domicilio particular</label>
-                <input id="domParticular" type="text" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="domEmpleo">Domicilio de empleo</label>
-                <input id="domEmpleo" type="text" />
-              </div>
-              <div class="col">
-                <label for="lugarCobro">Lugar de cobro</label>
-                <input id="lugarCobro" type="text" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="pagoSemanal">Pago semanal</label>
-                <input id="pagoSemanal" type="number" step="0.01" />
-              </div>
-              <div class="col">
-                <label for="pagoQuincenal">Pago quincenal</label>
-                <input id="pagoQuincenal" type="number" step="0.01" />
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="horario">Horario</label>
-                <input id="horario" type="text" placeholder="Ej. 9:00 - 18:00" />
-              </div>
-              <div class="col">
-                <label for="metodoPago">Método de pago</label>
-                <select id="metodoPago">
-                  <option value="">-- Selecciona --</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                  <option value="Transferencia">Transferencia</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="row">
-              <div class="col">
-                <label for="tipoCobro">Cobro o transferencia</label>
-                <select id="tipoCobro">
-                  <option value="">-- Selecciona --</option>
-                  <option value="Cobro">Cobro</option>
-                  <option value="Transferencia">Transferencia</option>
-                </select>
-              </div>
-              <div class="col">
-                <label for="observaciones">Observaciones</label>
-                <input id="observaciones" type="text" />
-              </div>
-            </div>
-
-            <div style="text-align:center; margin-top:12px;">
-              <button class="btn" type="submit">Aplicar Venta</button>
-              <button class="btn secondary" type="button" id="imprimirTicketNuevo">Imprimir Ticket</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="form-card" aria-live="polite">
-          <h4>Ventas registradas</h4>
-          <ul id="ventasUl"></ul>
-        </div>
-      </section>
-
-      <!-- CLIENTES -->
-      <section id="modClientes" class="module" aria-label="Clientes">
-        <div class="form-card">
-          <h3>Clientes</h3>
-          <form id="formCliente">
-            <div class="row">
-              <div class="col">
-                <label for="clienteNombre">Nombre</label>
-                <input id="clienteNombre" type="text" required />
-              </div>
-              <div class="col">
-                <label for="clienteTelefono">Teléfono</label>
-                <input id="clienteTelefono" type="text" required />
-              </div>
-            </div>
-            <div style="text-align:center; margin-top:10px;">
-              <button class="btn" type="submit">Agregar Cliente</button>
-            </div>
-          </form>
-        </div>
-
-        <div class="form-card">
-          <h4>Clientes registrados</h4>
-          <ul id="clientesUl"></ul>
-        </div>
-      </section>
-
-      <!-- CONFIG -->
-      <section id="modConfig" class="module" aria-label="Configuración">
-        <div class="form-card">
-          <h3>Configuración</h3>
-          <p class="muted">Ajustes y administración futura (login, sincronización, etc.).</p>
-        </div>
-      </section>
-
-      <!-- REPORTES -->
-      <section id="modReportes" class="module" aria-label="Reportes">
-        <div class="form-card">
-          <h3>Reportes de Abonos</h3>
-          <form id="formReporte">
-            <div class="row">
-              <div class="col">
-                <label for="filtroCliente">Cliente</label>
-                <select id="filtroCliente"><option value="">Todos</option></select>
-              </div>
-              <div class="col">
-                <label for="filtroCobrador">Cobrador</label>
-                <select id="filtroCobrador"><option value="">Todos</option></select>
-              </div>
-              <div class="col">
-                <label for="fechaInicio">Desde</label>
-                <input id="fechaInicio" type="date" />
-              </div>
-              <div class="col">
-                <label for="fechaFin">Hasta</label>
-                <input id="fechaFin" type="date" />
-              </div>
-            </div>
-            <div style="text-align:center; margin-top:10px;">
-              <button class="btn" type="submit">Filtrar</button>
-            </div>
-          </form>
-          <div style="margin-top:12px;">
-            <h4>Resultados</h4>
-            <ul id="listaAbonos"></ul>
-          </div>
-        </div>
-      </section>
-
-    </main>
   </div>
+  <footer>© 2025 Sistema de Cobranza</footer>
+</div>
 
-  <script>
-  /* ------------- UTIL / PERSISTENCIA ------------- */
-  const LS_KEYS = { CLIENTES: 'sc_clientes_v1', VENTAS: 'sc_ventas_v1', ABONOS: 'sc_abonos_v1' };
+<div class="main-content">
+  <header>
+    <h1 id="tituloModulo">Módulo: Ruta</h1>
+    <div id="relojFecha"></div>
+  </header>
 
-  function saveAll() {
-    localStorage.setItem(LS_KEYS.CLIENTES, JSON.stringify(clientes));
-    localStorage.setItem(LS_KEYS.VENTAS, JSON.stringify(ventas));
-    localStorage.setItem(LS_KEYS.ABONOS, JSON.stringify(abonos));
-  }
-  function loadAll() {
-    const c = localStorage.getItem(LS_KEYS.CLIENTES);
-    const v = localStorage.getItem(LS_KEYS.VENTAS);
-    const a = localStorage.getItem(LS_KEYS.ABONOS);
-    try {
-      clientes = c ? JSON.parse(c) : [];
-      ventas = v ? JSON.parse(v) : [];
-      abonos = a ? JSON.parse(a) : [];
-    } catch(e) {
-      clientes = []; ventas = []; abonos = [];
-    }
-  }
+  <!-- Módulo Ruta -->
+  <section id="modRuta" class="module active">
+    <h2>Ruta del día</h2>
+    <form class="ruta-form">
+      <label>Seleccionar cobrador</label>
+      <select id="cobradorRuta"><option value="">Selecciona cobrador</option></select>
+      <div id="clientesRuta"></div>
+    </form>
+  </section>
 
-  /* ------------- ESTADO GLOBAL ------------- */
-  let clientes = [];
-  let ventas = [];
-  let abonos = [];
-  let clientesAsignados = []; // temporal por cobrador
-  let map = null;
-  let markers = [];
+  <!-- Módulo Ventas -->
+  <section id="modVentas" class="module">
+    <h2>Registro de Ventas</h2>
+    <div id="folioActual"></div>
+    <form class="ventas-form">
+      <label>Asignar cobrador</label><select id="cobradorVenta"><option value="">Selecciona cobrador</option></select>
+      <label>Fecha de venta</label><input type="date" id="fechaVenta">
+      <label>Artículos</label><input type="text" id="articulos">
+      <label>Lugar de entrega</label><input type="text" id="lugarEntrega">
+      <label>Precio</label><input type="number" id="precio">
+      <label>Nombre</label><input type="text" id="nombreCliente">
+      <label>Domicilio particular</label><input type="text" id="domicilioParticular">
+      <label>Domicilio de empleo</label><input type="text" id="domicilioTrabajo">
+      <label>Pago semanal</label><input type="number" id="pagoSemanal">
+      <label>Pago quincenal</label><input type="number" id="pagoQuincenal">
+      <label>Horario</label><input type="text" id="horario">
+      <label>Lugar de cobro</label><input type="text" id="lugarCobro">
+      <label>Enganche</label><input type="number" id="enganche">
+      <label>Método de pago</label><input type="text" id="metodoPago">
+      <label>Cobro o transferencia</label><input type="text" id="tipoCobro">
+      <label>Observaciones</label><textarea id="observaciones"></textarea>
+      <button type="button" id="aplicarVenta">Aplicar venta</button>
+      <button type="button" id="imprimirTicket">Imprimir ticket</button>
+    </form>
+  </section>
 
-  /* ------------- NAVEGACIÓN ------------- */
-  const botones = { btnRuta:'modRuta', btnVentas:'modVentas', btnClientes:'modClientes', btnConfig:'modConfig', btnReportes:'modReportes' };
-  const titulo = document.getElementById('tituloModulo');
-  Object.keys(botones).forEach(id=>{
-    document.getElementById(id).addEventListener('click', ()=>{
-      Object.keys(botones).forEach(b=> {
-        document.getElementById(b).classList.remove('active');
-        document.getElementById(botones[b]).classList.remove('active');
-      });
-      document.getElementById(id).classList.add('active');
-      document.getElementById(botones[id]).classList.add('active');
-      titulo.textContent = 'Módulo: ' + document.getElementById(id).textContent.trim();
+  <!-- Módulo Clientes -->
+  <section id="modClientes" class="module">
+    <h2>Clientes</h2>
+    <form class="clientes-form">
+      <label>Nombre</label><input type="text" id="nombreCli">
+      <label>Teléfono</label><input type="text" id="telefonoCli">
+      <button type="button" id="guardarCliente">Guardar cliente</button>
+    </form>
+    <button id="asignarUbicacion">Asignar ubicación actual</button>
+    <button id="verUbicacion">Ver ubicación del cliente</button>
+    <div id="listaClientes"></div>
+  </section>
+
+  <!-- Módulo Configuración -->
+  <section id="modConfig" class="module">
+    <h2>Configuración</h2>
+    <p>Administración de cobradores, clientes y asignaciones.</p>
+  </section>
+
+  <!-- Módulo Reportes -->
+  <section id="modReportes" class="module">
+    <h2>Reportes</h2>
+    <p>Filtra por cliente, cobrador y rango de fechas.</p>
+  </section>
+
+</div>
+
+<script>
+// Módulos
+const botones={btnRuta:'modRuta',btnVentas:'modVentas',btnClientes:'modClientes',btnConfig:'modConfig',btnReportes:'modReportes'};
+const titulo=document.getElementById('tituloModulo');
+Object.keys(botones).forEach(id=>{
+  document.getElementById(id).addEventListener('click',()=>{
+    Object.keys(botones).forEach(btn=>{
+      document.getElementById(btn).classList.remove('active');
+      document.getElementById(botones[btn]).classList.remove('active');
     });
+    document.getElementById(id).classList.add('active');
+    document.getElementById(botones[id]).classList.add('active');
+    titulo.textContent='Módulo: '+document.getElementById(id).textContent.trim();
   });
+});
 
-  /* ------------- RELOJ ------------- */
-  const fechaHoraEl = document.getElementById('fechaHora');
-  function actualizarHora(){
-    const now = new Date();
-    fechaHoraEl.textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
-  }
-  setInterval(actualizarHora, 1000);
-  actualizarHora();
+// Reloj
+function actualizarReloj(){const now=new Date();document.getElementById('relojFecha').textContent=now.toLocaleDateString()+' '+now.toLocaleTimeString();}
+setInterval(actualizarReloj,1000);
+actualizarReloj();
 
-  /* ------------- INICIALIZACIÓN ------------- */
-  loadAll();
-  // ensure clients have saldo property
-  clientes = clientes.map(c => ({ saldo: 0, ...c }));
-
-  // Render inicial
-  renderClientes();
-  renderClientesSelector();
-  renderCobradorSelectors();
-  renderVentas();
-  renderReportFilters();
-
-  /* ------------- CLIENTES ------------- */
-  const formCliente = document.getElementById('formCliente');
-  const clientesUl = document.getElementById('clientesUl');
-
-  formCliente.addEventListener('submit', e=>{
-    e.preventDefault();
-    const nombre = document.getElementById('clienteNombre').value.trim();
-    const telefono = document.getElementById('clienteTelefono').value.trim();
-    if(!nombre || !telefono) { alert('Llena ambos campos'); return; }
-    clientes.push({ nombre, telefono, ubicacion: '', saldo: 0 });
-    document.getElementById('clienteNombre').value=''; document.getElementById('clienteTelefono').value='';
-    saveAll();
-    renderClientes();
-    renderClientesSelector();
-    renderReportFilters();
-    alert('Cliente agregado');
+// Clientes
+let clientes=JSON.parse(localStorage.getItem('clientes'))||[];
+function actualizarListaClientes(){
+  const lista=document.getElementById('listaClientes');lista.innerHTML='';
+  clientes.forEach((c,i)=>{
+    const div=document.createElement('div');
+    div.textContent=`${c.nombre} - ${c.telefono}`;
+    lista.appendChild(div);
   });
+}
+document.getElementById('guardarCliente').addEventListener('click',()=>{
+  const nombre=document.getElementById('nombreCli').value;
+  const telefono=document.getElementById('telefonoCli').value;
+  if(!nombre){alert('Escribe el nombre');return;}
+  clientes.push({nombre,telefono});
+  localStorage.setItem('clientes',JSON.stringify(clientes));
+  actualizarListaClientes();
+  document.getElementById('nombreCli').value='';
+  document.getElementById('telefonoCli').value='';
+});
 
-  function renderClientes(){
-    clientesUl.innerHTML = '';
-    clientes.forEach((c, i) => {
-      const li = document.createElement('li');
-      const left = document.createElement('div');
-      left.style.display='flex'; left.style.flexDirection='column';
-      left.innerHTML = `<strong>${c.nombre}</strong><span class="muted">Tel: ${c.telefono} | Saldo: $${Number(c.saldo).toFixed(2)}</span>`;
-      const actions = document.createElement('div');
-      // Edit
-      const btnEdit = document.createElement('button'); btnEdit.className='btn small'; btnEdit.textContent='Editar';
-      btnEdit.addEventListener('click', ()=> editarCliente(i));
-      // Assign location
-      const btnAssign = document.createElement('button'); btnAssign.className='btnCliente small'; btnAssign.textContent='Asignar Ubicación';
-      btnAssign.addEventListener('click', ()=> asignarUbicacion(i));
-      // View location
-      const btnView = document.createElement('button'); btnView.className='btnCliente small'; btnView.textContent='Ver Ubicación';
-      btnView.addEventListener('click', ()=> verUbicacion(i));
-      actions.appendChild(btnEdit); actions.appendChild(btnAssign); actions.appendChild(btnView);
-      li.appendChild(left); li.appendChild(actions);
-      clientesUl.appendChild(li);
-    });
-  }
+// Ventas
+let ventas=JSON.parse(localStorage.getItem('ventas'))||[];
+let folio=parseInt(localStorage.getItem('folioVenta'))||1;
+document.getElementById('folioActual').textContent='Folio actual: #'+folio.toString().padStart(5,'0');
+document.getElementById('aplicarVenta').addEventListener('click',()=>{
+  const v={
+    cobrador:document.getElementById('cobradorVenta').value,
+    fecha:document.getElementById('fechaVenta').value,
+    articulos:document.getElementById('articulos').value,
+    lugarEntrega:document.getElementById('lugarEntrega').value,
+    precio:document.getElementById('precio').value,
+    nombre:document.getElementById('nombreCliente').value,
+    domicilioParticular:document.getElementById('domicilioParticular').value,
+    domicilioTrabajo:document.getElementById('domicilioTrabajo').value,
+    pagoSemanal:document.getElementById('pagoSemanal').value,
+    pagoQuincenal:document.getElementById('pagoQuincenal').value,
+    horario:document.getElementById('horario').value,
+    lugarCobro:document.getElementById('lugarCobro').value,
+    enganche:document.getElementById('enganche').value,
+    metodoPago:document.getElementById('metodoPago').value,
+    tipoCobro:document.getElementById('tipoCobro').value,
+    observaciones:document.getElementById('observaciones').value
+  };
+  ventas.push(v);
+  localStorage.setItem('ventas',JSON.stringify(ventas));
+  localStorage.setItem('folioVenta',folio+1);
+  folio++;
+  document.getElementById('folioActual').textContent='Folio actual: #'+folio.toString().padStart(5,'0');
+  alert('Venta registrada correctamente');
+});
 
-  function editarCliente(index){
-    const c = clientes[index];
-    const nn = prompt('Editar nombre:', c.nombre);
-    const nt = prompt('Editar teléfono:', c.telefono);
-    if(nn) clientes[index].nombre = nn.trim();
-    if(nt) clientes[index].telefono = nt.trim();
-    saveAll();
-    renderClientes();
-    renderClientesSelector();
-    renderReportFilters();
-  }
-
-  function asignarUbicacion(index){
-    if(!navigator.geolocation){ alert('Geolocalización no soportada'); return; }
-    navigator.geolocation.getCurrentPosition(pos=>{
-      const lat = pos.coords.latitude.toFixed(6);
-      const lon = pos.coords.longitude.toFixed(6);
-      clientes[index].ubicacion = `https://www.google.com/maps?q=${lat},${lon}`;
-      saveAll();
-      renderClientes();
-      alert('Ubicación asignada');
-    }, err => {
-      alert('Error al obtener ubicación: ' + err.message);
-    }, { enableHighAccuracy:true, timeout:10000, maximumAge:0 });
-  }
-
-  function verUbicacion(index){
-    const url = clientes[index].ubicacion;
-    if(url) window.open(url, '_blank');
-    else alert('Este cliente no tiene ubicación asignada');
-  }
-
-  /* ------------- VENTAS (nuevo formulario) ------------- */
-  const formVentaNuevo = document.getElementById('formVentaNuevo');
-  const ventasUlEl = document.getElementById('ventasUl');
-  const imprimirTicketNuevo = document.getElementById('imprimirTicketNuevo');
-
-  formVentaNuevo.addEventListener('submit', e=>{
-    e.preventDefault();
-    const venta = {
-      fecha: document.getElementById('fechaVenta').value || new Date().toISOString(),
-      articulos: document.getElementById('articulos').value || '',
-      lugarEntrega: document.getElementById('lugarEntrega').value || '',
-      precio: Number(document.getElementById('precio').value || 0),
-      nombre: document.getElementById('nombre').value || '',
-      domParticular: document.getElementById('domParticular').value || '',
-      domEmpleo: document.getElementById('domEmpleo').value || '',
-      pagoSemanal: Number(document.getElementById('pagoSemanal').value || 0),
-      pagoQuincenal: Number(document.getElementById('pagoQuincenal').value || 0),
-      horario: document.getElementById('horario').value || '',
-      lugarCobro: document.getElementById('lugarCobro').value || '',
-      enganche: Number(document.getElementById('enganche').value || 0),
-      metodoPago: document.getElementById('metodoPago').value || '',
-      tipoCobro: document.getElementById('tipoCobro').value || '',
-      observaciones: document.getElementById('observaciones').value || '',
-      cobrador: document.getElementById('cobradorVenta').value || '',
-      createdAt: new Date()
-    };
-    ventas.push(venta);
-    saveAll();
-    renderVentas();
-    formVentaNuevo.reset();
-    alert('Venta registrada correctamente');
-  });
-
-  function renderVentas(){
-    ventasUlEl.innerHTML = '';
-    ventas.slice().reverse().forEach(v => {
-      const li = document.createElement('li');
-      const left = document.createElement('div');
-      left.style.flex='1';
-      left.innerHTML = `<strong>${new Date(v.createdAt).toLocaleString()}</strong> — ${v.nombre || '(sin nombre)'} — ${v.articulos} — $${Number(v.precio).toFixed(2)} <span class="muted">| ${v.cobrador}</span>`;
-      const btn = document.createElement('button'); btn.className='btn small'; btn.textContent='Imprimir';
-      btn.addEventListener('click', ()=> imprimirVenta(v));
-      li.appendChild(left); li.appendChild(btn);
-      ventasUlEl.appendChild(li);
-    });
-  }
-
-  imprimirTicketNuevo.addEventListener('click', ()=>{
-    if(ventas.length === 0) { alert('No hay ventas registradas'); return; }
-    imprimirVenta(ventas[ventas.length - 1]);
-  });
-
-  function imprimirVenta(v){
-    const ticket = `
-      <h2 style="text-align:center;">💼 Ticket de Venta</h2>
-      <p><strong>Fecha:</strong> ${v.fecha}</p>
+// Imprimir ticket
+document.getElementById('imprimirTicket').addEventListener('click',()=>{
+  if(ventas.length===0){alert('No hay ventas registradas');return;}
+  const v=ventas[ventas.length-1];
+  const fechaActual=new Date();
+  const fechaImpresion=fechaActual.toLocaleDateString();
+  const horaImpresion=fechaActual.toLocaleTimeString();
+  const ticket=`
+    <div style="font-family:Segoe UI, sans-serif;padding:20px;width:300px;">
+      <h2 style="text-align:center;font-weight:bold;margin-bottom:5px;">Promociones Culturales de México</h2>
+      <hr style="margin:10px 0;">
+      <p><strong>Folio:</strong> #${(folio-1).toString().padStart(5,'0')}</p>
+      <p><strong>Fecha de venta:</strong> ${v.fecha}</p>
+      <p><strong>Fecha impresión:</strong> ${fechaImpresion}</p>
+      <p><strong>Hora impresión:</strong> ${horaImpresion}</p>
+      <hr style="margin:10px 0;">
       <p><strong>Cliente:</strong> ${v.nombre}</p>
       <p><strong>Artículos:</strong> ${v.articulos}</p>
-      <p><strong>Lugar entrega:</strong> ${v.lugarEntrega}</p>
-      <p><strong>Precio:</strong> $${Number(v.precio).toFixed(2)}</p>
-      <p><strong>Enganche:</strong> $${Number(v.enganche).toFixed(2)}</p>
-      <p><strong>Método:</strong> ${v.metodoPago}</p>
-      <p><strong>Tipo:</strong> ${v.tipoCobro}</p>
+      <p><strong>Lugar de entrega:</strong> ${v.lugarEntrega}</p>
+      <p><strong>Precio total:</strong> $${v.precio}</p>
+      <p><strong>Enganche:</strong> $${v.enganche}</p>
+      <p><strong>Método de pago:</strong> ${v.metodoPago}</p>
+      <p><strong>Cobro o transferencia:</strong> ${v.tipoCobro}</p>
       <p><strong>Cobrador:</strong> ${v.cobrador}</p>
-      <p><strong>Observaciones:</strong> ${v.observaciones}</p>
-    `;
-    const w = window.open('','', 'width=400,height=600');
-    w.document.write(ticket);
-    w.document.close();
-    w.print();
-  }
-
-  /* ------------- RUTA (asignación + abonos + mapa) ------------- */
-  const rutaCobradorSelect = document.getElementById('rutaCobrador');
-  const filtroSaldoSelect = document.getElementById('filtroSaldo');
-  const clientesRutaUl = document.getElementById('clientesRutaUl');
-
-  // populate cobrador selectors (could be dynamic later)
-  function renderCobradorSelectors(){
-    const cobradores = ['Cobrador 1','Cobrador 2','Cobrador 3'];
-    // ruta
-    rutaCobradorSelect.innerHTML = '<option value="">-- Selecciona cobrador --</option>';
-    cobradores.forEach(c => {
-      const o = document.createElement('option'); o.value = c; o.textContent = c; rutaCobradorSelect.appendChild(o);
-    });
-    // ventas
-    const cobradorVentaSel = document.getElementById('cobradorVenta');
-    cobradorVentaSel.innerHTML = '<option value="">-- Selecciona --</option>';
-    cobradores.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; cobradorVentaSel.appendChild(o); });
-    // reportes
-    const filtroC = document.getElementById('filtroCobrador');
-    filtroC.innerHTML = '<option value="">Todos</option>';
-    cobradores.forEach(c => { const o = document.createElement('option'); o.value=c; o.textContent=c; filtroC.appendChild(o); });
-  }
-
-  renderCobradorSelectors();
-
-  rutaCobradorSelect.addEventListener('change', actualizarClientesRuta);
-  filtroSaldoSelect.addEventListener('change', actualizarClientesRuta);
-
-  // Build assigned clients list: clients that exist in system. We keep client.saldo persistent.
-  function actualizarClientesRuta(){
-    const cobrador = rutaCobradorSelect.value;
-    clientesRutaUl.innerHTML = '';
-    // reset asignados
-    if(!cobrador) { actualizarMapa([]); return; }
-
-    // For demo: all clients are "assigned". In future make an assignment model.
-    clientesAsignados = clientes.map(c => ({ ...c, cobrador, saldo: Number(c.saldo || 0) }));
-
-    // If no saldo info, optionally set default random demo balances only if saldo === 0 (but keep 0 if intentionally 0)
-    clientesAsignados = clientesAsignados.map(c => ({ ...c, saldo: c.saldo === 0 ? c.saldo : c.saldo }));
-
-    // apply filtro
-    const filtro = filtroSaldoSelect.value;
-    let filtrados = clientesAsignados;
-    if(filtro === 'pendiente') filtrados = filtrados.filter(c => Number(c.saldo) > 0);
-    if(filtro === 'pagados') filtrados = filtrados.filter(c => Number(c.saldo) <= 0);
-
-    filtrados.forEach((c, idx) => {
-      const li = document.createElement('li');
-      li.style.background = Number(c.saldo) > 0 ? '#fff7f7' : '#f7fff7';
-      const left = document.createElement('div');
-      left.style.flex='1';
-      left.innerHTML = `<strong>${c.nombre}</strong> <div class="muted">Saldo: $${Number(c.saldo).toFixed(2)}</div>`;
-      const right = document.createElement('div');
-
-      // ver ubicacion
-      const vb = document.createElement('button'); vb.className='btnCliente small'; vb.textContent='Ver Ubicación';
-      vb.addEventListener('click', ()=> {
-        if(c.ubicacion) window.open(c.ubicacion, '_blank'); else alert('Cliente sin ubicación');
-      });
-
-      // concepto, abono inputs + aplicar
-      const conceptoInput = document.createElement('input'); conceptoInput.placeholder='Concepto'; conceptoInput.id = `concepto_r_${idx}`;
-      const abonoInput = document.createElement('input'); abonoInput.type='number'; abonoInput.placeholder='Abono'; abonoInput.id = `abono_r_${idx}`;
-      conceptoInput.style.marginRight='6px'; abonoInput.style.marginRight='6px'; conceptoInput.style.width='160px'; abonoInput.style.width='110px';
-
-      const btnApply = document.createElement('button'); btnApply.className='btn small'; btnApply.textContent='Aplicar Pago';
-      btnApply.addEventListener('click', ()=> {
-        const concepto = conceptoInput.value.trim();
-        const abono = parseFloat(abonoInput.value);
-        if(!concepto || isNaN(abono) || abono<=0){ alert('Concepto y abono válidos'); return; }
-        aplicarAbonoGlobal(c.nombre, c.cobrador, concepto, abono);
-      });
-
-      right.appendChild(vb);
-      right.appendChild(conceptoInput);
-      right.appendChild(abonoInput);
-      right.appendChild(btnApply);
-
-      li.appendChild(left);
-      li.appendChild(right);
-      clientesRutaUl.appendChild(li);
-    });
-
-    actualizarMapa(filtrados);
-  }
-
-  // Apply abono: updates client.saldo globally, saves abono record (with date), refreshes lists
-  function aplicarAbonoGlobal(clienteNombre, cobrador, concepto, abono) {
-    const idx = clientes.findIndex(c => c.nombre === clienteNombre);
-    if(idx === -1){ alert('Cliente no encontrado'); return; }
-    const saldoAnterior = Number(clientes[idx].saldo || 0);
-    let nuevoSaldo = saldoAnterior - abono;
-    if(nuevoSaldo < 0) nuevoSaldo = 0;
-    clientes[idx].saldo = Number(nuevoSaldo);
-    // registro abono
-    const registro = { cliente: clienteNombre, cobrador, concepto, abono: Number(abono), fecha: new Date() };
-    abonos.push(registro);
-    saveAll();
-    // refresh route and reports and clients list
-    actualizarClientesRuta();
-    renderClientsPartial();
-    renderReportFilters();
-    alert('Abono aplicado: $' + Number(abono).toFixed(2));
-    // imprimir comprobante
-    const ticket = `<h2 style="text-align:center;">💼 Comprobante de Pago</h2>
-      <p><strong>Cliente:</strong> ${clienteNombre}</p>
-      <p><strong>Concepto:</strong> ${concepto}</p>
-      <p><strong>Saldo Anterior:</strong> $${Number(saldoAnterior).toFixed(2)}</p>
-      <p><strong>Abono:</strong> $${Number(abono).toFixed(2)}</p>
-      <p><strong>Saldo Restante:</strong> $${Number(nuevoSaldo).toFixed(2)}</p>`;
-    const w = window.open('','', 'width=400,height=600');
-    w.document.write(ticket);
-    w.document.close();
-    w.print();
-  }
-
-  /* ------------- MAPA (Google Maps) ------------- */
-  // utilidad para extraer coords desde una URL google maps (soporta q=lat,lng y @lat,lng)
-  function extractCoordsFromUrl(url) {
-    if(!url) return null;
-    try {
-      // buscar q=lat,lng
-      let m = url.match(/q=([0-9\.\-]+),([0-9\.\-]+)/);
-      if(m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-      // buscar @lat,lng
-      m = url.match(/@([0-9\.\-]+),([0-9\.\-]+)/);
-      if(m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-      // buscar primera pareja de floats
-      m = url.match(/([0-9\.\-]+),([0-9\.\-]+)/);
-      if(m) return { lat: parseFloat(m[1]), lng: parseFloat(m[2]) };
-    } catch(e){}
-    return null;
-  }
-
-  function actualizarMapa(clientesList) {
-    // clientesList: array con .ubicacion (url) y .nombre y .saldo
-    if(!document.getElementById('map')) return;
-    if(!map) {
-      // inicializa mapa con centro por defecto (CDMX) si no existe
-      map = new google.maps.Map(document.getElementById('map'), { center:{lat:20.6597,lng:-103.3496}, zoom: 12 });
-    }
-    // limpiar markers previos
-    markers.forEach(m => m.setMap(null));
-    markers = [];
-    const bounds = new google.maps.LatLngBounds();
-    clientsAdded = 0;
-    clientesList.forEach(c => {
-      const coords = extractCoordsFromUrl(c.ubicacion);
-      if(coords) {
-        const marker = new google.maps.Marker({ position: coords, map, title: `${c.nombre} | Saldo: $${Number(c.saldo).toFixed(2)}` });
-        const info = new google.maps.InfoWindow({ content: `<strong>${c.nombre}</strong><div>Saldo: $${Number(c.saldo).toFixed(2)}</div>` });
-        marker.addListener('click', ()=> info.open(map, marker));
-        markers.push(marker);
-        bounds.extend(marker.getPosition());
-        clientsAdded++;
-      }
-    });
-    if(markers.length > 0) {
-      map.fitBounds(bounds);
-    } else {
-      // si no hay markers, centrar a default
-      map.setCenter({lat:20.6597,lng:-103.3496});
-      map.setZoom(12);
-    }
-  }
-
-  /* ------------- REPORTES ------------- */
-  const formReporte = document.getElementById('formReporte');
-  const listaAbonos = document.getElementById('listaAbonos');
-
-  formReporte.addEventListener('submit', e=>{
-    e.preventDefault();
-    const clienteSel = document.getElementById('filtroCliente').value;
-    const cobradorSel = document.getElementById('filtroCobrador').value;
-    const inicioVal = document.getElementById('fechaInicio').value;
-    const finVal = document.getElementById('fechaFin').value;
-    let filtered = abonos.slice();
-    if(clienteSel) filtered = filtered.filter(a => a.cliente === clienteSel);
-    if(cobradorSel) filtered = filtered.filter(a => a.cobrador === cobradorSel);
-    if(inicioVal) filtered = filtered.filter(a => new Date(a.fecha) >= new Date(inicioVal + 'T00:00:00'));
-    if(finVal) filtered = filtered.filter(a => new Date(a.fecha) <= new Date(finVal + 'T23:59:59'));
-    listaAbonos.innerHTML = '';
-    if(filtered.length === 0) {
-      listaAbonos.innerHTML = '<li>No hay registros</li>';
-      return;
-    }
-    filtered.forEach(a => {
-      const li = document.createElement('li');
-      const date = new Date(a.fecha);
-      li.textContent = `${date.toLocaleString()} — ${a.cliente} | ${a.concepto} | Abono: $${Number(a.abono).toFixed(2)} | ${a.cobrador}`;
-      listaAbonos.appendChild(li);
-    });
-  });
-
-  /* ------------- RENDER HELPERS ------------- */
-  function renderClientesSelector() {
-    // selector ventas & filtros
-    const sel = document.getElementById('ventaCliente');
-    if(sel) {
-      sel.innerHTML = '<option value="">-- Selecciona --</option>';
-      clientes.forEach(c => { const o = document.createElement('option'); o.value=c.nombre; o.textContent=c.nombre; sel.appendChild(o); });
-    }
-  }
-
-  function renderReportFilters() {
-    const filtroCliente = document.getElementById('filtroCliente');
-    filtroCliente.innerHTML = '<option value="">Todos</option>';
-    clientes.forEach(c => { const o = document.createElement('option'); o.value=c.nombre; o.textContent=c.nombre; filtroCliente.appendChild(o); });
-    // cobrador already handled in renderCobradorSelectors(); keeps static list
-  }
-
-  function renderClientsPartial(){
-    // refresh clients list, selectors and route view
-    renderClientes();
-    renderClientesSelector();
-    renderReportFilters();
-  }
-
-  /* ------------- INICIAL RENDER ------------- */
-  renderClientsPartial();
-  renderVentas();
-
-  /* ------------- GOOGLE MAPS CALLBACK (script below will provide API) ------------- */
-  </script>
-
-  <!-- Google Maps API: reemplaza TU_API_KEY por tu key -->
-  <script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY"></script>
+      <p><strong>Pago semanal:</strong> ${v.pagoSemanal? '$'+v.pagoSemanal : '-'}</p>
+      <p><strong>Pago quincenal:</strong> ${v.pagoQuincenal? '$'+v.pagoQuincenal : '-'}</p>
+      <p><strong>Horario:</strong> ${v.horario}</p>
+      <p><strong>Lugar de cobro:</strong> ${v.lugarCobro}</p>
+      <p><strong>Observaciones:</strong> ${v.observaciones|| '-'}</p>
+      <hr style="margin:10px 0;">
+      <p style="text-align:center;font-size:0.9em;">Gracias por su compra</p>
+      <p style="text-align:center;font-size:0.8em;">Este ticket es comprobante de venta</p>
+    </div>`;
+  const w=window.open('','', 'width=400,height=600');
+  w.document.write(ticket);
+  w.document.close();
+  w.print();
+});
+</script>
 </body>
 </html>
 
