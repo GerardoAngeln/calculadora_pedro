@@ -5,29 +5,31 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Sistema de Cobranza en Ruta</title>
   <style>
-    * { box-sizing: border-box; margin:0; padding:0; font-family:'Segoe UI',sans-serif; }
-    body { display:flex; height:100vh; background:#f5f6fa; color:#333; flex-direction:column; }
-    .container { display:flex; flex:1; overflow:hidden; }
-    .sidebar { width:240px; background:#fff; box-shadow:2px 0 10px rgba(0,0,0,0.08); display:flex; flex-direction:column; justify-content:space-between; padding:20px 0; flex-shrink:0; }
-    .sidebar h2 { text-align:center; font-size:1.4em; color:#444; margin-bottom:20px; }
-    .menu { display:flex; flex-direction:column; }
-    .menu button { background:none; border:none; padding:14px 20px; text-align:left; font-size:1em; cursor:pointer; transition:0.3s; color:#333; }
-    .menu button:hover, .menu button.active { background:#e8f0fe; color:#1a73e8; }
-    .menu button i { margin-right:10px; }
-    .main-content { flex:1; padding:20px; overflow-y:auto; }
-    .module { display:none; animation:fadeIn 0.3s ease-in-out; }
-    .module.active { display:block; }
-    @keyframes fadeIn { from {opacity:0; transform:translateY(10px);} to {opacity:1; transform:translateY(0);} }
-    header { background:#fff; padding:10px 20px; border-radius:10px; box-shadow:0 2px 8px rgba(0,0,0,0.1); margin-bottom:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; }
-    header h1 { font-size:1.3em; color:#1a73e8; margin-bottom:5px; }
-    #fechaHora { font-size:0.95em; color:#555; }
-    footer { text-align:center; font-size:0.9em; padding:10px; color:#888; }
-    form div { margin-bottom:10px; }
-    input, select, button { padding:6px 8px; margin-right:5px; border-radius:4px; border:1px solid #ccc; font-size:0.95em; }
-    button.btnCliente { margin-left:5px; cursor:pointer; background:#1a73e8; color:#fff; border:none; padding:4px 6px; border-radius:4px; font-size:0.85em; }
-    ul { list-style:none; margin-top:10px; padding-left:0; max-height:300px; overflow-y:auto; }
-    li { padding:6px 4px; border-bottom:1px solid #eee; }
-    @media(max-width:768px){ .container{flex-direction:column;} .sidebar{width:100%; display:flex; flex-direction:row; overflow-x:auto;} .menu button{text-align:center; padding:10px;} }
+    *{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
+    body{display:flex;height:100vh;background:#f5f6fa;color:#333;flex-direction:column;}
+    .container{display:flex;flex:1;overflow:hidden;}
+    .sidebar{width:240px;background:#fff;box-shadow:2px 0 10px rgba(0,0,0,0.08);display:flex;flex-direction:column;justify-content:space-between;padding:20px 0;flex-shrink:0;}
+    .sidebar h2{text-align:center;font-size:1.4em;color:#444;margin-bottom:20px;}
+    .menu{display:flex;flex-direction:column;}
+    .menu button{background:none;border:none;padding:14px 20px;text-align:left;font-size:1em;cursor:pointer;transition:0.3s;color:#333;}
+    .menu button:hover,.menu button.active{background:#e8f0fe;color:#1a73e8;}
+    .menu button i{margin-right:10px;}
+    .main-content{flex:1;padding:20px;overflow-y:auto;}
+    .module{display:none;animation:fadeIn 0.3s ease-in-out;}
+    .module.active{display:block;}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+    header{background:#fff;padding:10px 20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:20px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;}
+    header h1{font-size:1.3em;color:#1a73e8;margin-bottom:5px;}
+    #fechaHora{font-size:0.95em;color:#555;}
+    footer{text-align:center;font-size:0.9em;padding:10px;color:#888;}
+    form div{margin-bottom:10px;}
+    input,select,textarea,button{padding:8px;margin-right:5px;border-radius:4px;border:1px solid #ccc;font-size:0.95em;}
+    textarea{width:100%;resize:none;}
+    button.btnCliente{margin-left:5px;cursor:pointer;background:#1a73e8;color:#fff;border:none;padding:4px 6px;border-radius:4px;font-size:0.85em;}
+    ul{list-style:none;margin-top:10px;padding-left:0;max-height:300px;overflow-y:auto;}
+    li{padding:6px 4px;border-bottom:1px solid #eee;}
+    .form-card{background:#fff;padding:20px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);max-width:700px;margin:auto;}
+    @media(max-width:768px){.container{flex-direction:column;}.sidebar{width:100%;display:flex;flex-direction:row;overflow-x:auto;}.menu button{text-align:center;padding:10px;}}
   </style>
 </head>
 <body>
@@ -55,80 +57,71 @@
       <div id="fechaHora"></div>
     </header>
 
-    <!-- Módulos -->
-    <!-- Módulo Ruta -->
+    <!-- Módulo de Ruta -->
     <section id="modRuta" class="module active">
       <h2>Ruta del día</h2>
-      <form id="formRuta">
-        <div>
-          <label>Seleccionar Cobrador:</label>
-          <select id="rutaCobrador" required>
-            <option value="">-- Selecciona Cobrador --</option>
-            <option value="Cobrador 1">Cobrador 1</option>
-            <option value="Cobrador 2">Cobrador 2</option>
-            <option value="Cobrador 3">Cobrador 3</option>
-          </select>
-        </div>
-        <div style="margin-top:10px;">
-          <label>Filtrar clientes por saldo pendiente:</label>
-          <select id="filtroSaldo">
-            <option value="todos">Todos</option>
-            <option value="pendiente">Con saldo pendiente</option>
-            <option value="pagados">Sin saldo pendiente</option>
-          </select>
-        </div>
-      </form>
-      <div id="clientesRuta">
-        <h3>Clientes asignados:</h3>
-        <ul id="clientesRutaUl"></ul>
-      </div>
-      <div id="map" style="width:100%;height:300px;margin-top:15px;border:1px solid #ccc;"></div>
+      <p>Aquí se mostrarán los clientes asignados al cobrador y sus pagos pendientes.</p>
     </section>
 
-    <!-- Módulo Ventas -->
+    <!-- 🔹 NUEVO MÓDULO DE VENTAS -->
     <section id="modVentas" class="module">
-      <h2>Registro de Ventas</h2>
-      <form id="formVenta">
-        <div>
-          <label>Cliente:</label>
-          <select id="ventaCliente"></select>
-          <label>Celular:</label>
-          <input type="text" id="ventaCelular" placeholder="Teléfono" />
-        </div>
-        <div>
-          <label>Concepto:</label>
-          <input type="text" id="ventaConcepto" />
-          <label>Monto:</label>
-          <input type="number" id="ventaMonto" />
-        </div>
-        <div>
-          <label>Anticipo:</label>
-          <input type="number" id="ventaAnticipo" />
-          <label>Cobrador:</label>
-          <select id="ventaCobrador">
-            <option value="">-- Selecciona --</option>
-            <option value="Cobrador 1">Cobrador 1</option>
-            <option value="Cobrador 2">Cobrador 2</option>
-            <option value="Cobrador 3">Cobrador 3</option>
-          </select>
-        </div>
-        <button type="submit">Aplicar Venta</button>
-        <button type="button" id="imprimirTicket">Imprimir Ticket</button>
-      </form>
+      <h2>Registro de Venta</h2>
+      <div class="form-card">
+        <form id="formVentaNuevo">
+          <div><label>Fecha de venta:</label><input type="date" id="fechaVenta" required></div>
+          <div><label>Artículos:</label><input type="text" id="articulos" required></div>
+          <div><label>Lugar de entrega:</label><input type="text" id="lugarEntrega" required></div>
+          <div><label>Precio:</label><input type="number" id="precio" required></div>
+          <div><label>Nombre:</label><input type="text" id="nombre" required></div>
+          <div><label>Domicilio particular:</label><input type="text" id="domParticular"></div>
+          <div><label>Domicilio de empleo:</label><input type="text" id="domEmpleo"></div>
+          <div>
+            <label>Pago semanal:</label><input type="number" id="pagoSemanal" placeholder="$">
+            <label>Pago quincenal:</label><input type="number" id="pagoQuincenal" placeholder="$">
+          </div>
+          <div><label>Horario:</label><input type="text" id="horario" placeholder="Ej. 9:00 - 18:00"></div>
+          <div><label>Lugar de cobro:</label><input type="text" id="lugarCobro"></div>
+          <div><label>Enganche:</label><input type="number" id="enganche"></div>
+          <div>
+            <label>Método de pago:</label>
+            <select id="metodoPago">
+              <option value="">-- Selecciona --</option>
+              <option>Efectivo</option>
+              <option>Tarjeta</option>
+              <option>Transferencia</option>
+            </select>
+          </div>
+          <div>
+            <label>Cobro o transferencia:</label>
+            <select id="tipoCobro">
+              <option value="">-- Selecciona --</option>
+              <option>Cobro</option>
+              <option>Transferencia</option>
+            </select>
+          </div>
+          <div><label>Observaciones:</label><textarea id="observaciones" rows="3"></textarea></div>
+          <div>
+            <label>Asignar cobrador:</label>
+            <select id="cobradorVenta" required>
+              <option value="">-- Selecciona --</option>
+              <option value="Cobrador 1">Cobrador 1</option>
+              <option value="Cobrador 2">Cobrador 2</option>
+              <option value="Cobrador 3">Cobrador 3</option>
+            </select>
+          </div>
+          <div style="text-align:center;margin-top:15px;">
+            <button type="submit">Aplicar Venta</button>
+            <button type="button" id="imprimirTicketNuevo">Imprimir Ticket</button>
+          </div>
+        </form>
+      </div>
       <ul id="ventasUl"></ul>
     </section>
 
     <!-- Módulo Clientes -->
     <section id="modClientes" class="module">
       <h2>Clientes</h2>
-      <form id="formCliente">
-        <div>
-          <input type="text" id="clienteNombre" placeholder="Nombre del cliente" required/>
-          <input type="text" id="clienteTelefono" placeholder="Teléfono" required/>
-        </div>
-        <button type="submit">Agregar Cliente</button>
-      </form>
-      <ul id="clientesUl"></ul>
+      <p>Aquí podrás gestionar los clientes del sistema.</p>
     </section>
 
     <!-- Módulo Configuración -->
@@ -140,33 +133,13 @@
     <!-- Módulo Reportes -->
     <section id="modReportes" class="module">
       <h2>Reportes</h2>
-      <form id="formReporte">
-        <div>
-          <label>Cliente:</label>
-          <select id="filtroCliente"><option value="">Todos</option></select>
-          <label>Cobrador:</label>
-          <select id="filtroCobrador">
-            <option value="">Todos</option>
-            <option value="Cobrador 1">Cobrador 1</option>
-            <option value="Cobrador 2">Cobrador 2</option>
-            <option value="Cobrador 3">Cobrador 3</option>
-          </select>
-        </div>
-        <div>
-          <label>Fecha Inicio:</label>
-          <input type="date" id="fechaInicio"/>
-          <label>Fecha Fin:</label>
-          <input type="date" id="fechaFin"/>
-        </div>
-        <button type="submit">Filtrar</button>
-      </form>
-      <ul id="listaAbonos"></ul>
+      <p>Visualiza los reportes de ventas, cobranza y desempeño general.</p>
     </section>
   </div>
 </div>
 
 <script>
-  // Navegación módulos
+  // 🧭 Navegación de módulos
   const botones={btnRuta:'modRuta',btnVentas:'modVentas',btnClientes:'modClientes',btnConfig:'modConfig',btnReportes:'modReportes'};
   const titulo=document.getElementById('tituloModulo');
   Object.keys(botones).forEach(id=>{
@@ -181,7 +154,7 @@
     });
   });
 
-  // Fecha y hora
+  // 🕒 Fecha y hora en tiempo real
   const fechaHora=document.getElementById('fechaHora');
   function actualizarHora(){
     const ahora=new Date();
@@ -191,220 +164,65 @@
   }
   setInterval(actualizarHora,1000);
 
-  // Datos generales
-  let clientes=[];
-  let ventas=[];
-  let abonos=[];
-  let clientesAsignados=[];
-
-  // Clientes
-  const formCliente=document.getElementById('formCliente');
-  const clientesUl=document.getElementById('clientesUl');
-  formCliente.addEventListener('submit',e=>{
-    e.preventDefault();
-    const nombre=document.getElementById('clienteNombre').value.trim();
-    const telefono=document.getElementById('clienteTelefono').value.trim();
-    if(!nombre||!telefono){alert('Llena todos los campos'); return;}
-    const cliente={nombre,telefono,ubicacion:''};
-    clientes.push(cliente);
-    document.getElementById('clienteNombre').value='';
-    document.getElementById('clienteTelefono').value='';
-    renderClientes();
-    renderClientesVentas();
-  });
-  function renderClientes(){
-    clientesUl.innerHTML='';
-    clientes.forEach((c,i)=>{
-      const li=document.createElement('li');
-      li.innerHTML=`<strong>${c.nombre}</strong> - ${c.telefono} <button class="btnCliente" onclick="asignarUbicacion(${i})">Asignar Ubicación</button> <button class="btnCliente" onclick="verUbicacion(${i})">Ver Ubicación</button>`;
-      clientesUl.appendChild(li);
-    });
-  }
-  window.asignarUbicacion=function(i){
-    if(navigator.geolocation){navigator.geolocation.getCurrentPosition(pos=>{
-      clientes[i].ubicacion=`https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
-      alert('Ubicación asignada');
-    });}else alert('No se pudo obtener ubicación');
-  }
-  window.verUbicacion=function(i){
-    if(clientes[i].ubicacion) window.open(clientes[i].ubicacion,'_blank');
-    else alert('Cliente no tiene ubicación');
-  }
-
-  // Ventas
-  const ventaCliente=document.getElementById('ventaCliente');
-  const formVenta=document.getElementById('formVenta');
+  // 🧾 Nuevo módulo de ventas
+  const formVentaNuevo=document.getElementById('formVentaNuevo');
   const ventasUl=document.getElementById('ventasUl');
-  const imprimirTicket=document.getElementById('imprimirTicket');
+  const imprimirTicket=document.getElementById('imprimirTicketNuevo');
+  let ventas=[];
 
-  function renderClientesVentas(){
-    ventaCliente.innerHTML='<option value="">-- Selecciona --</option>';
-    clientes.forEach(c=>{
-      const option=document.createElement('option'); option.value=c.nombre; option.textContent=c.nombre; ventaCliente.appendChild(option);
-    });
-  }
-
-  formVenta.addEventListener('submit',e=>{
+  formVentaNuevo.addEventListener('submit',e=>{
     e.preventDefault();
-    const cliente=ventaCliente.value;
-    const celular=document.getElementById('ventaCelular').value;
-    const concepto=document.getElementById('ventaConcepto').value;
-    const monto=parseFloat(document.getElementById('ventaMonto').value);
-    const anticipo=parseFloat(document.getElementById('ventaAnticipo').value);
-    const cobrador=document.getElementById('ventaCobrador').value;
-    if(!cliente||!concepto||isNaN(monto)||isNaN(anticipo)||!cobrador){alert('Llena todos los campos'); return;}
-    const venta={cliente,celular,concepto,monto,anticipo,cobrador,fecha:new Date()};
+    const venta={
+      fecha:document.getElementById('fechaVenta').value,
+      articulos:document.getElementById('articulos').value,
+      lugarEntrega:document.getElementById('lugarEntrega').value,
+      precio:document.getElementById('precio').value,
+      nombre:document.getElementById('nombre').value,
+      domParticular:document.getElementById('domParticular').value,
+      domEmpleo:document.getElementById('domEmpleo').value,
+      pagoSemanal:document.getElementById('pagoSemanal').value,
+      pagoQuincenal:document.getElementById('pagoQuincenal').value,
+      horario:document.getElementById('horario').value,
+      lugarCobro:document.getElementById('lugarCobro').value,
+      enganche:document.getElementById('enganche').value,
+      metodoPago:document.getElementById('metodoPago').value,
+      tipoCobro:document.getElementById('tipoCobro').value,
+      observaciones:document.getElementById('observaciones').value,
+      cobrador:document.getElementById('cobradorVenta').value
+    };
     ventas.push(venta);
+    formVentaNuevo.reset();
     renderVentas();
-    formVenta.reset();
+    alert('✅ Venta registrada correctamente.');
   });
 
   function renderVentas(){
     ventasUl.innerHTML='';
     ventas.forEach(v=>{
       const li=document.createElement('li');
-      li.textContent=`${v.fecha.toLocaleDateString()} ${v.fecha.toLocaleTimeString()} - ${v.cliente} | ${v.concepto} | Monto: $${v.monto} | Anticipo: $${v.anticipo} | Cobrador: ${v.cobrador}`;
+      li.innerHTML=`<strong>${v.fecha}</strong> - ${v.nombre} (${v.articulos}) - $${v.precio} - ${v.cobrador}`;
       ventasUl.appendChild(li);
     });
   }
 
   imprimirTicket.addEventListener('click',()=>{
-    if(ventas.length===0){alert('No hay ventas'); return;}
+    if(ventas.length===0){alert('No hay ventas registradas');return;}
     const v=ventas[ventas.length-1];
-    const contenido=`<h2 style="text-align:center;">💼 Ticket de Venta</h2>
-      <p><strong>Cliente:</strong> ${v.cliente}</p>
-      <p><strong>Celular:</strong> ${v.celular}</p>
-      <p><strong>Concepto:</strong> ${v.concepto}</p>
-      <p><strong>Monto:</strong> $${v.monto}</p>
-      <p><strong>Anticipo:</strong> $${v.anticipo}</p>
-      <p><strong>Cobrador:</strong> ${v.cobrador}</p>`;
+    const ticket=`<h2 style="text-align:center;">💼 Ticket de Venta</h2>
+      <p><strong>Fecha:</strong> ${v.fecha}</p>
+      <p><strong>Cliente:</strong> ${v.nombre}</p>
+      <p><strong>Artículos:</strong> ${v.articulos}</p>
+      <p><strong>Lugar de entrega:</strong> ${v.lugarEntrega}</p>
+      <p><strong>Precio:</strong> $${v.precio}</p>
+      <p><strong>Enganche:</strong> $${v.enganche}</p>
+      <p><strong>Método de pago:</strong> ${v.metodoPago}</p>
+      <p><strong>Cobrador:</strong> ${v.cobrador}</p>
+      <p><strong>Observaciones:</strong> ${v.observaciones}</p>`;
     const w=window.open('','', 'width=400,height=600');
-    w.document.write(contenido);
+    w.document.write(ticket);
     w.document.close();
     w.print();
   });
-
-  // Módulo Ruta
-  const rutaCobradorSelect=document.getElementById('rutaCobrador');
-  const filtroSaldoSelect=document.getElementById('filtroSaldo');
-  const clientesRutaUl=document.getElementById('clientesRutaUl');
-  let map;
-  let markers=[];
-
-  rutaCobradorSelect.addEventListener('change',actualizarClientesRuta);
-  filtroSaldoSelect.addEventListener('change',actualizarClientesRuta);
-
-  function actualizarClientesRuta(){
-    const cobrador=rutaCobradorSelect.value;
-    if(!cobrador){clientesRutaUl.innerHTML=''; return;}
-    clientesAsignados=clientes.map(c=>({...c,cobrador,saldo:Math.floor(Math.random()*1000)+100}));
-    const filtro=filtroSaldoSelect.value;
-    let clientesFiltrados=clientesAsignados;
-    if(filtro==='pendiente') clientesFiltrados=clientesAsignados.filter(c=>c.saldo>0);
-    if(filtro==='pagados') clientesFiltrados=clientesAsignados.filter(c=>c.saldo<=0);
-
-    clientesRutaUl.innerHTML='';
-    clientesFiltrados.forEach((c,i)=>{
-      const li=document.createElement('li');
-      li.style.backgroundColor=c.saldo>0?'#fff2f2':'#f0fff0';
-      li.innerHTML=`<strong>${c.nombre} | Saldo: $${c.saldo}</strong>
-        <button class="btnCliente" onclick="verUbicacionRuta(${i})">Ver Ubicación</button>
-        <div style="margin-top:5px;">
-          <input type="text" id="concepto${i}" placeholder="Concepto" />
-          <input type="number" id="abono${i}" placeholder="Abono" />
-          <button class="btnCliente" onclick="aplicarAbono(${i})">Aplicar Pago</button>
-        </div>`;
-      clientesRutaUl.appendChild(li);
-    });
-
-    actualizarMapa(clientesFiltrados);
-  }
-
-  window.verUbicacionRuta=function(i){
-    const c=clientesAsignados[i];
-    if(c.ubicacion) window.open(c.ubicacion,'_blank');
-    else alert("Cliente sin ubicación asignada");
-  }
-
-  window.aplicarAbono=function(i){
-    const c=clientesAsignados[i];
-    const concepto=document.getElementById(`concepto${i}`).value.trim();
-    const abono=parseFloat(document.getElementById(`abono${i}`).value);
-    if(!concepto||isNaN(abono)||abono<=0){alert('Llena concepto y abono válido'); return;}
-    const saldoAnterior=c.saldo;
-    c.saldo-=abono; if(c.saldo<0)c.saldo=0;
-    document.getElementById(`concepto${i}`).value='';
-    document.getElementById(`abono${i}`).value='';
-    abonos.push({cliente:c.nombre,cobrador:c.cobrador,concepto,abono,fecha:new Date()});
-    actualizarClientesRuta();
-    const contenidoTicket=`<h2 style="text-align:center;">💼 Comprobante de Pago</h2>
-      <p><strong>Cliente:</strong> ${c.nombre}</p>
-      <p><strong>Concepto:</strong> ${concepto}</p>
-      <p><strong>Saldo Anterior:</strong> $${saldoAnterior}</p>
-      <p><strong>Abono:</strong> $${abono}</p>
-      <p><strong>Saldo Restante:</strong> $${c.saldo}</p>`;
-    const w=window.open('','', 'width=400,height=600');
-    w.document.write(contenidoTicket);
-    w.document.close();
-    w.print();
-  }
-
-  function actualizarMapa(clientesFiltrados){
-    if(!map){
-      map=new google.maps.Map(document.getElementById('map'),{
-        zoom:12,
-        center:{lat:20.6597,lng:-103.3496}
-      });
-    }
-    markers.forEach(m=>m.setMap(null));
-    markers=[];
-    clientesFiltrados.forEach(c=>{
-      if(c.ubicacion){
-        const coords=c.ubicacion.match(/q=([0-9\.\-]+),([0-9\.\-]+)/);
-        if(coords){
-          const lat=parseFloat(coords[1]);
-          const lng=parseFloat(coords[2]);
-          const marker=new google.maps.Marker({
-            position:{lat,lng},
-            map,
-            title:`${c.nombre} | Saldo: $${c.saldo}`
-          });
-          markers.push(marker);
-        }
-      }
-    });
-    if(markers.length>0){
-      const bounds=new google.maps.LatLngBounds();
-      markers.forEach(m=>bounds.extend(m.getPosition()));
-      map.fitBounds(bounds);
-    }
-  }
-
-  // Reportes
-  const formReporte=document.getElementById('formReporte');
-  const listaAbonos=document.getElementById('listaAbonos');
-  formReporte.addEventListener('submit',e=>{
-    e.preventDefault();
-    const cliente=document.getElementById('filtroCliente').value;
-    const cobrador=document.getElementById('filtroCobrador').value;
-    const inicio=document.getElementById('fechaInicio').value;
-    const fin=document.getElementById('fechaFin').value;
-    let filtrados=abonos;
-    if(cliente) filtrados=filtrados.filter(a=>a.cliente===cliente);
-    if(cobrador) filtrados=filtrados.filter(a=>a.cobrador===cobrador);
-    if(inicio) filtrados=filtrados.filter(a=>new Date(a.fecha)>=new Date(inicio));
-    if(fin) filtrados=filtrados.filter(a=>new Date(a.fecha)<=new Date(fin));
-    listaAbonos.innerHTML='';
-    filtrados.forEach(a=>{
-      const li=document.createElement('li');
-      li.textContent=`${a.fecha.toLocaleDateString()} ${a.fecha.toLocaleTimeString()} - ${a.cliente} | ${a.concepto} | Abono: $${a.abono} | Cobrador: ${a.cobrador}`;
-      listaAbonos.appendChild(li);
-    });
-  });
-
 </script>
-
-<!-- Google Maps API -->
-<script src="https://maps.googleapis.com/maps/api/js?key=TU_API_KEY"></script>
 </body>
 </html>
