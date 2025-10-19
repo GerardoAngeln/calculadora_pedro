@@ -1,235 +1,544 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Cobranza en Ruta</title>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Sistema Cobranza - Con Cobradores</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',sans-serif;}
-body{display:flex;height:100vh;background:#f5f6fa;color:#333;flex-direction:row;}
-.sidebar{width:240px;background:#fff;box-shadow:2px 0 10px rgba(0,0,0,0.08);display:flex;flex-direction:column;justify-content:space-between;padding:20px 0;}
-.sidebar h2{text-align:center;font-size:1.4em;color:#444;margin-bottom:20px;}
-.menu{display:flex;flex-direction:column;}
-.menu button{background:none;border:none;padding:14px 20px;text-align:left;font-size:1em;cursor:pointer;transition:0.3s;color:#333;}
-.menu button:hover, .menu button.active{background:#e8f0fe;color:#1a73e8;}
-.menu button i{margin-right:10px;}
-.main-content{flex:1;padding:30px;overflow-y:auto;}
-.module{display:none;animation:fadeIn 0.3s ease-in-out;}
-.module.active{display:block;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
-header{background:#fff;padding:15px 25px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.1);margin-bottom:25px;display:flex;justify-content:space-between;align-items:center;}
-header h1{font-size:1.3em;color:#1a73e8;}
-footer{text-align:center;font-size:0.9em;padding:10px;color:#888;}
-/* Formularios */
-.ventas-form,.clientes-form,.ruta-form{max-width:600px;margin:0 auto;display:flex;flex-direction:column;gap:10px;}
-.ventas-form input,.ventas-form select,.ventas-form textarea,
-.clientes-form input,.clientes-form select,.clientes-form textarea,
-.ruta-form input,.ruta-form select,.ruta-form textarea{padding:8px;border:1px solid #ccc;border-radius:5px;width:100%;}
-.ventas-form label,.clientes-form label,.ruta-form label{font-weight:bold;}
-.ventas-form button,.clientes-form button,.ruta-form button{background:#1a73e8;color:#fff;padding:10px;border:none;border-radius:5px;cursor:pointer;transition:0.3s;}
-.ventas-form button:hover,.clientes-form button:hover,.ruta-form button:hover{background:#155ab6;}
-#folioActual{font-weight:bold;text-align:center;margin-bottom:10px;}
-.ticket-preview{margin-top:15px;padding:10px;border:1px dashed #aaa;border-radius:5px;}
-/* Responsive */
-@media(max-width:768px){body{flex-direction:column}.sidebar{width:100%;display:flex;flex-direction:row;overflow-x:auto}.menu button{text-align:center;flex:1;}}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI, sans-serif}
+  body{display:flex;height:100vh;background:#f5f6fa;color:#222}
+  .sidebar{width:260px;background:#fff;box-shadow:2px 0 12px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:space-between;padding:18px 12px}
+  .sidebar h2{font-size:1.2rem;text-align:center;margin-bottom:10px;color:#333}
+  .menu{display:flex;flex-direction:column;gap:6px}
+  .menu button{background:none;border:none;padding:10px 12px;text-align:left;border-radius:8px;cursor:pointer;color:#333;font-size:1rem}
+  .menu button.active,.menu button:hover{background:#eaf0ff;color:#1a73e8}
+  .main{flex:1;padding:18px;overflow:auto}
+  header{background:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+  h1{color:#1a73e8;font-size:1.05rem}
+  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:12px;max-width:980px}
+  form .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+  label{font-weight:600;font-size:.95rem;width:140px}
+  input,select,textarea,button{padding:8px;border-radius:6px;border:1px solid #ccc;font-size:.95rem}
+  textarea{min-height:70px;resize:vertical}
+  .btn{background:#1a73e8;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
+  .btn.warn{background:#e05d5d}
+  .list{max-height:320px;overflow:auto;margin-top:8px}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee}
+  .small{padding:6px 8px;font-size:.85rem;border-radius:6px}
+  @media(max-width:800px){.sidebar{width:100%;display:flex;flex-direction:row;gap:8px;overflow:auto}.main{padding:12px}}
 </style>
 </head>
 <body>
-
-<div class="sidebar">
-  <div>
-    <h2>💼 Cobranza Ruta</h2>
-    <div class="menu">
-      <button id="btnRuta" class="active"><i>🧭</i>Ruta</button>
-      <button id="btnVentas"><i>💰</i>Ventas</button>
-      <button id="btnClientes"><i>👤</i>Clientes</button>
-      <button id="btnConfig"><i>⚙️</i>Configuración</button>
-      <button id="btnReportes"><i>📊</i>Reportes</button>
+  <aside class="sidebar" aria-label="Navegación">
+    <div>
+      <h2>💼 Cobranza Ruta</h2>
+      <nav class="menu" role="navigation">
+        <button id="btnRuta" class="active">🧭 Ruta</button>
+        <button id="btnVentas">💰 Ventas</button>
+        <button id="btnClientes">👥 Clientes</button>
+        <button id="btnCobradores">🧑‍💼 Cobradores</button>
+        <button id="btnReportes">📊 Reportes</button>
+        <button id="btnConfig">⚙️ Configuración</button>
+      </nav>
     </div>
-  </div>
-  <footer>© 2025 Sistema de Cobranza</footer>
-</div>
+    <div style="text-align:center;color:#777;font-size:.9rem;padding-top:10px">© 2025 Sistema</div>
+  </aside>
 
-<div class="main-content">
-  <header>
-    <h1 id="tituloModulo">Módulo: Ruta</h1>
-    <div id="relojFecha"></div>
-  </header>
+  <main class="main">
+    <header>
+      <h1 id="titulo">Módulo: Ruta</h1>
+      <div id="fechaHora" aria-live="polite"></div>
+    </header>
 
-  <!-- Módulo Ruta -->
-  <section id="modRuta" class="module active">
-    <h2>Ruta del día</h2>
-    <form class="ruta-form">
-      <label>Seleccionar cobrador</label>
-      <select id="cobradorRuta"><option value="">Selecciona cobrador</option></select>
-      <div id="clientesRuta"></div>
-    </form>
-  </section>
+    <!-- RUTA -->
+    <section id="modRuta" class="card">
+      <h3>Ruta del día</h3>
+      <form id="formRuta">
+        <div class="row">
+          <label for="rutaCobrador">Seleccionar cobrador</label>
+          <select id="rutaCobrador" style="flex:1"><option value="">-- Selecciona --</option></select>
+        </div>
+        <div class="row">
+          <label>Filtrar por saldo</label>
+          <select id="filtroSaldo" style="flex:1">
+            <option value="todos">Todos</option>
+            <option value="pendiente">Con saldo</option>
+            <option value="pagados">Sin saldo</option>
+          </select>
+        </div>
+      </form>
+      <div id="clientesRuta" class="list"></div>
+    </section>
 
-  <!-- Módulo Ventas -->
-  <section id="modVentas" class="module">
-    <h2>Registro de Ventas</h2>
-    <div id="folioActual"></div>
-    <form class="ventas-form">
-      <label>Asignar cobrador</label><select id="cobradorVenta"><option value="">Selecciona cobrador</option></select>
-      <label>Fecha de venta</label><input type="date" id="fechaVenta">
-      <label>Artículos</label><input type="text" id="articulos">
-      <label>Lugar de entrega</label><input type="text" id="lugarEntrega">
-      <label>Precio</label><input type="number" id="precio">
-      <label>Nombre</label><input type="text" id="nombreCliente">
-      <label>Domicilio particular</label><input type="text" id="domicilioParticular">
-      <label>Domicilio de empleo</label><input type="text" id="domicilioTrabajo">
-      <label>Pago semanal</label><input type="number" id="pagoSemanal">
-      <label>Pago quincenal</label><input type="number" id="pagoQuincenal">
-      <label>Horario</label><input type="text" id="horario">
-      <label>Lugar de cobro</label><input type="text" id="lugarCobro">
-      <label>Enganche</label><input type="number" id="enganche">
-      <label>Método de pago</label><input type="text" id="metodoPago">
-      <label>Cobro o transferencia</label><input type="text" id="tipoCobro">
-      <label>Observaciones</label><textarea id="observaciones"></textarea>
-      <button type="button" id="aplicarVenta">Aplicar venta</button>
-      <button type="button" id="imprimirTicket">Imprimir ticket</button>
-    </form>
-  </section>
+    <!-- VENTAS -->
+    <section id="modVentas" class="card" style="display:none">
+      <h3>Registro de Venta</h3>
+      <div style="margin-bottom:10px">
+        <strong>Folio actual:</strong> <span id="folioActual">#00001</span>
+      </div>
+      <form id="formVentasNuevo">
+        <div class="row">
+          <label for="ventaCobrador">Asignar cobrador</label>
+          <select id="ventaCobrador" style="flex:1"><option value="">-- Selecciona --</option></select>
+        </div>
+        <div class="row">
+          <label for="fechaVenta">Fecha</label><input id="fechaVenta" type="date">
+          <label for="articulos">Artículos</label><input id="articulos" type="text" style="flex:1">
+        </div>
+        <div class="row">
+          <label for="lugarEntrega">Lugar entrega</label><input id="lugarEntrega" type="text" style="flex:1">
+          <label for="precio">Precio</label><input id="precio" type="number">
+        </div>
+        <div class="row">
+          <label for="nombreCliente">Nombre</label><input id="nombreCliente" type="text" style="flex:1">
+        </div>
+        <div class="row">
+          <label for="domParticular">Domicilio particular</label><input id="domParticular" type="text" style="flex:1">
+        </div>
+        <div class="row">
+          <label for="domEmpleo">Domicilio empleo</label><input id="domEmpleo" type="text" style="flex:1">
+        </div>
+        <div class="row">
+          <label for="pagoSemanal">Pago semanal</label><input id="pagoSemanal" type="number">
+          <label for="pagoQuincenal">Pago quincenal</label><input id="pagoQuincenal" type="number">
+        </div>
+        <div class="row">
+          <label for="horario">Horario</label><input id="horario" type="text" style="flex:1">
+          <label for="lugarCobro">Lugar cobro</label><input id="lugarCobro" type="text">
+        </div>
+        <div class="row">
+          <label for="enganche">Enganche</label><input id="enganche" type="number">
+          <label for="metodoPago">Método pago</label>
+          <select id="metodoPago">
+            <option value="">--</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia">Transferencia</option>
+          </select>
+        </div>
+        <div class="row">
+          <label for="tipoCobro">Cobro/Transferencia</label>
+          <select id="tipoCobro"><option value="">--</option><option value="Cobro">Cobro</option><option value="Transferencia">Transferencia</option></select>
+        </div>
+        <div class="row">
+          <label for="observaciones">Observaciones</label>
+          <textarea id="observaciones" style="flex:1"></textarea>
+        </div>
 
-  <!-- Módulo Clientes -->
-  <section id="modClientes" class="module">
-    <h2>Clientes</h2>
-    <form class="clientes-form">
-      <label>Nombre</label><input type="text" id="nombreCli">
-      <label>Teléfono</label><input type="text" id="telefonoCli">
-      <button type="button" id="guardarCliente">Guardar cliente</button>
-    </form>
-    <button id="asignarUbicacion">Asignar ubicación actual</button>
-    <button id="verUbicacion">Ver ubicación del cliente</button>
-    <div id="listaClientes"></div>
-  </section>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+          <button id="btnAplicarVenta" class="btn" type="button">Aplicar Venta</button>
+          <button id="btnImprimirVenta" class="btn" type="button">Imprimir Ticket</button>
+        </div>
+      </form>
 
-  <!-- Módulo Configuración -->
-  <section id="modConfig" class="module">
-    <h2>Configuración</h2>
-    <p>Administración de cobradores, clientes y asignaciones.</p>
-  </section>
+      <div style="margin-top:12px">
+        <h4>Ventas registradas</h4>
+        <div id="listaVentas" class="list"></div>
+      </div>
+    </section>
 
-  <!-- Módulo Reportes -->
-  <section id="modReportes" class="module">
-    <h2>Reportes</h2>
-    <p>Filtra por cliente, cobrador y rango de fechas.</p>
-  </section>
+    <!-- CLIENTES -->
+    <section id="modClientes" class="card" style="display:none">
+      <h3>Clientes</h3>
+      <form id="formClienteNuevo">
+        <div class="row">
+          <label>Nombre</label><input id="cliNombre" type="text" style="flex:1">
+        </div>
+        <div class="row">
+          <label>Teléfono</label><input id="cliTelefono" type="text" style="flex:1">
+        </div>
+        <div style="text-align:center">
+          <button id="btnGuardarCliente" class="btn" type="button">Guardar cliente</button>
+        </div>
+      </form>
 
-</div>
+      <div style="margin-top:12px">
+        <h4>Listado</h4>
+        <div id="listaClientes" class="list"></div>
+      </div>
+    </section>
+
+    <!-- COBRADORES -->
+    <section id="modCobradores" class="card" style="display:none">
+      <h3>Cobradores</h3>
+      <form id="formCobrador">
+        <div class="row">
+          <label>Nombre</label><input id="cobNombre" type="text" style="flex:1">
+          <label>Teléfono</label><input id="cobTelefono" type="text">
+        </div>
+        <div class="row">
+          <label>Email</label><input id="cobEmail" type="email" style="flex:1">
+          <label>Observaciones</label><input id="cobObs" type="text">
+        </div>
+        <div style="text-align:center"><button id="btnGuardarCobrador" class="btn" type="button">Guardar cobrador</button></div>
+      </form>
+
+      <div style="margin-top:12px">
+        <h4>Lista de cobradores</h4>
+        <div id="listaCobradores" class="list"></div>
+      </div>
+    </section>
+
+    <!-- REPORTES -->
+    <section id="modReportes" class="card" style="display:none">
+      <h3>Reportes de Abonos</h3>
+      <form id="formReport">
+        <div class="row">
+          <label>Cliente</label><select id="filtroCliente" style="flex:1"><option value="">Todos</option></select>
+          <label>Cobrador</label><select id="filtroCobrador"><option value="">Todos</option></select>
+        </div>
+        <div class="row">
+          <label>Desde</label><input id="fInicio" type="date">
+          <label>Hasta</label><input id="fFin" type="date">
+        </div>
+        <div style="text-align:center"><button id="btnFiltrar" class="btn" type="button">Filtrar</button></div>
+      </form>
+      <div style="margin-top:12px"><div id="resultReport" class="list"></div></div>
+    </section>
+
+    <!-- CONFIG -->
+    <section id="modConfig" class="card" style="display:none">
+      <h3>Configuración</h3>
+      <p class="muted">Ajustes generales (pendiente de implementar).</p>
+    </section>
+
+  </main>
 
 <script>
-// Módulos
-const botones={btnRuta:'modRuta',btnVentas:'modVentas',btnClientes:'modClientes',btnConfig:'modConfig',btnReportes:'modReportes'};
-const titulo=document.getElementById('tituloModulo');
-Object.keys(botones).forEach(id=>{
-  document.getElementById(id).addEventListener('click',()=>{
-    Object.keys(botones).forEach(btn=>{
-      document.getElementById(btn).classList.remove('active');
-      document.getElementById(botones[btn]).classList.remove('active');
-    });
-    document.getElementById(id).classList.add('active');
-    document.getElementById(botones[id]).classList.add('active');
-    titulo.textContent='Módulo: '+document.getElementById(id).textContent.trim();
+/* ---------- UTIL Y PERSISTENCIA ---------- */
+const KEY = { CLIENTES:'sc_clientes_v2', VENTAS:'sc_ventas_v2', ABONOS:'sc_abonos_v2', COBRADORES:'sc_cobradores_v2', FOLIO:'sc_folio_v2' };
+function save(key,obj){localStorage.setItem(key,JSON.stringify(obj))}
+function load(key){try{return JSON.parse(localStorage.getItem(key))||[];}catch(e){return []}}
+
+/* ---------- ESTADO ---------- */
+let clientes = load(KEY.CLIENTES);
+let ventas = load(KEY.VENTAS);
+let abonos = load(KEY.ABONOS);
+let cobradores = load(KEY.COBRADORES);
+let folio = parseInt(localStorage.getItem(KEY.FOLIO)||'1',10);
+
+/* ---------- UI: Navegación ---------- */
+const sections = { btnRuta:'modRuta', btnVentas:'modVentas', btnClientes:'modClientes', btnCobradores:'modCobradores', btnReportes:'modReportes', btnConfig:'modConfig' };
+Object.keys(sections).forEach(btn=>{
+  document.getElementById(btn).addEventListener('click', ()=>{
+    Object.values(sections).forEach(id=>document.getElementById(id).style.display='none');
+    document.getElementById(sections[btn]).style.display='block';
+    document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+    document.getElementById(btn).classList.add('active');
+    document.getElementById('titulo').textContent='Módulo: '+document.getElementById(btn).textContent.trim();
+    refreshAllSelectors();
   });
 });
 
-// Reloj
-function actualizarReloj(){const now=new Date();document.getElementById('relojFecha').textContent=now.toLocaleDateString()+' '+now.toLocaleTimeString();}
-setInterval(actualizarReloj,1000);
-actualizarReloj();
+/* ---------- RELOJ ---------- */
+function tick(){document.getElementById('fechaHora').textContent = new Date().toLocaleString()}
+setInterval(tick,1000); tick();
 
-// Clientes
-let clientes=JSON.parse(localStorage.getItem('clientes'))||[];
-function actualizarListaClientes(){
-  const lista=document.getElementById('listaClientes');lista.innerHTML='';
-  clientes.forEach((c,i)=>{
-    const div=document.createElement('div');
-    div.textContent=`${c.nombre} - ${c.telefono}`;
-    lista.appendChild(div);
+/* ---------- RENDER HELPERS ---------- */
+function refreshAllSelectors(){
+  // rutaCobrador, ventaCobrador, filtroCobrador, filtroCliente
+  const rutaS = document.getElementById('rutaCobrador');
+  const ventaS = document.getElementById('ventaCobrador');
+  const filtroC = document.getElementById('filtroCobrador');
+  const filtroCli = document.getElementById('filtroCliente');
+
+  [rutaS, ventaS, filtroC].forEach(sel=>{
+    sel.innerHTML = '<option value="">-- Selecciona --</option>';
+    cobradores.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o) });
+  });
+
+  // clientes selector in report
+  filtroCli.innerHTML = '<option value="">Todos</option>';
+  clientes.forEach(c=>{ const o=document.createElement('option'); o.value=c.nombre; o.textContent=c.nombre; filtroCli.appendChild(o) });
+
+  // show folio
+  document.getElementById('folioActual').textContent = '#' + String(folio).padStart(5,'0');
+}
+
+/* ---------- RENDER LISTAS ---------- */
+function renderClientesList(){
+  const cont = document.getElementById('listaClientes'); cont.innerHTML='';
+  clientes.forEach((c,idx)=>{
+    const div=document.createElement('div'); div.className='item';
+    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Tel: ${c.telefono||'-'}</div></div>`;
+    const actions=document.createElement('div');
+    const btnEdit=document.createElement('button'); btnEdit.className='small'; btnEdit.textContent='Editar';
+    btnEdit.addEventListener('click', ()=> editCliente(idx));
+    const btnDel=document.createElement('button'); btnDel.className='small'; btnDel.textContent='Eliminar';
+    btnDel.addEventListener('click', ()=> { if(confirm('Eliminar este cliente?')){ clientes.splice(idx,1); save(KEY.CLIENTES,clientes); renderClientesList(); refreshAllSelectors(); }});
+    const btnLoc=document.createElement('button'); btnLoc.className='small'; btnLoc.textContent='Asignar ubic.';
+    btnLoc.addEventListener('click', ()=> assignLocationToClient(idx));
+    const btnVer=document.createElement('button'); btnVer.className='small'; btnVer.textContent='Ver ubic.';
+    btnVer.addEventListener('click', ()=> { if(clientsHasLocation(idx)) window.open(clientsHasLocation(idx),'_blank'); else alert('Sin ubicación')});
+    actions.appendChild(btnEdit); actions.appendChild(btnDel); actions.appendChild(btnLoc); actions.appendChild(btnVer);
+    div.appendChild(actions); cont.appendChild(div);
   });
 }
-document.getElementById('guardarCliente').addEventListener('click',()=>{
-  const nombre=document.getElementById('nombreCli').value;
-  const telefono=document.getElementById('telefonoCli').value;
-  if(!nombre){alert('Escribe el nombre');return;}
-  clientes.push({nombre,telefono});
-  localStorage.setItem('clientes',JSON.stringify(clientes));
-  actualizarListaClientes();
-  document.getElementById('nombreCli').value='';
-  document.getElementById('telefonoCli').value='';
+function renderCobradoresList(){
+  const cont=document.getElementById('listaCobradores'); cont.innerHTML='';
+  cobradores.forEach((c,idx)=>{
+    const div=document.createElement('div'); div.className='item';
+    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Tel: ${c.telefono||'-'} ${c.email? ' | ' + c.email : ''}</div></div>`;
+    const actions=document.createElement('div');
+    const btnEdit=document.createElement('button'); btnEdit.className='small'; btnEdit.textContent='Editar';
+    btnEdit.addEventListener('click', ()=> editCobrador(idx));
+    const btnDel=document.createElement('button'); btnDel.className='small'; btnDel.textContent='Eliminar';
+    btnDel.addEventListener('click', ()=> { if(confirm('Eliminar cobrador?')){ cobradores.splice(idx,1); save(KEY.COBRADORES,cobradores); renderCobradoresList(); refreshAllSelectors(); }});
+    actions.appendChild(btnEdit); actions.appendChild(btnDel);
+    div.appendChild(actions); cont.appendChild(div);
+  });
+}
+function renderVentasList(){
+  const cont=document.getElementById('listaVentas'); cont.innerHTML='';
+  ventas.slice().reverse().forEach((v,idx)=>{
+    const div=document.createElement('div'); div.className='item';
+    const cob = cobradores.find(x=>x.id===v.cobrador);
+    const cobName = cob? cob.nombre : (v.cobradorName||'-');
+    div.innerHTML = `<div><strong>${v.nombre||'(sin nombre)'}</strong><div class="muted">${new Date(v.createdAt).toLocaleString()} — ${v.articulos} — $${Number(v.precio).toFixed(2)} | ${cobName}</div></div>`;
+    const actions=document.createElement('div');
+    const btnImp=document.createElement('button'); btnImp.className='small'; btnImp.textContent='Imprimir';
+    btnImp.addEventListener('click', ()=> printTicket(v));
+    actions.appendChild(btnImp);
+    div.appendChild(actions); cont.appendChild(div);
+  });
+}
+
+/* ---------- COBRADORES: CRUD ---------- */
+document.getElementById('btnGuardarCobrador').addEventListener('click', ()=>{
+  const nombre = document.getElementById('cobNombre').value.trim();
+  const telefono = document.getElementById('cobTelefono').value.trim();
+  const email = document.getElementById('cobEmail').value.trim();
+  const obs = document.getElementById('cobObs').value.trim();
+  if(!nombre){ alert('El nombre es requerido'); return; }
+  const newC = { id: 'cob_'+Date.now(), nombre, telefono, email, obs };
+  cobradores.push(newC);
+  save(KEY.COBRADORES, cobradores);
+  document.getElementById('formCobrador').reset();
+  renderCobradoresList(); refreshAllSelectors();
 });
 
-// Ventas
-let ventas=JSON.parse(localStorage.getItem('ventas'))||[];
-let folio=parseInt(localStorage.getItem('folioVenta'))||1;
-document.getElementById('folioActual').textContent='Folio actual: #'+folio.toString().padStart(5,'0');
-document.getElementById('aplicarVenta').addEventListener('click',()=>{
-  const v={
-    cobrador:document.getElementById('cobradorVenta').value,
-    fecha:document.getElementById('fechaVenta').value,
-    articulos:document.getElementById('articulos').value,
-    lugarEntrega:document.getElementById('lugarEntrega').value,
-    precio:document.getElementById('precio').value,
-    nombre:document.getElementById('nombreCliente').value,
-    domicilioParticular:document.getElementById('domicilioParticular').value,
-    domicilioTrabajo:document.getElementById('domicilioTrabajo').value,
-    pagoSemanal:document.getElementById('pagoSemanal').value,
-    pagoQuincenal:document.getElementById('pagoQuincenal').value,
-    horario:document.getElementById('horario').value,
-    lugarCobro:document.getElementById('lugarCobro').value,
-    enganche:document.getElementById('enganche').value,
-    metodoPago:document.getElementById('metodoPago').value,
-    tipoCobro:document.getElementById('tipoCobro').value,
-    observaciones:document.getElementById('observaciones').value
+/* Editar cobrador */
+function editCobrador(idx){
+  const c = cobradores[idx];
+  const nn = prompt('Nombre:', c.nombre);
+  if(!nn) return;
+  const nt = prompt('Teléfono:', c.telefono || '');
+  const ne = prompt('Email:', c.email || '');
+  const no = prompt('Observaciones:', c.obs || '');
+  cobradores[idx] = { ...c, nombre: nn.trim(), telefono: (nt||'').trim(), email: (ne||'').trim(), obs: (no||'').trim() };
+  save(KEY.COBRADORES, cobradores);
+  renderCobradoresList(); refreshAllSelectors();
+}
+
+/* ---------- CLIENTES: CRUD ---------- */
+document.getElementById('btnGuardarCliente').addEventListener('click', ()=>{
+  const nombre = document.getElementById('cliNombre').value.trim();
+  const tel = document.getElementById('cliTelefono').value.trim();
+  if(!nombre){alert('Nombre requerido'); return;}
+  clientes.push({ id: 'cli_'+Date.now(), nombre, telefono: tel, ubicacion: null, saldo: 0});
+  save(KEY.CLIENTES, clientes);
+  document.getElementById('formClienteNuevo').reset();
+  renderClientesList(); refreshAllSelectors();
+});
+
+function editCliente(idx){
+  const c = clientes[idx];
+  const nn = prompt('Nombre:', c.nombre);
+  if(!nn) return;
+  const nt = prompt('Teléfono:', c.telefono||'');
+  clientes[idx].nombre = nn.trim();
+  clientes[idx].telefono = (nt||'').trim();
+  save(KEY.CLIENTES, clientes);
+  renderClientesList(); refreshAllSelectors();
+}
+
+function assignLocationToClient(idx){
+  if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    const lat = pos.coords.latitude.toFixed(6);
+    const lng = pos.coords.longitude.toFixed(6);
+    clientes[idx].ubicacion = `https://www.google.com/maps?q=${lat},${lng}`;
+    save(KEY.CLIENTES, clientes);
+    alert('Ubicación asignada: '+lat+','+lng);
+    renderClientesList();
+  }, err=> alert('Error: '+err.message), { enableHighAccuracy:true, timeout:10000 });
+}
+function clientsHasLocation(idx){ return clientes[idx] && clientes[idx].ubicacion ? clientes[idx].ubicacion : null }
+
+/* ---------- VENTAS ---------- */
+document.getElementById('btnAplicarVenta').addEventListener('click', ()=>{
+  const v = {
+    id: 'v_'+Date.now(),
+    cobrador: document.getElementById('ventaCobrador').value || '',
+    cobradorName: (function(){ const cb = cobradores.find(x=>x.id===document.getElementById('ventaCobrador').value); return cb? cb.nombre : ''; })(),
+    fecha: document.getElementById('fechaVenta').value || '',
+    articulos: document.getElementById('articulos').value || '',
+    lugarEntrega: document.getElementById('lugarEntrega').value || '',
+    precio: Number(document.getElementById('precio').value || 0),
+    nombre: document.getElementById('nombreCliente').value||'',
+    domParticular: document.getElementById('domParticular').value||'',
+    domEmpleo: document.getElementById('domEmpleo').value||'',
+    pagoSemanal: Number(document.getElementById('pagoSemanal').value || 0),
+    pagoQuincenal: Number(document.getElementById('pagoQuincenal').value || 0),
+    horario: document.getElementById('horario').value||'',
+    lugarCobro: document.getElementById('lugarCobro').value||'',
+    enganche: Number(document.getElementById('enganche').value || 0),
+    metodoPago: document.getElementById('metodoPago').value||'',
+    tipoCobro: document.getElementById('tipoCobro').value||'',
+    observaciones: document.getElementById('observaciones').value||'',
+    createdAt: new Date().toISOString(),
+    folio: folio
   };
-  ventas.push(v);
-  localStorage.setItem('ventas',JSON.stringify(ventas));
-  localStorage.setItem('folioVenta',folio+1);
-  folio++;
-  document.getElementById('folioActual').textContent='Folio actual: #'+folio.toString().padStart(5,'0');
-  alert('Venta registrada correctamente');
+  ventas.push(v); save(KEY.VENTAS, ventas);
+  folio = folio + 1; localStorage.setItem(KEY.FOLIO, String(folio));
+  refreshAllSelectors(); renderVentasList();
+  alert('Venta guardada. Folio asignado: #' + String(v.folio).padStart(5,'0'));
+  document.getElementById('formVentasNuevo').reset();
 });
 
-// Imprimir ticket
-document.getElementById('imprimirTicket').addEventListener('click',()=>{
-  if(ventas.length===0){alert('No hay ventas registradas');return;}
-  const v=ventas[ventas.length-1];
-  const fechaActual=new Date();
-  const fechaImpresion=fechaActual.toLocaleDateString();
-  const horaImpresion=fechaActual.toLocaleTimeString();
-  const ticket=`
-    <div style="font-family:Segoe UI, sans-serif;padding:20px;width:300px;">
-      <h2 style="text-align:center;font-weight:bold;margin-bottom:5px;">Promociones Culturales de México</h2>
-      <hr style="margin:10px 0;">
-      <p><strong>Folio:</strong> #${(folio-1).toString().padStart(5,'0')}</p>
-      <p><strong>Fecha de venta:</strong> ${v.fecha}</p>
-      <p><strong>Fecha impresión:</strong> ${fechaImpresion}</p>
-      <p><strong>Hora impresión:</strong> ${horaImpresion}</p>
-      <hr style="margin:10px 0;">
-      <p><strong>Cliente:</strong> ${v.nombre}</p>
-      <p><strong>Artículos:</strong> ${v.articulos}</p>
-      <p><strong>Lugar de entrega:</strong> ${v.lugarEntrega}</p>
-      <p><strong>Precio total:</strong> $${v.precio}</p>
-      <p><strong>Enganche:</strong> $${v.enganche}</p>
-      <p><strong>Método de pago:</strong> ${v.metodoPago}</p>
-      <p><strong>Cobro o transferencia:</strong> ${v.tipoCobro}</p>
-      <p><strong>Cobrador:</strong> ${v.cobrador}</p>
+/* Imprimir: toma la venta más reciente o la que le pases */
+document.getElementById('btnImprimirVenta').addEventListener('click', ()=>{
+  if(ventas.length===0){ alert('No hay ventas'); return; }
+  printTicket(ventas[ventas.length-1]);
+});
+
+function printTicket(v){
+  const fechaImp = new Date();
+  const cob = cobradores.find(x=>x.id===v.cobrador);
+  const html = `
+    <div style="font-family:Segoe UI, sans-serif;padding:18px;width:320px">
+      <h2 style="text-align:center;font-weight:700">Promociones Culturales de México</h2>
+      <hr>
+      <p><strong>Folio:</strong> #${String(v.folio).padStart(5,'0')}</p>
+      <p><strong>Fecha venta:</strong> ${v.fecha || '-'}</p>
+      <p><strong>Fecha impresión:</strong> ${fechaImp.toLocaleDateString()}</p>
+      <p><strong>Hora impresión:</strong> ${fechaImp.toLocaleTimeString()}</p>
+      <hr>
+      <p><strong>Cliente:</strong> ${v.nombre || '-'}</p>
+      <p><strong>Artículos:</strong> ${v.articulos || '-'}</p>
+      <p><strong>Lugar entrega:</strong> ${v.lugarEntrega || '-'}</p>
+      <p><strong>Precio:</strong> $${Number(v.precio).toFixed(2)}</p>
+      <p><strong>Enganche:</strong> $${Number(v.enganche).toFixed(2)}</p>
+      <p><strong>Método:</strong> ${v.metodoPago || '-'}</p>
+      <p><strong>Cobro/Transf:</strong> ${v.tipoCobro || '-'}</p>
+      <p><strong>Cobrador:</strong> ${cob? cob.nombre : v.cobradorName || '-'}</p>
       <p><strong>Pago semanal:</strong> ${v.pagoSemanal? '$'+v.pagoSemanal : '-'}</p>
       <p><strong>Pago quincenal:</strong> ${v.pagoQuincenal? '$'+v.pagoQuincenal : '-'}</p>
-      <p><strong>Horario:</strong> ${v.horario}</p>
-      <p><strong>Lugar de cobro:</strong> ${v.lugarCobro}</p>
-      <p><strong>Observaciones:</strong> ${v.observaciones|| '-'}</p>
-      <hr style="margin:10px 0;">
-      <p style="text-align:center;font-size:0.9em;">Gracias por su compra</p>
-      <p style="text-align:center;font-size:0.8em;">Este ticket es comprobante de venta</p>
+      <p><strong>Horario:</strong> ${v.horario || '-'}</p>
+      <p><strong>Lugar cobro:</strong> ${v.lugarCobro || '-'}</p>
+      <p><strong>Observaciones:</strong> ${v.observaciones || '-'}</p>
+      <hr>
+      <p style="text-align:center;font-size:0.9em">Gracias por su compra</p>
     </div>`;
-  const w=window.open('','', 'width=400,height=600');
-  w.document.write(ticket);
+  const w = window.open('','', 'width=420,height=700');
+  w.document.write(html);
   w.document.close();
   w.print();
-});
+}
+
+/* ---------- RUTA: mostrar clientes asignados y aplicar abonos ---------- */
+document.getElementById('rutaCobrador').addEventListener('change', showClientsForRoute);
+document.getElementById('filtroSaldo').addEventListener('change', showClientsForRoute);
+
+function showClientsForRoute(){
+  const cid = document.getElementById('rutaCobrador').value;
+  const filtro = document.getElementById('filtroSaldo').value;
+  const cont = document.getElementById('clientesRuta'); cont.innerHTML='';
+  if(!cid) { cont.innerHTML = '<div class="muted">Selecciona un cobrador</div>'; return; }
+
+  // Para demo: todos los clientes son asignados. In real: use assignment model.
+  const list = clientes.map(c=>({ ...c }));
+  const filtered = list.filter(c=>{
+    if(filtro==='pendiente') return (Number(c.saldo)||0) > 0;
+    if(filtro==='pagados') return (Number(c.saldo)||0) <= 0;
+    return true;
+  });
+
+  filtered.forEach((c, idx)=>{
+    const div=document.createElement('div'); div.className='item';
+    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Saldo: $${Number(c.saldo||0).toFixed(2)}</div></div>`;
+    const right=document.createElement('div');
+    const btnUb=document.createElement('button'); btnUb.className='small'; btnUb.textContent='Ver Ubic';
+    btnUb.addEventListener('click', ()=>{ if(c.ubicacion) window.open(c.ubicacion,'_blank'); else alert('Sin ubicacion')});
+    const inpConcept=document.createElement('input'); inpConcept.placeholder='Concepto';
+    const inpAbono=document.createElement('input'); inpAbono.placeholder='Abono'; inpAbono.type='number';
+    inpConcept.style.marginRight='6px'; inpAbono.style.width='90px';
+    const btnAp=document.createElement('button'); btnAp.className='small'; btnAp.textContent='Aplicar';
+    btnAp.addEventListener('click', ()=>{
+      const concepto = inpConcept.value.trim(); const ab = Number(inpAbono.value||0);
+      if(!concepto || ab<=0){ alert('Concepto y abono válidos'); return; }
+      // actualizar saldo cliente globalmente
+      const idxCli = clientes.findIndex(x=>x.id === c.id);
+      if(idxCli === -1){ alert('Cliente no existe'); return; }
+      const anterior = Number(clientes[idxCli].saldo||0);
+      let nuevo = anterior - ab; if(nuevo<0) nuevo=0;
+      clientes[idxCli].saldo = nuevo;
+      save(KEY.CLIENTES, clientes);
+      // guardar abono
+      abonos.push({ id:'a_'+Date.now(), cliente:c.nombre, cobrador:cid, concepto, abono:ab, fecha: new Date().toISOString()});
+      save(KEY.ABONOS, abonos);
+      showClientsForRoute(); renderClientesList(); renderReportResults(); alert('Abono aplicado');
+      // imprimir comprobante
+      const ticket = {
+        folio: '(comprobante)', cliente:c.nombre, concepto, abono:ab, anterior, restante: nuevo, cobrador: (cobradores.find(x=>x.id===cid)||{}).nombre || ''
+      };
+      printReceipt(ticket);
+    });
+
+    right.appendChild(btnUb);
+    right.appendChild(inpConcept);
+    right.appendChild(inpAbono);
+    right.appendChild(btnAp);
+    div.appendChild(right);
+    cont.appendChild(div);
+  });
+}
+
+/* print comprobante de abono */
+function printReceipt(t){
+  const html = `
+    <div style="font-family:Segoe UI;padding:16px;width:320px">
+      <h2 style="text-align:center;font-weight:700">Comprobante de Pago</h2><hr>
+      <p><strong>Cliente:</strong> ${t.cliente}</p>
+      <p><strong>Cobrador:</strong> ${t.cobrador}</p>
+      <p><strong>Concepto:</strong> ${t.concepto}</p>
+      <p><strong>Saldo anterior:</strong> $${Number(t.anterior).toFixed(2)}</p>
+      <p><strong>Abono:</strong> $${Number(t.abono).toFixed(2)}</p>
+      <p><strong>Saldo restante:</strong> $${Number(t.restante).toFixed(2)}</p>
+      <hr><p style="text-align:center">Este comprobante sirve como constancia de pago</p>
+    </div>`;
+  const w = window.open('','', 'width=420,height=620');
+  w.document.write(html); w.document.close(); w.print();
+}
+
+/* ---------- REPORTES ---------- */
+document.getElementById('btnFiltrar').addEventListener('click', renderReportResults);
+function renderReportResults(){
+  const cli = document.getElementById('filtroCliente').value;
+  const cob = document.getElementById('filtroCobrador').value;
+  const fI = document.getElementById('fInicio').value;
+  const fF = document.getElementById('fFin').value;
+  const cont = document.getElementById('resultReport'); cont.innerHTML='';
+  let list = abonos.slice();
+  if(cli) list = list.filter(a=>a.cliente === cli);
+  if(cob) list = list.filter(a=>a.cobrador === cob);
+  if(fI) list = list.filter(a=> new Date(a.fecha) >= new Date(fI+'T00:00:00'));
+  if(fF) list = list.filter(a=> new Date(a.fecha) <= new Date(fF+'T23:59:59'));
+  if(list.length===0){ cont.innerHTML = '<div class="muted">No hay registros</div>'; return; }
+  list.forEach(a=>{
+    const div=document.createElement('div'); div.className='item';
+    div.textContent = `${new Date(a.fecha).toLocaleString()} — ${a.cliente} | ${a.concepto} | $${Number(a.abono).toFixed(2)} | ${ (cobradores.find(x=>x.id===a.cobrador)||{}).nombre || a.cobrador }`;
+    cont.appendChild(div);
+  });
+}
+
+/* ---------- INICIO: render inicial ---------- */
+function renderInitial(){
+  renderClientesList();
+  renderCobradoresList();
+  renderVentasList();
+  refreshAllSelectors();
+  renderReportResults();
+}
+renderInitial();
+
 </script>
 </body>
 </html>
