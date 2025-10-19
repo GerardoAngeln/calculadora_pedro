@@ -1,543 +1,790 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Sistema Cobranza - Con Cobradores</title>
+<title>Sistema de Cobranza — Final</title>
+
+<!-- Leaflet CSS (OpenStreetMap, sin API key) -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+  integrity="sha256-sA+e2g3T6k2v2l+XwQh0V6w1sKqz5v1qv+v5cNw6v4M=" crossorigin=""/>
+
 <style>
-  *{box-sizing:border-box;margin:0;padding:0;font-family:Segoe UI, sans-serif}
-  body{display:flex;height:100vh;background:#f5f6fa;color:#222}
-  .sidebar{width:260px;background:#fff;box-shadow:2px 0 12px rgba(0,0,0,0.06);display:flex;flex-direction:column;justify-content:space-between;padding:18px 12px}
-  .sidebar h2{font-size:1.2rem;text-align:center;margin-bottom:10px;color:#333}
-  .menu{display:flex;flex-direction:column;gap:6px}
-  .menu button{background:none;border:none;padding:10px 12px;text-align:left;border-radius:8px;cursor:pointer;color:#333;font-size:1rem}
-  .menu button.active,.menu button:hover{background:#eaf0ff;color:#1a73e8}
-  .main{flex:1;padding:18px;overflow:auto}
-  header{background:#fff;padding:12px 16px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.06);display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
-  h1{color:#1a73e8;font-size:1.05rem}
-  .card{background:#fff;padding:14px;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,0.04);margin-bottom:12px;max-width:980px}
-  form .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:8px}
-  label{font-weight:600;font-size:.95rem;width:140px}
-  input,select,textarea,button{padding:8px;border-radius:6px;border:1px solid #ccc;font-size:.95rem}
-  textarea{min-height:70px;resize:vertical}
-  .btn{background:#1a73e8;color:#fff;border:none;padding:8px 10px;border-radius:6px;cursor:pointer}
-  .btn.warn{background:#e05d5d}
-  .list{max-height:320px;overflow:auto;margin-top:8px}
-  .item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid #eee}
-  .small{padding:6px 8px;font-size:.85rem;border-radius:6px}
-  @media(max-width:800px){.sidebar{width:100%;display:flex;flex-direction:row;gap:8px;overflow:auto}.main{padding:12px}}
+  :root{
+    --bg:#f5f6fa; --panel:#fff; --primary:#1a73e8; --text:#222; --muted:#666;
+    --card-shadow: 0 2px 10px rgba(0,0,0,0.06);
+  }
+  [data-theme="dark"]{
+    --bg:#0f1720; --panel:#121316; --primary:#4ea3ff; --text:#e6eefc; --muted:#9aa6bf;
+    --card-shadow: 0 2px 10px rgba(0,0,0,0.4);
+  }
+
+  *{box-sizing:border-box;font-family:Inter, "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial; -webkit-font-smoothing:antialiased;}
+  html,body{height:100%;margin:0;background:var(--bg);color:var(--text);}
+  .app{display:flex;height:100vh;overflow:hidden;}
+  .sidebar{width:260px;background:var(--panel);box-shadow:2px 0 12px rgba(0,0,0,0.04);padding:18px;display:flex;flex-direction:column;gap:12px}
+  .brand{font-weight:700;color:var(--primary);font-size:1.05rem}
+  .menu{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+  .menu button{background:none;border:none;padding:10px 12px;border-radius:8px;text-align:left;cursor:pointer;color:var(--text);font-weight:600}
+  .menu button.active,.menu button:hover{background:rgba(26,115,232,0.08);color:var(--primary)}
+  .main{flex:1;display:flex;flex-direction:column;overflow:auto;padding:16px 18px;gap:12px}
+  header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .header-left{display:flex;flex-direction:column}
+  .title{font-size:1.05rem;color:var(--primary);margin:0}
+  .sub{color:var(--muted);font-size:.95rem}
+  .controls{display:flex;gap:8px;align-items:center}
+  .btn{background:var(--primary);color:#fff;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:700}
+  .btn.ghost{background:transparent;color:var(--text);border:1px solid rgba(0,0,0,0.06)}
+  .card{background:var(--panel);padding:12px;border-radius:10px;box-shadow:var(--card-shadow)}
+  .grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .full{grid-column:1/-1}
+  label{display:block;font-weight:700;margin-bottom:6px;color:var(--text)}
+  input,select,textarea{width:100%;padding:8px;border-radius:8px;border:1px solid #ddd;background:transparent;color:var(--text)}
+  textarea{min-height:90px;resize:vertical}
+  .list{max-height:340px;overflow:auto}
+  .item{display:flex;justify-content:space-between;align-items:center;padding:8px;border-bottom:1px solid rgba(0,0,0,0.04)}
+  .muted{color:var(--muted);font-size:.94rem}
+  .small{font-size:.85rem;padding:6px 8px;border-radius:6px}
+  .row{display:flex;gap:8px;align-items:center}
+  .center{text-align:center}
+  #mapAll,#mapClientes,#mapRuta{height:320px;border-radius:8px}
+  /* toast */
+  .toast-wrap{position:fixed;right:18px;bottom:18px;display:flex;flex-direction:column;gap:8px;z-index:9999}
+  .toast{background:rgba(0,0,0,0.8);color:white;padding:10px 12px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.4)}
+  /* modal */
+  .modal-back{position:fixed;inset:0;background:rgba(0,0,0,0.45);display:flex;align-items:center;justify-content:center;z-index:9998}
+  .modal{background:var(--panel);padding:18px;border-radius:10px;min-width:320px;box-shadow:var(--card-shadow)}
+  /* responsive */
+  @media(max-width:980px){
+    .app{flex-direction:column}
+    .sidebar{width:100%;display:flex;flex-direction:row;gap:8px;overflow:auto}
+    .menu{flex-direction:row}
+    .main{padding:12px}
+    .grid{grid-template-columns:1fr}
+  }
+  @media(max-width:520px){
+    .btn{padding:8px 6px;font-size:.95rem}
+    input,select,textarea{padding:10px}
+  }
 </style>
 </head>
 <body>
-  <aside class="sidebar" aria-label="Navegación">
+
+<div id="app" class="app" data-theme="light">
+  <!-- SIDEBAR -->
+  <aside class="sidebar card">
     <div>
-      <h2>💼 Cobranza Ruta</h2>
-      <nav class="menu" role="navigation">
-        <button id="btnRuta" class="active">🧭 Ruta</button>
-        <button id="btnVentas">💰 Ventas</button>
-        <button id="btnClientes">👥 Clientes</button>
-        <button id="btnCobradores">🧑‍💼 Cobradores</button>
-        <button id="btnReportes">📊 Reportes</button>
-        <button id="btnConfig">⚙️ Configuración</button>
-      </nav>
+      <div class="brand">💼 Promociones Culturales</div>
+      <div class="muted" style="margin-top:6px">Sistema de Cobranza en Ruta</div>
     </div>
-    <div style="text-align:center;color:#777;font-size:.9rem;padding-top:10px">© 2025 Sistema</div>
+
+    <nav class="menu" aria-label="main menu">
+      <button id="navDashboard" class="active">🏠 Resumen</button>
+      <button id="navRuta">🧭 Ruta</button>
+      <button id="navVentas">💰 Ventas</button>
+      <button id="navClientes">👥 Clientes</button>
+      <button id="navCobradores">🧑‍💼 Cobradores</button>
+      <button id="navReportes">📊 Reportes</button>
+      <button id="navConfig">⚙️ Configuración</button>
+    </nav>
+
+    <div style="margin-top:auto;display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="toggleTheme" class="small">🌙</button>
+        <button id="btnLogout" class="small">Salir</button>
+      </div>
+      <div class="muted center">© 2025 Promociones Culturales</div>
+    </div>
   </aside>
 
+  <!-- MAIN -->
   <main class="main">
     <header>
-      <h1 id="titulo">Módulo: Ruta</h1>
-      <div id="fechaHora" aria-live="polite"></div>
+      <div class="header-left">
+        <h2 id="pageTitle" class="title">Módulo: Resumen</h2>
+        <div id="roleInfo" class="muted">Usuario: <strong id="currentRole">—</strong></div>
+      </div>
+      <div class="controls">
+        <div id="fechaHora" class="muted"></div>
+        <button id="openQuickAdd" class="btn ghost">+ Nueva Venta</button>
+      </div>
     </header>
 
+    <!-- DASHBOARD -->
+    <section id="pageDashboard" class="card">
+      <div class="grid">
+        <div class="card">
+          <h4>Ventas del día</h4>
+          <div id="dashboardVentas" class="muted">0</div>
+        </div>
+        <div class="card">
+          <h4>Abonos del día</h4>
+          <div id="dashboardAbonos" class="muted">0</div>
+        </div>
+        <div class="card full">
+          <h4>Mapa general - Clientes</h4>
+          <div id="mapAll"></div>
+        </div>
+      </div>
+    </section>
+
     <!-- RUTA -->
-    <section id="modRuta" class="card">
+    <section id="pageRuta" class="card" style="display:none">
       <h3>Ruta del día</h3>
-      <form id="formRuta">
-        <div class="row">
-          <label for="rutaCobrador">Seleccionar cobrador</label>
-          <select id="rutaCobrador" style="flex:1"><option value="">-- Selecciona --</option></select>
+      <div class="grid">
+        <div>
+          <label>Seleccionar cobrador</label>
+          <select id="rutaCobrador"></select>
+          <label style="margin-top:10px">Filtrar por saldo</label>
+          <select id="rutaFiltroSaldo"><option value="todos">Todos</option><option value="pendiente">Con saldo</option><option value="pagados">Sin saldo</option></select>
+          <div style="margin-top:10px">
+            <h4>Clientes asignados</h4>
+            <div id="listaRuta" class="list"></div>
+          </div>
         </div>
-        <div class="row">
-          <label>Filtrar por saldo</label>
-          <select id="filtroSaldo" style="flex:1">
-            <option value="todos">Todos</option>
-            <option value="pendiente">Con saldo</option>
-            <option value="pagados">Sin saldo</option>
-          </select>
+        <div>
+          <h4>Mapa de la ruta</h4>
+          <div id="mapRuta"></div>
         </div>
-      </form>
-      <div id="clientesRuta" class="list"></div>
+      </div>
     </section>
 
     <!-- VENTAS -->
-    <section id="modVentas" class="card" style="display:none">
+    <section id="pageVentas" class="card" style="display:none">
       <h3>Registro de Venta</h3>
-      <div style="margin-bottom:10px">
-        <strong>Folio actual:</strong> <span id="folioActual">#00001</span>
-      </div>
-      <form id="formVentasNuevo">
-        <div class="row">
-          <label for="ventaCobrador">Asignar cobrador</label>
-          <select id="ventaCobrador" style="flex:1"><option value="">-- Selecciona --</option></select>
-        </div>
-        <div class="row">
-          <label for="fechaVenta">Fecha</label><input id="fechaVenta" type="date">
-          <label for="articulos">Artículos</label><input id="articulos" type="text" style="flex:1">
-        </div>
-        <div class="row">
-          <label for="lugarEntrega">Lugar entrega</label><input id="lugarEntrega" type="text" style="flex:1">
-          <label for="precio">Precio</label><input id="precio" type="number">
-        </div>
-        <div class="row">
-          <label for="nombreCliente">Nombre</label><input id="nombreCliente" type="text" style="flex:1">
-        </div>
-        <div class="row">
-          <label for="domParticular">Domicilio particular</label><input id="domParticular" type="text" style="flex:1">
-        </div>
-        <div class="row">
-          <label for="domEmpleo">Domicilio empleo</label><input id="domEmpleo" type="text" style="flex:1">
-        </div>
-        <div class="row">
-          <label for="pagoSemanal">Pago semanal</label><input id="pagoSemanal" type="number">
-          <label for="pagoQuincenal">Pago quincenal</label><input id="pagoQuincenal" type="number">
-        </div>
-        <div class="row">
-          <label for="horario">Horario</label><input id="horario" type="text" style="flex:1">
-          <label for="lugarCobro">Lugar cobro</label><input id="lugarCobro" type="text">
-        </div>
-        <div class="row">
-          <label for="enganche">Enganche</label><input id="enganche" type="number">
-          <label for="metodoPago">Método pago</label>
-          <select id="metodoPago">
-            <option value="">--</option><option value="Efectivo">Efectivo</option><option value="Tarjeta">Tarjeta</option><option value="Transferencia">Transferencia</option>
-          </select>
-        </div>
-        <div class="row">
-          <label for="tipoCobro">Cobro/Transferencia</label>
-          <select id="tipoCobro"><option value="">--</option><option value="Cobro">Cobro</option><option value="Transferencia">Transferencia</option></select>
-        </div>
-        <div class="row">
-          <label for="observaciones">Observaciones</label>
-          <textarea id="observaciones" style="flex:1"></textarea>
+      <div class="grid">
+        <div>
+          <div class="card">
+            <div style="margin-bottom:8px"><strong>Folio actual: </strong><span id="folioDisplay">#00001</span></div>
+            <form id="formVenta">
+              <label>Asignar cobrador</label><select id="ventaCobrador"></select>
+              <label>Fecha de venta</label><input id="ventaFecha" type="date" />
+              <label>Artículos</label><input id="ventaArticulos" />
+              <label>Lugar de entrega</label><input id="ventaLugarEntrega" />
+              <label>Precio</label><input id="ventaPrecio" type="number" />
+              <label>Nombre</label><input id="ventaNombre" />
+            </form>
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="saveVentaBtn" class="btn">Aplicar Venta</button>
+              <button id="printLastVenta" class="btn ghost">Imprimir Ticket</button>
+            </div>
+          </div>
+
+          <div class="card" style="margin-top:12px">
+            <h4>Ventas registradas</h4>
+            <div id="listaVentas" class="list"></div>
+          </div>
         </div>
 
-        <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-          <button id="btnAplicarVenta" class="btn" type="button">Aplicar Venta</button>
-          <button id="btnImprimirVenta" class="btn" type="button">Imprimir Ticket</button>
+        <div>
+          <div class="card">
+            <h4>Detalles extendidos</h4>
+            <label>Pago semanal</label><input id="ventaPagoSemanal" type="number" />
+            <label>Pago quincenal</label><input id="ventaPagoQuincenal" type="number" />
+            <label>Horario</label><input id="ventaHorario" />
+            <label>Lugar de cobro</label><input id="ventaLugarCobro" />
+            <label>Enganche</label><input id="ventaEnganche" type="number" />
+            <label>Método de pago</label>
+            <select id="ventaMetodoPago"><option>Efectivo</option><option>Tarjeta</option><option>Transferencia</option></select>
+            <label>Tipo (Cobro/Transferencia)</label>
+            <select id="ventaTipoCobro"><option>Cobro</option><option>Transferencia</option></select>
+            <label>Observaciones</label><textarea id="ventaObservaciones"></textarea>
+          </div>
         </div>
-      </form>
-
-      <div style="margin-top:12px">
-        <h4>Ventas registradas</h4>
-        <div id="listaVentas" class="list"></div>
       </div>
     </section>
 
     <!-- CLIENTES -->
-    <section id="modClientes" class="card" style="display:none">
+    <section id="pageClientes" class="card" style="display:none">
       <h3>Clientes</h3>
-      <form id="formClienteNuevo">
-        <div class="row">
-          <label>Nombre</label><input id="cliNombre" type="text" style="flex:1">
+      <div class="grid">
+        <div>
+          <form id="formCliente">
+            <label>Nombre</label><input id="cliNombre" />
+            <label>Teléfono</label><input id="cliTelefono" />
+            <div style="display:flex;gap:8px;margin-top:8px">
+              <button id="saveCliente" class="btn">Guardar Cliente</button>
+              <button id="btnVerTodosMapa" class="btn ghost">Ver todos en mapa</button>
+            </div>
+          </form>
+          <div class="card" style="margin-top:12px">
+            <h4>Listado</h4>
+            <div id="listaClientes" class="list"></div>
+          </div>
         </div>
-        <div class="row">
-          <label>Teléfono</label><input id="cliTelefono" type="text" style="flex:1">
+        <div>
+          <h4>Mapa de clientes</h4>
+          <div id="mapClientes"></div>
         </div>
-        <div style="text-align:center">
-          <button id="btnGuardarCliente" class="btn" type="button">Guardar cliente</button>
-        </div>
-      </form>
-
-      <div style="margin-top:12px">
-        <h4>Listado</h4>
-        <div id="listaClientes" class="list"></div>
       </div>
     </section>
 
     <!-- COBRADORES -->
-    <section id="modCobradores" class="card" style="display:none">
+    <section id="pageCobradores" class="card" style="display:none">
       <h3>Cobradores</h3>
       <form id="formCobrador">
         <div class="row">
-          <label>Nombre</label><input id="cobNombre" type="text" style="flex:1">
-          <label>Teléfono</label><input id="cobTelefono" type="text">
+          <div style="flex:1">
+            <label>Nombre</label><input id="cobNombre" />
+          </div>
+          <div style="width:180px">
+            <label>Teléfono</label><input id="cobTelefono" />
+          </div>
         </div>
         <div class="row">
-          <label>Email</label><input id="cobEmail" type="email" style="flex:1">
-          <label>Observaciones</label><input id="cobObs" type="text">
+          <div style="flex:1">
+            <label>Email</label><input id="cobEmail" />
+          </div>
+          <div style="width:180px">
+            <label>Zona</label><input id="cobZona" />
+          </div>
         </div>
-        <div style="text-align:center"><button id="btnGuardarCobrador" class="btn" type="button">Guardar cobrador</button></div>
+        <div style="text-align:center;margin-top:8px">
+          <button id="saveCobrador" class="btn">Guardar cobrador</button>
+        </div>
       </form>
 
       <div style="margin-top:12px">
-        <h4>Lista de cobradores</h4>
+        <h4>Lista</h4>
         <div id="listaCobradores" class="list"></div>
       </div>
     </section>
 
     <!-- REPORTES -->
-    <section id="modReportes" class="card" style="display:none">
+    <section id="pageReportes" class="card" style="display:none">
       <h3>Reportes de Abonos</h3>
-      <form id="formReport">
-        <div class="row">
-          <label>Cliente</label><select id="filtroCliente" style="flex:1"><option value="">Todos</option></select>
-          <label>Cobrador</label><select id="filtroCobrador"><option value="">Todos</option></select>
+      <form id="formReport" class="grid">
+        <div>
+          <label>Cliente</label><select id="reportCliente"></select>
         </div>
-        <div class="row">
-          <label>Desde</label><input id="fInicio" type="date">
-          <label>Hasta</label><input id="fFin" type="date">
+        <div>
+          <label>Cobrador</label><select id="reportCobrador"></select>
         </div>
-        <div style="text-align:center"><button id="btnFiltrar" class="btn" type="button">Filtrar</button></div>
+        <div>
+          <label>Desde</label><input id="reportDesde" type="date" />
+        </div>
+        <div>
+          <label>Hasta</label><input id="reportHasta" type="date" />
+        </div>
+        <div class="full center" style="margin-top:8px">
+          <button id="btnRunReport" class="btn">Filtrar</button>
+          <button id="btnExportCSV" class="btn ghost">Exportar CSV</button>
+          <button id="btnExportPDF" class="btn ghost">Exportar PDF</button>
+        </div>
       </form>
-      <div style="margin-top:12px"><div id="resultReport" class="list"></div></div>
+      <div style="margin-top:10px">
+        <div id="reportResults" class="list"></div>
+      </div>
     </section>
 
     <!-- CONFIG -->
-    <section id="modConfig" class="card" style="display:none">
+    <section id="pageConfig" class="card" style="display:none">
       <h3>Configuración</h3>
-      <p class="muted">Ajustes generales (pendiente de implementar).</p>
+      <div class="row">
+        <label>Modo oscuro</label>
+        <button id="toggleThemeConfig" class="btn ghost">Alternar</button>
+      </div>
+      <p class="muted" style="margin-top:8px">Ajustes futuros: autenticación, sincronización en la nube, backup automático.</p>
     </section>
 
   </main>
+</div>
+
+<!-- Toast wrapper -->
+<div class="toast-wrap" id="toasts" aria-live="polite"></div>
+
+<!-- Role modal -->
+<div id="modalRole" class="modal-back" style="display:none">
+  <div class="modal">
+    <h3>Selecciona tu rol</h3>
+    <p class="muted">Elige "Cobrador" para ver solo Ruta y Ventas, o "Administrador" para todo el sistema.</p>
+    <div style="display:flex;gap:8px;margin-top:12px;justify-content:center">
+      <button id="roleCobrador" class="btn">Cobrador</button>
+      <button id="roleAdmin" class="btn ghost">Administrador</button>
+    </div>
+  </div>
+</div>
+
+<!-- Dependencies -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+  integrity="sha256-o8M4f2r3rD2t2kLzqV/4JY1rKkqg2lV4gqXb0d5QmT8=" crossorigin=""></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script>
-/* ---------- UTIL Y PERSISTENCIA ---------- */
-const KEY = { CLIENTES:'sc_clientes_v2', VENTAS:'sc_ventas_v2', ABONOS:'sc_abonos_v2', COBRADORES:'sc_cobradores_v2', FOLIO:'sc_folio_v2' };
-function save(key,obj){localStorage.setItem(key,JSON.stringify(obj))}
-function load(key){try{return JSON.parse(localStorage.getItem(key))||[];}catch(e){return []}}
+/* ============================
+   UTIL / PERSISTENCIA
+   ============================ */
+const LS = {
+  CLIENTES: 'sc_clientes_v4',
+  COBRADORES: 'sc_cobradores_v4',
+  VENTAS: 'sc_ventas_v4',
+  ABONOS: 'sc_abonos_v4',
+  FOLIO: 'sc_folio_v4',
+  THEME: 'sc_theme_v4',
+  ROLE: 'sc_role_v4'
+};
+function save(key, value){ localStorage.setItem(key, JSON.stringify(value)); }
+function load(key){ try { return JSON.parse(localStorage.getItem(key) || 'null') || []; } catch(e){ return []; } }
 
-/* ---------- ESTADO ---------- */
-let clientes = load(KEY.CLIENTES);
-let ventas = load(KEY.VENTAS);
-let abonos = load(KEY.ABONOS);
-let cobradores = load(KEY.COBRADORES);
-let folio = parseInt(localStorage.getItem(KEY.FOLIO)||'1',10);
+/* ============================
+   ESTADO INICIAL
+   ============================ */
+let clientes = load(LS.CLIENTES) || [];
+let cobradores = load(LS.COBRADORES) || [];
+let ventas = load(LS.VENTAS) || [];
+let abonos = load(LS.ABONOS) || [];
+let folio = parseInt(localStorage.getItem(LS.FOLIO) || '1', 10);
+let currentRole = localStorage.getItem(LS.ROLE) || null;
 
-/* ---------- UI: Navegación ---------- */
-const sections = { btnRuta:'modRuta', btnVentas:'modVentas', btnClientes:'modClientes', btnCobradores:'modCobradores', btnReportes:'modReportes', btnConfig:'modConfig' };
-Object.keys(sections).forEach(btn=>{
-  document.getElementById(btn).addEventListener('click', ()=>{
-    Object.values(sections).forEach(id=>document.getElementById(id).style.display='none');
-    document.getElementById(sections[btn]).style.display='block';
-    document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
-    document.getElementById(btn).classList.add('active');
-    document.getElementById('titulo').textContent='Módulo: '+document.getElementById(btn).textContent.trim();
-    refreshAllSelectors();
-  });
-});
+/* ============================
+   HELPERS UI
+   ============================ */
+function toast(msg, timeout=2500){
+  const wrap = document.getElementById('toasts');
+  const el = document.createElement('div'); el.className='toast'; el.textContent = msg;
+  wrap.appendChild(el);
+  setTimeout(()=>{ el.style.opacity=0; setTimeout(()=>el.remove(),400); }, timeout);
+}
+function formatMoney(n){ return Number(n||0).toFixed(2); }
+function padFolio(n){ return String(n).padStart(5,'0'); }
 
-/* ---------- RELOJ ---------- */
-function tick(){document.getElementById('fechaHora').textContent = new Date().toLocaleString()}
+/* ============================
+   THEME
+   ============================ */
+const appEl = document.getElementById('app');
+function setTheme(theme){
+  appEl.setAttribute('data-theme', theme);
+  localStorage.setItem(LS.THEME, theme);
+  document.getElementById('toggleTheme').textContent = theme === 'dark' ? '☀️' : '🌙';
+}
+const savedTheme = localStorage.getItem(LS.THEME) || 'light';
+setTheme(savedTheme);
+
+/* ============================
+   FECHA / ROLE MODAL
+   ============================ */
+function tick(){ document.getElementById('fechaHora').textContent = new Date().toLocaleString(); }
 setInterval(tick,1000); tick();
 
-/* ---------- RENDER HELPERS ---------- */
-function refreshAllSelectors(){
-  // rutaCobrador, ventaCobrador, filtroCobrador, filtroCliente
-  const rutaS = document.getElementById('rutaCobrador');
-  const ventaS = document.getElementById('ventaCobrador');
-  const filtroC = document.getElementById('filtroCobrador');
-  const filtroCli = document.getElementById('filtroCliente');
+function openRoleModal(){ document.getElementById('modalRole').style.display='flex'; }
+function closeRoleModal(){ document.getElementById('modalRole').style.display='none'; }
 
-  [rutaS, ventaS, filtroC].forEach(sel=>{
-    sel.innerHTML = '<option value="">-- Selecciona --</option>';
-    cobradores.forEach(c=>{ const o=document.createElement('option'); o.value=c.id; o.textContent=c.nombre; sel.appendChild(o) });
-  });
-
-  // clientes selector in report
-  filtroCli.innerHTML = '<option value="">Todos</option>';
-  clientes.forEach(c=>{ const o=document.createElement('option'); o.value=c.nombre; o.textContent=c.nombre; filtroCli.appendChild(o) });
-
-  // show folio
-  document.getElementById('folioActual').textContent = '#' + String(folio).padStart(5,'0');
-}
-
-/* ---------- RENDER LISTAS ---------- */
-function renderClientesList(){
-  const cont = document.getElementById('listaClientes'); cont.innerHTML='';
-  clientes.forEach((c,idx)=>{
-    const div=document.createElement('div'); div.className='item';
-    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Tel: ${c.telefono||'-'}</div></div>`;
-    const actions=document.createElement('div');
-    const btnEdit=document.createElement('button'); btnEdit.className='small'; btnEdit.textContent='Editar';
-    btnEdit.addEventListener('click', ()=> editCliente(idx));
-    const btnDel=document.createElement('button'); btnDel.className='small'; btnDel.textContent='Eliminar';
-    btnDel.addEventListener('click', ()=> { if(confirm('Eliminar este cliente?')){ clientes.splice(idx,1); save(KEY.CLIENTES,clientes); renderClientesList(); refreshAllSelectors(); }});
-    const btnLoc=document.createElement('button'); btnLoc.className='small'; btnLoc.textContent='Asignar ubic.';
-    btnLoc.addEventListener('click', ()=> assignLocationToClient(idx));
-    const btnVer=document.createElement('button'); btnVer.className='small'; btnVer.textContent='Ver ubic.';
-    btnVer.addEventListener('click', ()=> { if(clientsHasLocation(idx)) window.open(clientsHasLocation(idx),'_blank'); else alert('Sin ubicación')});
-    actions.appendChild(btnEdit); actions.appendChild(btnDel); actions.appendChild(btnLoc); actions.appendChild(btnVer);
-    div.appendChild(actions); cont.appendChild(div);
-  });
-}
-function renderCobradoresList(){
-  const cont=document.getElementById('listaCobradores'); cont.innerHTML='';
-  cobradores.forEach((c,idx)=>{
-    const div=document.createElement('div'); div.className='item';
-    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Tel: ${c.telefono||'-'} ${c.email? ' | ' + c.email : ''}</div></div>`;
-    const actions=document.createElement('div');
-    const btnEdit=document.createElement('button'); btnEdit.className='small'; btnEdit.textContent='Editar';
-    btnEdit.addEventListener('click', ()=> editCobrador(idx));
-    const btnDel=document.createElement('button'); btnDel.className='small'; btnDel.textContent='Eliminar';
-    btnDel.addEventListener('click', ()=> { if(confirm('Eliminar cobrador?')){ cobradores.splice(idx,1); save(KEY.COBRADORES,cobradores); renderCobradoresList(); refreshAllSelectors(); }});
-    actions.appendChild(btnEdit); actions.appendChild(btnDel);
-    div.appendChild(actions); cont.appendChild(div);
-  });
-}
-function renderVentasList(){
-  const cont=document.getElementById('listaVentas'); cont.innerHTML='';
-  ventas.slice().reverse().forEach((v,idx)=>{
-    const div=document.createElement('div'); div.className='item';
-    const cob = cobradores.find(x=>x.id===v.cobrador);
-    const cobName = cob? cob.nombre : (v.cobradorName||'-');
-    div.innerHTML = `<div><strong>${v.nombre||'(sin nombre)'}</strong><div class="muted">${new Date(v.createdAt).toLocaleString()} — ${v.articulos} — $${Number(v.precio).toFixed(2)} | ${cobName}</div></div>`;
-    const actions=document.createElement('div');
-    const btnImp=document.createElement('button'); btnImp.className='small'; btnImp.textContent='Imprimir';
-    btnImp.addEventListener('click', ()=> printTicket(v));
-    actions.appendChild(btnImp);
-    div.appendChild(actions); cont.appendChild(div);
-  });
-}
-
-/* ---------- COBRADORES: CRUD ---------- */
-document.getElementById('btnGuardarCobrador').addEventListener('click', ()=>{
-  const nombre = document.getElementById('cobNombre').value.trim();
-  const telefono = document.getElementById('cobTelefono').value.trim();
-  const email = document.getElementById('cobEmail').value.trim();
-  const obs = document.getElementById('cobObs').value.trim();
-  if(!nombre){ alert('El nombre es requerido'); return; }
-  const newC = { id: 'cob_'+Date.now(), nombre, telefono, email, obs };
-  cobradores.push(newC);
-  save(KEY.COBRADORES, cobradores);
-  document.getElementById('formCobrador').reset();
-  renderCobradoresList(); refreshAllSelectors();
+document.getElementById('roleCobrador').addEventListener('click', ()=>{
+  currentRole = 'Cobrador'; localStorage.setItem(LS.ROLE, currentRole); initRole(); closeRoleModal();
+});
+document.getElementById('roleAdmin').addEventListener('click', ()=>{
+  currentRole = 'Administrador'; localStorage.setItem(LS.ROLE, currentRole); initRole(); closeRoleModal();
 });
 
-/* Editar cobrador */
-function editCobrador(idx){
-  const c = cobradores[idx];
-  const nn = prompt('Nombre:', c.nombre);
-  if(!nn) return;
-  const nt = prompt('Teléfono:', c.telefono || '');
-  const ne = prompt('Email:', c.email || '');
-  const no = prompt('Observaciones:', c.obs || '');
-  cobradores[idx] = { ...c, nombre: nn.trim(), telefono: (nt||'').trim(), email: (ne||'').trim(), obs: (no||'').trim() };
-  save(KEY.COBRADORES, cobradores);
-  renderCobradoresList(); refreshAllSelectors();
+/* ============================
+   NAVIGATION
+   ============================ */
+const pages = {
+  navDashboard: 'pageDashboard',
+  navRuta: 'pageRuta',
+  navVentas: 'pageVentas',
+  navClientes: 'pageClientes',
+  navCobradores: 'pageCobradores',
+  navReportes: 'pageReportes',
+  navConfig: 'pageConfig'
+};
+Object.keys(pages).forEach(btnId=>{
+  const el = document.getElementById(btnId);
+  el.addEventListener('click', ()=>{
+    Object.values(pages).forEach(pid => document.getElementById(pid).style.display = 'none');
+    document.getElementById(pages[btnId]).style.display = 'block';
+    document.querySelectorAll('.menu button').forEach(b=>b.classList.remove('active'));
+    el.classList.add('active');
+    document.getElementById('pageTitle').textContent = 'Módulo: ' + el.textContent.trim();
+    refreshSelectors();
+  });
+});
+
+/* ============================
+   PERSIST Y RENDER HELPERS
+   ============================ */
+function persistAll(){
+  save(LS.CLIENTES, clientes);
+  save(LS.COBRADORES, cobradores);
+  save(LS.VENTAS, ventas);
+  save(LS.ABONOS, abonos);
+  localStorage.setItem(LS.FOLIO, String(folio));
+}
+function refreshSelectors(){
+  const selRuta = document.getElementById('rutaCobrador');
+  const selVenta = document.getElementById('ventaCobrador');
+  const selReportCb = document.getElementById('reportCobrador');
+  [selRuta, selVenta, selReportCb].forEach(sel=>{
+    if(!sel) return;
+    sel.innerHTML = '<option value="">-- Selecciona --</option>';
+    cobradores.forEach(c=>{ const o=document.createElement('option'); o.value = c.id; o.textContent = c.nombre; sel.appendChild(o) });
+  });
+  const selReportCli = document.getElementById('reportCliente');
+  if(selReportCli){
+    selReportCli.innerHTML = '<option value="">Todos</option>';
+    clientes.forEach(c=>{ const o=document.createElement('option'); o.value = c.id; o.textContent = c.nombre; selReportCli.appendChild(o) });
+  }
+  document.getElementById('folioDisplay').textContent = '#' + padFolio(folio);
 }
 
-/* ---------- CLIENTES: CRUD ---------- */
-document.getElementById('btnGuardarCliente').addEventListener('click', ()=>{
+/* render lists */
+function renderClientes(){
+  const container = document.getElementById('listaClientes'); container.innerHTML='';
+  clientes.forEach((c, idx)=>{
+    const item = document.createElement('div'); item.className='item';
+    const left = document.createElement('div'); left.innerHTML = `<strong>${c.nombre}</strong><div class="muted">Tel: ${c.telefono||'-'} • Saldo: $${formatMoney(c.saldo)}</div>`;
+    const actions = document.createElement('div');
+    const btnEdit = document.createElement('button'); btnEdit.className='small'; btnEdit.textContent='Editar';
+    btnEdit.addEventListener('click', ()=> editCliente(idx));
+    const btnDel = document.createElement('button'); btnDel.className='small'; btnDel.textContent='Eliminar';
+    btnDel.addEventListener('click', ()=> { if(confirm('Eliminar cliente?')){ clientes.splice(idx,1); persistAll(); renderClientes(); refreshSelectors(); toast('Cliente eliminado'); }});
+    const btnLoc = document.createElement('button'); btnLoc.className='small'; btnLoc.textContent='Asignar ubic.';
+    btnLoc.addEventListener('click', ()=> assignLocationToClient(idx));
+    const btnVer = document.createElement('button'); btnVer.className='small'; btnVer.textContent='Ver ubic.';
+    btnVer.addEventListener('click', ()=> { if(c.ubicacion) window.open(c.ubicacion,'_blank'); else toast('Cliente sin ubicación'); });
+    actions.appendChild(btnEdit); actions.appendChild(btnDel); actions.appendChild(btnLoc); actions.appendChild(btnVer);
+    item.appendChild(left); item.appendChild(actions); container.appendChild(item);
+  });
+}
+
+function renderCobradores(){
+  const cont = document.getElementById('listaCobradores'); cont.innerHTML='';
+  cobradores.forEach((cb, idx)=>{
+    const item = document.createElement('div'); item.className='item';
+    const left = document.createElement('div'); left.innerHTML = `<strong>${cb.nombre}</strong><div class="muted">${cb.telefono||'-'} ${cb.zona? '• Zona: '+cb.zona : ''}</div>`;
+    const actions = document.createElement('div');
+    const btnEdit = document.createElement('button'); btnEdit.className='small'; btnEdit.textContent='Editar';
+    btnEdit.addEventListener('click', ()=> editCobrador(idx));
+    const btnDel = document.createElement('button'); btnDel.className='small'; btnDel.textContent='Eliminar';
+    btnDel.addEventListener('click', ()=> { if(confirm('Eliminar cobrador?')){ cobradores.splice(idx,1); persistAll(); renderCobradores(); refreshSelectors(); toast('Cobrador eliminado'); }});
+    actions.appendChild(btnEdit); actions.appendChild(btnDel);
+    item.appendChild(left); item.appendChild(actions); cont.appendChild(item);
+  });
+}
+
+function renderVentasList(){
+  const cont = document.getElementById('listaVentas'); cont.innerHTML='';
+  ventas.slice().reverse().forEach(v=>{
+    const item = document.createElement('div'); item.className='item';
+    const cob = cobradores.find(c=>c.id===v.cobrador);
+    item.innerHTML = `<div><strong>${v.nombre||'(sin nombre)'}</strong><div class="muted">${new Date(v.createdAt).toLocaleString()} • ${v.articulos} • $${formatMoney(v.precio)} • ${cob? cob.nombre : '-'}</div></div>
+      <div><button class="small" onclick="printTicketById('${v.id}')">Imprimir</button></div>`;
+    cont.appendChild(item);
+  });
+}
+
+/* ============================
+   COBRADORES CRUD
+   ============================ */
+document.getElementById('saveCobrador').addEventListener('click', ()=>{
+  const n = document.getElementById('cobNombre').value.trim();
+  const t = document.getElementById('cobTelefono').value.trim();
+  const e = document.getElementById('cobEmail').value.trim();
+  const z = document.getElementById('cobZona').value.trim();
+  if(!n){ toast('Nombre requerido'); return; }
+  cobradores.push({ id: 'cb_' + Date.now(), nombre: n, telefono: t, email: e, zona: z });
+  persistAll(); renderCobradores(); refreshSelectors();
+  document.getElementById('formCobrador').reset();
+  toast('Cobrador guardado');
+});
+
+function editCobrador(idx){
+  const cb = cobradores[idx];
+  const nn = prompt('Nombre', cb.nombre);
+  if(!nn) return;
+  const nt = prompt('Teléfono', cb.telefono||'');
+  const nz = prompt('Zona', cb.zona||'');
+  cobradores[idx].nombre = nn.trim();
+  cobradores[idx].telefono = (nt||'').trim();
+  cobradores[idx].zona = (nz||'').trim();
+  persistAll(); renderCobradores(); refreshSelectors(); toast('Cobrador actualizado');
+}
+
+/* ============================
+   CLIENTES CRUD
+   ============================ */
+document.getElementById('saveCliente').addEventListener('click', ()=>{
   const nombre = document.getElementById('cliNombre').value.trim();
   const tel = document.getElementById('cliTelefono').value.trim();
-  if(!nombre){alert('Nombre requerido'); return;}
-  clientes.push({ id: 'cli_'+Date.now(), nombre, telefono: tel, ubicacion: null, saldo: 0});
-  save(KEY.CLIENTES, clientes);
-  document.getElementById('formClienteNuevo').reset();
-  renderClientesList(); refreshAllSelectors();
+  if(!nombre){ toast('Nombre requerido'); return; }
+  clientes.push({ id: 'cl_'+Date.now(), nombre, telefono: tel, ubicacion: null, lat:null, lng:null, saldo: 0 });
+  persistAll(); renderClientes(); refreshSelectors();
+  document.getElementById('formCliente').reset();
+  toast('Cliente agregado');
 });
 
 function editCliente(idx){
   const c = clientes[idx];
-  const nn = prompt('Nombre:', c.nombre);
+  const nn = prompt('Nombre', c.nombre);
   if(!nn) return;
-  const nt = prompt('Teléfono:', c.telefono||'');
+  const nt = prompt('Teléfono', c.telefono||'');
   clientes[idx].nombre = nn.trim();
   clientes[idx].telefono = (nt||'').trim();
-  save(KEY.CLIENTES, clientes);
-  renderClientesList(); refreshAllSelectors();
+  persistAll(); renderClientes(); refreshSelectors(); toast('Cliente actualizado');
 }
-
 function assignLocationToClient(idx){
-  if(!navigator.geolocation){ alert('Geolocalización no disponible'); return; }
+  if(!navigator.geolocation){ toast('Geolocalización no disponible'); return; }
   navigator.geolocation.getCurrentPosition(pos=>{
-    const lat = pos.coords.latitude.toFixed(6);
-    const lng = pos.coords.longitude.toFixed(6);
-    clientes[idx].ubicacion = `https://www.google.com/maps?q=${lat},${lng}`;
-    save(KEY.CLIENTES, clientes);
-    alert('Ubicación asignada: '+lat+','+lng);
-    renderClientesList();
-  }, err=> alert('Error: '+err.message), { enableHighAccuracy:true, timeout:10000 });
+    clientes[idx].lat = pos.coords.latitude;
+    clientes[idx].lng = pos.coords.longitude;
+    clientes[idx].ubicacion = `https://www.google.com/maps?q=${pos.coords.latitude},${pos.coords.longitude}`;
+    persistAll(); renderClientes(); toast('Ubicación asignada');
+  }, err => toast('Error al obtener ubicación: '+err.message), { enableHighAccuracy:true, timeout:10000 });
 }
-function clientsHasLocation(idx){ return clientes[idx] && clientes[idx].ubicacion ? clientes[idx].ubicacion : null }
 
-/* ---------- VENTAS ---------- */
-document.getElementById('btnAplicarVenta').addEventListener('click', ()=>{
-  const v = {
-    id: 'v_'+Date.now(),
+/* ============================
+   VENTAS (folio, save, ticket + QR)
+   ============================ */
+function addVentaFromForm(){
+  const vId = 'v_' + Date.now();
+  const venta = {
+    id: vId,
     cobrador: document.getElementById('ventaCobrador').value || '',
-    cobradorName: (function(){ const cb = cobradores.find(x=>x.id===document.getElementById('ventaCobrador').value); return cb? cb.nombre : ''; })(),
-    fecha: document.getElementById('fechaVenta').value || '',
-    articulos: document.getElementById('articulos').value || '',
-    lugarEntrega: document.getElementById('lugarEntrega').value || '',
-    precio: Number(document.getElementById('precio').value || 0),
-    nombre: document.getElementById('nombreCliente').value||'',
-    domParticular: document.getElementById('domParticular').value||'',
-    domEmpleo: document.getElementById('domEmpleo').value||'',
-    pagoSemanal: Number(document.getElementById('pagoSemanal').value || 0),
-    pagoQuincenal: Number(document.getElementById('pagoQuincenal').value || 0),
-    horario: document.getElementById('horario').value||'',
-    lugarCobro: document.getElementById('lugarCobro').value||'',
-    enganche: Number(document.getElementById('enganche').value || 0),
-    metodoPago: document.getElementById('metodoPago').value||'',
-    tipoCobro: document.getElementById('tipoCobro').value||'',
-    observaciones: document.getElementById('observaciones').value||'',
     createdAt: new Date().toISOString(),
+    fecha: document.getElementById('ventaFecha').value || '',
+    articulos: document.getElementById('ventaArticulos').value || '',
+    lugarEntrega: document.getElementById('ventaLugarEntrega').value || '',
+    precio: Number(document.getElementById('ventaPrecio').value || 0),
+    nombre: document.getElementById('ventaNombre').value || '',
+    pagoSemanal: Number(document.getElementById('ventaPagoSemanal').value || 0),
+    pagoQuincenal: Number(document.getElementById('ventaPagoQuincenal').value || 0),
+    horario: document.getElementById('ventaHorario').value || '',
+    lugarCobro: document.getElementById('ventaLugarCobro').value || '',
+    enganche: Number(document.getElementById('ventaEnganche').value || 0),
+    metodoPago: document.getElementById('ventaMetodoPago').value || '',
+    tipoCobro: document.getElementById('ventaTipoCobro').value || '',
+    observaciones: document.getElementById('ventaObservaciones').value || '',
     folio: folio
   };
-  ventas.push(v); save(KEY.VENTAS, ventas);
-  folio = folio + 1; localStorage.setItem(KEY.FOLIO, String(folio));
-  refreshAllSelectors(); renderVentasList();
-  alert('Venta guardada. Folio asignado: #' + String(v.folio).padStart(5,'0'));
-  document.getElementById('formVentasNuevo').reset();
-});
-
-/* Imprimir: toma la venta más reciente o la que le pases */
-document.getElementById('btnImprimirVenta').addEventListener('click', ()=>{
-  if(ventas.length===0){ alert('No hay ventas'); return; }
-  printTicket(ventas[ventas.length-1]);
-});
+  ventas.push(venta); persistAll();
+  folio++; localStorage.setItem(LS.FOLIO, String(folio));
+  refreshSelectors(); renderVentasList(); toast('Venta registrada (folio #' + padFolio(venta.folio) + ')');
+  document.getElementById('formVenta').reset();
+}
+document.getElementById('saveVentaBtn').addEventListener('click', addVentaFromForm);
+document.getElementById('printLastVenta').addEventListener('click', ()=>{ if(ventas.length===0){ toast('No hay ventas'); return; } printTicket(ventas[ventas.length-1]); });
 
 function printTicket(v){
-  const fechaImp = new Date();
-  const cob = cobradores.find(x=>x.id===v.cobrador);
-  const html = `
-    <div style="font-family:Segoe UI, sans-serif;padding:18px;width:320px">
+  const printWindow = window.open('','_blank','width=420,height=700');
+  const fechaNow = new Date();
+  const cobr = cobradores.find(c=>c.id===v.cobrador);
+  const docHtml = `
+    <html><head><title>Ticket</title></head><body style="font-family:Segoe UI, sans-serif;padding:12px">
       <h2 style="text-align:center;font-weight:700">Promociones Culturales de México</h2>
       <hr>
-      <p><strong>Folio:</strong> #${String(v.folio).padStart(5,'0')}</p>
+      <p><strong>Folio:</strong> #${padFolio(v.folio)}</p>
       <p><strong>Fecha venta:</strong> ${v.fecha || '-'}</p>
-      <p><strong>Fecha impresión:</strong> ${fechaImp.toLocaleDateString()}</p>
-      <p><strong>Hora impresión:</strong> ${fechaImp.toLocaleTimeString()}</p>
+      <p><strong>Fecha impresión:</strong> ${fechaNow.toLocaleDateString()}</p>
+      <p><strong>Hora impresión:</strong> ${fechaNow.toLocaleTimeString()}</p>
       <hr>
       <p><strong>Cliente:</strong> ${v.nombre || '-'}</p>
       <p><strong>Artículos:</strong> ${v.articulos || '-'}</p>
       <p><strong>Lugar entrega:</strong> ${v.lugarEntrega || '-'}</p>
-      <p><strong>Precio:</strong> $${Number(v.precio).toFixed(2)}</p>
-      <p><strong>Enganche:</strong> $${Number(v.enganche).toFixed(2)}</p>
+      <p><strong>Precio:</strong> $${formatMoney(v.precio)}</p>
+      <p><strong>Enganche:</strong> $${formatMoney(v.enganche)}</p>
       <p><strong>Método:</strong> ${v.metodoPago || '-'}</p>
-      <p><strong>Cobro/Transf:</strong> ${v.tipoCobro || '-'}</p>
-      <p><strong>Cobrador:</strong> ${cob? cob.nombre : v.cobradorName || '-'}</p>
-      <p><strong>Pago semanal:</strong> ${v.pagoSemanal? '$'+v.pagoSemanal : '-'}</p>
-      <p><strong>Pago quincenal:</strong> ${v.pagoQuincenal? '$'+v.pagoQuincenal : '-'}</p>
+      <p><strong>Cobro/Transfer:</strong> ${v.tipoCobro || '-'}</p>
+      <p><strong>Cobrador:</strong> ${cobr? cobr.nombre : '-'}</p>
+      <p><strong>Pago semanal:</strong> ${v.pagoSemanal? '$'+formatMoney(v.pagoSemanal) : '-'}</p>
+      <p><strong>Pago quincenal:</strong> ${v.pagoQuincenal? '$'+formatMoney(v.pagoQuincenal) : '-'}</p>
       <p><strong>Horario:</strong> ${v.horario || '-'}</p>
       <p><strong>Lugar cobro:</strong> ${v.lugarCobro || '-'}</p>
       <p><strong>Observaciones:</strong> ${v.observaciones || '-'}</p>
       <hr>
+      <div id="qrcode"></div>
       <p style="text-align:center;font-size:0.9em">Gracias por su compra</p>
-    </div>`;
-  const w = window.open('','', 'width=420,height=700');
-  w.document.write(html);
-  w.document.close();
-  w.print();
+    </body></html>`;
+  printWindow.document.write(docHtml); printWindow.document.close();
+  printWindow.onload = function(){
+    const qrData = JSON.stringify({ folio: padFolio(v.folio), cliente: v.nombre, total: formatMoney(v.precio), fecha: fechaNow.toISOString() });
+    const qDiv = printWindow.document.getElementById('qrcode');
+    // QR code lib is available in parent, create DOM QR inside printWindow
+    new printWindow.QRCode(qDiv, { text: qrData, width: 140, height: 140 });
+    setTimeout(()=>{ printWindow.focus(); printWindow.print(); }, 500);
+  };
+}
+function printTicketById(id){ const v = ventas.find(x=>x.id===id); if(v) printTicket(v); }
+
+/* ============================
+   RUTA: show clients and map using Leaflet
+   ============================ */
+let mapAll = null; let mapClientes = null; let mapRuta = null;
+let markersAll = []; let markersCli = []; let markersRuta = [];
+
+function initMaps(){
+  try{
+    mapAll = L.map('mapAll', { center:[20.6597,-103.3496], zoom:5 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapAll);
+    mapClientes = L.map('mapClientes', { center:[20.6597,-103.3496], zoom:5 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapClientes);
+    mapRuta = L.map('mapRuta', { center:[20.6597,-103.3496], zoom:5 });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(mapRuta);
+    refreshMaps();
+  }catch(e){ console.warn('Leaflet init error', e); }
 }
 
-/* ---------- RUTA: mostrar clientes asignados y aplicar abonos ---------- */
-document.getElementById('rutaCobrador').addEventListener('change', showClientsForRoute);
-document.getElementById('filtroSaldo').addEventListener('change', showClientsForRoute);
-
-function showClientsForRoute(){
-  const cid = document.getElementById('rutaCobrador').value;
-  const filtro = document.getElementById('filtroSaldo').value;
-  const cont = document.getElementById('clientesRuta'); cont.innerHTML='';
-  if(!cid) { cont.innerHTML = '<div class="muted">Selecciona un cobrador</div>'; return; }
-
-  // Para demo: todos los clientes son asignados. In real: use assignment model.
-  const list = clientes.map(c=>({ ...c }));
-  const filtered = list.filter(c=>{
-    if(filtro==='pendiente') return (Number(c.saldo)||0) > 0;
-    if(filtro==='pagados') return (Number(c.saldo)||0) <= 0;
-    return true;
+function refreshMaps(){
+  markersAll.forEach(m=>m.remove()); markersAll=[]; markersCli.forEach(m=>m.remove()); markersCli=[]; markersRuta.forEach(m=>m.remove()); markersRuta=[];
+  let boundsAll = [];
+  clientes.forEach(c=>{
+    if(c.lat && c.lng){
+      const m = L.marker([c.lat,c.lng]).addTo(mapAll).bindPopup(`<strong>${c.nombre}</strong><br>Saldo: $${formatMoney(c.saldo)}`);
+      markersAll.push(m); boundsAll.push([c.lat,c.lng]);
+      const mc = L.marker([c.lat,c.lng]).addTo(mapClientes).bindPopup(`<strong>${c.nombre}</strong><br>Tel: ${c.telefono||'-'}`);
+      markersCli.push(mc);
+    }
   });
+  if(boundsAll.length){ try{ mapAll.fitBounds(boundsAll, { padding:[40,40] }); mapClientes.fitBounds(boundsAll, { padding:[40,40] }); }catch(e){} }
+}
 
-  filtered.forEach((c, idx)=>{
-    const div=document.createElement('div'); div.className='item';
-    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Saldo: $${Number(c.saldo||0).toFixed(2)}</div></div>`;
-    const right=document.createElement('div');
-    const btnUb=document.createElement('button'); btnUb.className='small'; btnUb.textContent='Ver Ubic';
-    btnUb.addEventListener('click', ()=>{ if(c.ubicacion) window.open(c.ubicacion,'_blank'); else alert('Sin ubicacion')});
-    const inpConcept=document.createElement('input'); inpConcept.placeholder='Concepto';
-    const inpAbono=document.createElement('input'); inpAbono.placeholder='Abono'; inpAbono.type='number';
-    inpConcept.style.marginRight='6px'; inpAbono.style.width='90px';
-    const btnAp=document.createElement('button'); btnAp.className='small'; btnAp.textContent='Aplicar';
+function showRouteForCobrador(){
+  const cobId = document.getElementById('rutaCobrador').value;
+  const filtro = document.getElementById('rutaFiltroSaldo').value;
+  const cont = document.getElementById('listaRuta'); cont.innerHTML='';
+  let list = clientes.slice();
+  if(filtro==='pendiente') list = list.filter(c=> Number(c.saldo)>0 );
+  if(filtro==='pagados') list = list.filter(c=> Number(c.saldo)<=0 );
+  list.forEach(c=>{
+    const div = document.createElement('div'); div.className='item';
+    div.innerHTML = `<div><strong>${c.nombre}</strong><div class="muted">Saldo: $${formatMoney(c.saldo)}</div></div>`;
+    const actions = document.createElement('div');
+    const btnVer = document.createElement('button'); btnVer.className='small'; btnVer.textContent='Ver ubic';
+    btnVer.addEventListener('click', ()=> { if(c.ubicacion) window.open(c.ubicacion,'_blank'); else toast('Sin ubicación'); });
+    const inpConcept = document.createElement('input'); inpConcept.placeholder='Concepto'; inpConcept.style.width='140px';
+    const inpAbono = document.createElement('input'); inpAbono.type='number'; inpAbono.placeholder='Abono'; inpAbono.style.width='90px';
+    const btnAp = document.createElement('button'); btnAp.className='small'; btnAp.textContent='Aplicar';
     btnAp.addEventListener('click', ()=>{
       const concepto = inpConcept.value.trim(); const ab = Number(inpAbono.value||0);
-      if(!concepto || ab<=0){ alert('Concepto y abono válidos'); return; }
-      // actualizar saldo cliente globalmente
-      const idxCli = clientes.findIndex(x=>x.id === c.id);
-      if(idxCli === -1){ alert('Cliente no existe'); return; }
-      const anterior = Number(clientes[idxCli].saldo||0);
-      let nuevo = anterior - ab; if(nuevo<0) nuevo=0;
-      clientes[idxCli].saldo = nuevo;
-      save(KEY.CLIENTES, clientes);
-      // guardar abono
-      abonos.push({ id:'a_'+Date.now(), cliente:c.nombre, cobrador:cid, concepto, abono:ab, fecha: new Date().toISOString()});
-      save(KEY.ABONOS, abonos);
-      showClientsForRoute(); renderClientesList(); renderReportResults(); alert('Abono aplicado');
-      // imprimir comprobante
-      const ticket = {
-        folio: '(comprobante)', cliente:c.nombre, concepto, abono:ab, anterior, restante: nuevo, cobrador: (cobradores.find(x=>x.id===cid)||{}).nombre || ''
-      };
-      printReceipt(ticket);
+      if(!concepto || ab<=0){ toast('Concepto y abono válidos'); return; }
+      applyAbono(c, cobId, concepto, ab);
     });
-
-    right.appendChild(btnUb);
-    right.appendChild(inpConcept);
-    right.appendChild(inpAbono);
-    right.appendChild(btnAp);
-    div.appendChild(right);
-    cont.appendChild(div);
+    actions.appendChild(btnVer); actions.appendChild(inpConcept); actions.appendChild(inpAbono); actions.appendChild(btnAp);
+    div.appendChild(actions); cont.appendChild(div);
   });
+  // update mapRuta
+  markersRuta.forEach(m=>m.remove()); markersRuta=[];
+  let bounds=[];
+  list.forEach(c=>{
+    if(c.lat && c.lng){
+      const m = L.marker([c.lat,c.lng]).addTo(mapRuta).bindPopup(`<strong>${c.nombre}</strong><br>Saldo: $${formatMoney(c.saldo)}`);
+      markersRuta.push(m); bounds.push([c.lat,c.lng]);
+    }
+  });
+  if(bounds.length) try{ mapRuta.fitBounds(bounds, { padding:[40,40] }); }catch(e){}
 }
 
-/* print comprobante de abono */
+/* apply abono */
+function applyAbono(clienteObj, cobradorId, concepto, abonoVal){
+  const idx = clientes.findIndex(x=>x.id === clienteObj.id);
+  if(idx === -1) { toast('Cliente no encontrado'); return; }
+  const anterior = Number(clientes[idx].saldo || 0);
+  let nuevo = anterior - Number(abonoVal); if(nuevo < 0) nuevo = 0;
+  clientes[idx].saldo = nuevo;
+  abonos.push({ id:'a_'+Date.now(), cliente: clienteObj.nombre, cobrador: cobradorId, concepto, abono: Number(abonoVal), fecha: new Date().toISOString() });
+  persistAll(); renderClientes(); showRouteForCobrador(); renderReportResults(); toast('Abono registrado');
+  const ticket = { cliente: clienteObj.nombre, cobrador: (cobradores.find(x=>x.id===cobradorId)||{}).nombre || '', concepto, anterior, abono: Number(abonoVal), restante: nuevo };
+  printReceipt(ticket);
+}
 function printReceipt(t){
+  const w = window.open('','_blank','width=420,height=620');
   const html = `
-    <div style="font-family:Segoe UI;padding:16px;width:320px">
-      <h2 style="text-align:center;font-weight:700">Comprobante de Pago</h2><hr>
+    <html><head><title>Comprobante</title></head><body style="font-family:Segoe UI;padding:16px">
+      <h2 style="text-align:center">Comprobante de Pago</h2><hr>
       <p><strong>Cliente:</strong> ${t.cliente}</p>
       <p><strong>Cobrador:</strong> ${t.cobrador}</p>
       <p><strong>Concepto:</strong> ${t.concepto}</p>
-      <p><strong>Saldo anterior:</strong> $${Number(t.anterior).toFixed(2)}</p>
-      <p><strong>Abono:</strong> $${Number(t.abono).toFixed(2)}</p>
-      <p><strong>Saldo restante:</strong> $${Number(t.restante).toFixed(2)}</p>
+      <p><strong>Saldo anterior:</strong> $${formatMoney(t.anterior)}</p>
+      <p><strong>Abono:</strong> $${formatMoney(t.abono)}</p>
+      <p><strong>Saldo restante:</strong> $${formatMoney(t.restante)}</p>
       <hr><p style="text-align:center">Este comprobante sirve como constancia de pago</p>
-    </div>`;
-  const w = window.open('','', 'width=420,height=620');
+    </body></html>`;
   w.document.write(html); w.document.close(); w.print();
 }
 
-/* ---------- REPORTES ---------- */
-document.getElementById('btnFiltrar').addEventListener('click', renderReportResults);
+/* ============================
+   REPORTES: filter/export
+   ============================ */
+document.getElementById('btnRunReport').addEventListener('click', renderReportResults);
+document.getElementById('btnExportCSV').addEventListener('click', exportReportCSV);
+document.getElementById('btnExportPDF').addEventListener('click', exportReportPDF);
+
 function renderReportResults(){
-  const cli = document.getElementById('filtroCliente').value;
-  const cob = document.getElementById('filtroCobrador').value;
-  const fI = document.getElementById('fInicio').value;
-  const fF = document.getElementById('fFin').value;
-  const cont = document.getElementById('resultReport'); cont.innerHTML='';
+  const cli = document.getElementById('reportCliente').value;
+  const cob = document.getElementById('reportCobrador').value;
+  const desde = document.getElementById('reportDesde').value;
+  const hasta = document.getElementById('reportHasta').value;
+  const cont = document.getElementById('reportResults'); cont.innerHTML='';
   let list = abonos.slice();
-  if(cli) list = list.filter(a=>a.cliente === cli);
-  if(cob) list = list.filter(a=>a.cobrador === cob);
-  if(fI) list = list.filter(a=> new Date(a.fecha) >= new Date(fI+'T00:00:00'));
-  if(fF) list = list.filter(a=> new Date(a.fecha) <= new Date(fF+'T23:59:59'));
+  if(cli) list = list.filter(a=> a.cliente === (clientes.find(c=>c.id===cli)||{}).nombre );
+  if(cob) list = list.filter(a=> a.cobrador === cob);
+  if(desde) list = list.filter(a=> new Date(a.fecha) >= new Date(desde + 'T00:00:00'));
+  if(hasta) list = list.filter(a=> new Date(a.fecha) <= new Date(hasta + 'T23:59:59'));
   if(list.length===0){ cont.innerHTML = '<div class="muted">No hay registros</div>'; return; }
   list.forEach(a=>{
-    const div=document.createElement('div'); div.className='item';
-    div.textContent = `${new Date(a.fecha).toLocaleString()} — ${a.cliente} | ${a.concepto} | $${Number(a.abono).toFixed(2)} | ${ (cobradores.find(x=>x.id===a.cobrador)||{}).nombre || a.cobrador }`;
-    cont.appendChild(div);
+    const d = document.createElement('div'); d.className='item';
+    const cobName = (cobradores.find(x=>x.id===a.cobrador)||{}).nombre || a.cobrador;
+    d.textContent = `${new Date(a.fecha).toLocaleString()} — ${a.cliente} | ${a.concepto} | $${formatMoney(a.abono)} • ${cobName}`;
+    cont.appendChild(d);
   });
 }
 
-/* ---------- INICIO: render inicial ---------- */
-function renderInitial(){
-  renderClientesList();
-  renderCobradoresList();
-  renderVentasList();
-  refreshAllSelectors();
-  renderReportResults();
+function exportReportCSV(){
+  const rows = [['Fecha','Cliente','Concepto','Abono','Cobrador']];
+  abonos.forEach(a=>{
+    const cobName = (cobradores.find(x=>x.id===a.cobrador)||{}).nombre || a.cobrador;
+    rows.push([ new Date(a.fecha).toLocaleString(), a.cliente, a.concepto, formatMoney(a.abono), cobName ]);
+  });
+  const csv = rows.map(r => r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob = new Blob([csv], { type:'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = 'report_abonos.csv'; a.click();
+  URL.revokeObjectURL(url);
 }
-renderInitial();
+
+async function exportReportPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF();
+  doc.setFontSize(12); doc.text('Reporte de Abonos', 14, 20);
+  let y = 30;
+  abonos.slice().forEach(a=>{
+    const cobName = (cobradores.find(x=>x.id===a.cobrador)||{}).nombre || a.cobrador;
+    const line = `${new Date(a.fecha).toLocaleString()} — ${a.cliente} — ${a.concepto} — $${formatMoney(a.abono)} — ${cobName}`;
+    doc.text(line, 14, y);
+    y+=6; if(y>270){ doc.addPage(); y=20; }
+  });
+  doc.save('reporte_abonos.pdf');
+}
+
+/* ============================
+   INIT: events, maps, render
+   ============================ */
+function initRole(){
+  if(!currentRole){ openRoleModal(); return; }
+  document.getElementById('currentRole').textContent = currentRole;
+  if(currentRole === 'Cobrador'){
+    ['navClientes','navCobradores','navReportes','navConfig'].forEach(id=>document.getElementById(id).style.display='none');
+  } else {
+    ['navClients','navClientes','navCobradores','navReportes','navConfig'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='block'; });
+  }
+}
+
+document.getElementById('btnLogout').addEventListener('click', ()=>{ if(confirm('Cerrar sesión?')){ localStorage.removeItem(LS.ROLE); currentRole=null; openRoleModal(); } });
+document.getElementById('toggleTheme').addEventListener('click', ()=> setTheme(appEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') );
+document.getElementById('toggleThemeConfig').addEventListener('click', ()=> setTheme(appEl.getAttribute('data-theme') === 'dark' ? 'light' : 'dark') );
+
+document.getElementById('openQuickAdd').addEventListener('click', ()=> { document.getElementById('navVentas').click(); });
+
+document.getElementById('rutaCobrador').addEventListener('change', showRouteForCobrador);
+document.getElementById('rutaFiltroSaldo').addEventListener('change', showRouteForCobrador);
+
+document.getElementById('btnVerTodosMapa').addEventListener('click', ()=>{ document.getElementById('navClientes').click(); setTimeout(()=>{ refreshMaps(); }, 300); });
+
+/* initial render */
+refreshSelectors(); renderClientes(); renderCobradores(); renderVentasList(); renderReportResults();
+setTimeout(()=>{ try{ initMaps(); }catch(e){} }, 400);
+initRole();
+if(!currentRole) openRoleModal();
 
 </script>
 </body>
