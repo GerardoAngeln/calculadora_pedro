@@ -14,7 +14,7 @@ header{background:#0d6efd;color:#fff;padding:15px;text-align:center;font-size:18
 .btn.success{background:#198754;}
 .btn.warn{background:#ffc107;color:#000;}
 .card{background:#fff;border-radius:12px;padding:15px;margin-bottom:12px;}
-input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radius:10px;border:1px solid #ccc;}
+input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radius:10px;border:1px solid #ccc;}
 .hidden{display:none;}
 .step{animation:fade .25s ease-in-out;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
@@ -33,14 +33,15 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
   <button class="btn" onclick="mostrarPaso('cliente')">➕ Nueva Reparación</button>
   <button class="btn secondary" onclick="mostrarHistorial('pendiente')">📋 Pendientes</button>
   <button class="btn secondary" onclick="mostrarHistorial('entregado')">📦 Entregados</button>
+  <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
-<!-- NUEVA -->
+<!-- NUEVA REPARACIÓN -->
 <div id="cliente" class="step hidden">
   <div class="card">
     <h3>👤 Cliente</h3>
     <input id="clienteNombre" placeholder="Nombre">
-    <input id="clienteTelefono" placeholder="Teléfono (WhatsApp)">
+    <input id="clienteTelefono" placeholder="Teléfono / WhatsApp">
     <button class="btn" onclick="mostrarPaso('equipo')">Siguiente</button>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Cancelar</button>
   </div>
@@ -69,13 +70,26 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
 
 <!-- LISTA -->
 <div id="lista" class="step hidden">
-  <input id="buscador" class="search" placeholder="🔍 Buscar..." oninput="filtrar()">
+  <input id="buscador" class="search" placeholder="🔍 Buscar por nombre, modelo o folio" oninput="filtrar()">
   <div id="listaItems"></div>
   <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
 </div>
 
 <!-- DETALLE -->
 <div id="detalle" class="step hidden"></div>
+
+<!-- RESPALDO -->
+<div id="respaldo" class="step hidden">
+  <div class="card">
+    <h3>💾 Respaldo de información</h3>
+    <button class="btn success" onclick="exportarDatos()">📤 Exportar respaldo</button>
+    <input type="file" id="importFile" accept=".json" onchange="importarDatos()">
+    <p style="font-size:13px;color:#555">
+      Guarda este archivo en Drive, WhatsApp o correo.
+    </p>
+    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
+  </div>
+</div>
 
 </div>
 
@@ -87,13 +101,8 @@ function mostrarPaso(id){
   document.getElementById(id).classList.remove('hidden');
 }
 
-function fechaHora(){
-  return new Date().toLocaleString();
-}
-
-function generarFolio(){
-  return "R-" + Date.now();
-}
+function fechaHora(){ return new Date().toLocaleString(); }
+function generarFolio(){ return "R-" + Date.now(); }
 
 function guardarReparacion(){
   let rep={
@@ -119,8 +128,7 @@ function guardarReparacion(){
 function mostrarHistorial(tipo){
   modo=tipo;
   mostrarPaso("lista");
-  cache=JSON.parse(localStorage.getItem("reparaciones")||"[]")
-    .filter(r=>r.estatus===tipo);
+  cache=JSON.parse(localStorage.getItem("reparaciones")||"[]").filter(r=>r.estatus===tipo);
   renderLista(cache);
 }
 
@@ -180,13 +188,9 @@ function verDetalle(i){
     <div class="kv"><span>Saldo</span><strong>$${saldo}</strong></div>
   </div>
 
-  <button class="btn success" onclick="enviarTexto(${JSON.stringify(texto)})">
-    📩 Enviar información por texto
-  </button>
+  <button class="btn success" onclick="enviarTexto(${JSON.stringify(texto)})">📩 Enviar información por texto</button>
 
-  ${d.estatus==="pendiente" ? `
-    <button class="btn warn" onclick="entregarEquipo()">📦 Entregar equipo</button>
-  `:""}
+  ${d.estatus==="pendiente" ? `<button class="btn warn" onclick="entregarEquipo()">📦 Entregar equipo</button>` : ""}
 
   <button class="btn secondary" onclick="mostrarHistorial(modo)">Volver</button>
   `;
@@ -196,17 +200,38 @@ function enviarTexto(texto){
   if(navigator.share){
     navigator.share({text:texto});
   }else{
-    let url="https://wa.me/?text="+encodeURIComponent(texto);
-    window.open(url,"_blank");
+    window.open("https://wa.me/?text="+encodeURIComponent(texto),"_blank");
   }
 }
 
 function entregarEquipo(){
   let data=JSON.parse(localStorage.getItem("reparaciones"));
-  let original=data.find(r=>r.folio===cache[idx].folio);
-  original.estatus="entregado";
+  let o=data.find(r=>r.folio===cache[idx].folio);
+  o.estatus="entregado";
   localStorage.setItem("reparaciones",JSON.stringify(data));
   mostrarHistorial("pendiente");
+}
+
+/* RESPALDO */
+function exportarDatos(){
+  let data=localStorage.getItem("reparaciones")||"[]";
+  let blob=new Blob([data],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="respaldo_reparaciones.json";
+  a.click();
+}
+
+function importarDatos(){
+  let f=document.getElementById("importFile").files[0];
+  if(!f) return;
+  let r=new FileReader();
+  r.onload=e=>{
+    localStorage.setItem("reparaciones",e.target.result);
+    alert("Respaldo restaurado correctamente");
+    mostrarPaso("inicio");
+  };
+  r.readAsText(f);
 }
 </script>
 
