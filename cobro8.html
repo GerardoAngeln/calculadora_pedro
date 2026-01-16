@@ -3,244 +3,304 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cobranza Móvil</title>
+<title>SISTEMA PARA REPARACIÓN DE EQUIPOS</title>
 
 <style>
-body{margin:0;font-family:'Segoe UI',Arial,sans-serif;background:#f3f4f6}
-.view{display:none}
-header{background:#2ecc71;color:#fff;padding:16px;text-align:center;font-weight:600}
-.box{background:#fff;margin:16px;padding:16px;border-radius:14px}
-.btn{width:100%;padding:14px;margin:8px 0;border:none;border-radius:10px;font-size:16px}
-.admin{background:#111827;color:#fff}
-.cobrador{background:#2ecc71;color:#fff}
-.volver{background:#d1d5db}
-input,select{width:100%;padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #ddd}
-.item{background:#f1f5f9;padding:12px;border-radius:10px;margin-bottom:8px;cursor:pointer}
-.small{font-size:13px;color:#555}
-canvas{width:100%;border:1px solid #ddd;border-radius:10px;margin-top:10px}
+body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f2f4f7;}
+header{background:#0d6efd;color:#fff;padding:15px;text-align:center;font-size:18px;font-weight:bold;}
+.container{padding:15px;}
+.btn{width:100%;padding:14px;margin:6px 0;font-size:16px;border:none;border-radius:12px;background:#0d6efd;color:#fff;}
+.btn.secondary{background:#6c757d;}
+.btn.success{background:#198754;}
+.btn.warn{background:#ffc107;color:#000;}
+.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:12px;}
+input,textarea,select{width:100%;padding:10px;margin-top:8px;font-size:15px;border-radius:10px;border:1px solid #ccc;}
+.hidden{display:none;}
+.step{animation:fade .2s ease-in-out;}
+@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
+textarea.texto{height:280px;font-family:monospace;}
+.badge{padding:4px 10px;border-radius:12px;font-size:12px;color:#fff;}
+.ok{background:#198754;}
+.bad{background:#dc3545;}
+.none{background:#6c757d;}
+.search{margin-bottom:10px;}
 </style>
 </head>
 
 <body>
+<header>SISTEMA PARA REPARACIÓN DE EQUIPOS</header>
+
+<div class="container">
 
 <!-- INICIO -->
-<div id="inicioView" class="view">
-  <div class="box" style="text-align:center">
-    <h2>Cobranza Móvil</h2>
-    <p>💼 Promociones Culturales</p>
-    <button class="btn admin" onclick="show('adminView')">ADMIN</button>
-    <button class="btn cobrador" onclick="entrarCobrador()">COBRADOR</button>
-  </div>
-</div>
-
-<!-- ADMIN -->
-<div id="adminView" class="view">
-<header>Administrador</header>
-
-<div class="box">
-<h4>Alta de Clientes</h4>
-<input id="cNombre" placeholder="Nombre">
-<input id="cTel" placeholder="Teléfono">
-<button class="btn cobrador" onclick="addCliente()">Guardar cliente</button>
-</div>
-
-<div class="box">
-<h4>Alta de Cobradores</h4>
-<input id="coNombre" placeholder="Nombre">
-<button class="btn admin" onclick="addCobrador()">Guardar cobrador</button>
-</div>
-
-<div class="box">
-<h4>Asignar Cliente a Cobrador</h4>
-<select id="asCliente"></select>
-<select id="asCobrador"></select>
-<button class="btn cobrador" onclick="asignarCliente()">Asignar</button>
-</div>
-
-<div class="box">
-<h4>Registrar Venta</h4>
-<select id="vCliente"></select>
-<input id="vConcepto" placeholder="Concepto">
-<input type="number" id="vTotal" placeholder="Total">
-<input type="number" id="vAbono" placeholder="Abono inicial (opcional)">
-<button class="btn cobrador" onclick="registrarVenta()">Registrar venta</button>
-</div>
-
-<div class="box">
-<h4>Comprobante de Venta</h4>
-<canvas id="canvasVenta" width="320" height="420"></canvas>
-<button class="btn admin" onclick="descargarComprobante()">Descargar comprobante</button>
-</div>
-
-<button class="btn volver" onclick="show('inicioView')">Volver</button>
-</div>
-
-<!-- RUTA COBRADOR -->
-<div id="rutaView" class="view">
-<header>Clientes asignados</header>
-<div class="box" id="listaClientes"></div>
-<button class="btn volver" onclick="show('inicioView')">Salir</button>
+<div id="inicio" class="step">
+  <button class="btn" onclick="mostrarPaso('cliente')">➕ Nueva Reparación</button>
+  <button class="btn secondary" onclick="mostrarPendientes()">📋 Pendientes</button>
+  <button class="btn secondary" onclick="mostrarEntregados()">📦 Entregados</button>
+  <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
 <!-- CLIENTE -->
-<div id="clienteView" class="view">
-<header id="clienteHeader"></header>
-<div class="box" id="ventasCliente"></div>
-<button class="btn volver" onclick="volverRuta()">Volver</button>
+<div id="cliente" class="step hidden">
+  <div class="card">
+    <h3>👤 Cliente</h3>
+    <input id="clienteNombre" placeholder="Nombre">
+    <input id="clienteTelefono" placeholder="Teléfono / WhatsApp">
+    <button class="btn" onclick="mostrarPaso('equipo')">Siguiente</button>
+  </div>
 </div>
 
-<!-- COBRO -->
-<div id="cobroView" class="view">
-<header>Cobro / Comprobante</header>
-
-<div class="box">
-<div id="infoVenta" class="small"></div>
-<input type="number" id="montoCobro" placeholder="Monto a cobrar">
-<button class="btn cobrador" onclick="registrarCobro()">Registrar cobro</button>
+<!-- EQUIPO -->
+<div id="equipo" class="step hidden">
+  <div class="card">
+    <h3>📱 Equipo</h3>
+    <input id="marca" placeholder="Marca">
+    <input id="modelo" placeholder="Modelo">
+    <input id="color" placeholder="Color">
+    <input id="imei" placeholder="IMEI (opcional)">
+    <button class="btn" onclick="mostrarPaso('falla')">Siguiente</button>
+  </div>
 </div>
 
-<div class="box">
-<canvas id="canvasPago" width="320" height="420"></canvas>
-<button class="btn admin" onclick="descargarComprobante()">Descargar comprobante</button>
+<!-- FALLA -->
+<div id="falla" class="step hidden">
+  <div class="card">
+    <h3>🔧 Falla y Pago</h3>
+    <textarea id="fallaTexto" placeholder="Describe la falla"></textarea>
+    <input id="costo" placeholder="Costo total">
+    <input id="anticipo" placeholder="Anticipo">
+    <button class="btn success" onclick="guardarReparacion()">Guardar reparación</button>
+  </div>
 </div>
 
-<button class="btn volver" onclick="volverCliente()">Volver</button>
+<!-- TEXTO -->
+<div id="comprobante" class="step hidden">
+  <div class="card">
+    <h3>📄 Texto generado</h3>
+    <textarea id="textoComprobante" class="texto" readonly></textarea>
+    <button class="btn success" onclick="enviarWhatsApp()">📩 Enviar por WhatsApp</button>
+    <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
+  </div>
+</div>
+
+<!-- LISTA -->
+<div id="lista" class="step hidden">
+  <input id="buscador" class="search" placeholder="🔍 Buscar por cliente o folio" oninput="filtrar()">
+  <div id="listaItems"></div>
+  <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
+</div>
+
+<!-- DETALLE -->
+<div id="detalle" class="step hidden"></div>
+
+<!-- RESPALDO -->
+<div id="respaldo" class="step hidden">
+  <div class="card">
+    <h3>💾 Respaldo</h3>
+    <button class="btn success" onclick="exportarDatos()">📤 Exportar respaldo</button>
+    <input type="file" id="importFile" accept=".json" onchange="importarDatos()">
+    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
+  </div>
+</div>
+
 </div>
 
 <script>
-/* INICIO */
-show('inicioView');
+let cache=[], idx=null, textoActual="", modo="pendiente";
 
-/* DATA */
-let clientes=[], cobradores=[], ventas=[], abonos=[];
-let cobradorActivo=null, clienteActual=null, ventaActual=null;
-let tipoComprobante="";
-
-/* NAV */
-function show(id){
-  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
-  document.getElementById(id).style.display='block';
+/* FOLIO DESDE 001 */
+function obtenerFolio(){
+  let f=Number(localStorage.getItem("folioActual")||1);
+  localStorage.setItem("folioActual",f+1);
+  return String(f).padStart(3,"0");
 }
 
-/* ADMIN */
-function addCliente(){
-  clientes.push({id:Date.now(),nombre:cNombre.value,telefono:cTel.value,cobrador:null});
-  cNombre.value=cTel.value="";
-  renderAdmin();
+function mostrarPaso(id){
+  document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
-function addCobrador(){
-  cobradores.push({id:Date.now(),nombre:coNombre.value});
-  coNombre.value="";
-  renderAdmin();
-}
-function asignarCliente(){
-  clientes.find(c=>c.id==asCliente.value).cobrador=asCobrador.value;
-  alert("Cliente asignado");
-}
-function registrarVenta(){
-  let total=+vTotal.value, abono=+vAbono.value||0;
-  ventaActual={
-    id:Date.now(),
-    cliente:vCliente.value,
-    concepto:vConcepto.value,
-    total,
-    saldo:total-abono
+
+function fechaHora(){return new Date().toLocaleString();}
+
+/* GUARDAR */
+function guardarReparacion(){
+  let rep={
+    folio:obtenerFolio(),
+    fecha:fechaHora(),
+    cliente:clienteNombre.value,
+    telefono:clienteTelefono.value,
+    marca:marca.value,
+    modelo:modelo.value,
+    color:color.value,
+    imei:imei.value||"No proporcionado",
+    falla:fallaTexto.value,
+    costo:Number(costo.value||0),
+    anticipo:Number(anticipo.value||0),
+    estatus:"pendiente",
+    garantia:null,
+    fechaEntrega:null
   };
-  ventas.push(ventaActual);
-  generarComprobanteVenta();
-  alert("Venta registrada");
-}
-function renderAdmin(){
-  asCliente.innerHTML=vCliente.innerHTML=clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join("");
-  asCobrador.innerHTML=cobradores.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join("");
+  let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
+  data.push(rep);
+  localStorage.setItem("reparaciones",JSON.stringify(data));
+
+  textoActual=generarTextoRecepcion(rep);
+  textoComprobante.value=textoActual;
+  mostrarPaso("comprobante");
 }
 
-/* COBRADOR */
-function entrarCobrador(){
-  cobradorActivo=cobradores[0]?.id||null;
-  show('rutaView');renderRuta();
-}
-function renderRuta(){
-  listaClientes.innerHTML=clientes.filter(c=>c.cobrador==cobradorActivo).map(c=>{
-    let saldo=ventas.filter(v=>v.cliente==c.id).reduce((s,v)=>s+v.saldo,0);
-    return `<div class="item" onclick="abrirCliente(${c.id})">
-      <strong>${c.nombre}</strong><br>Saldo: $${saldo}
-    </div>`;
-  }).join("") || "Sin clientes asignados";
-}
-function abrirCliente(id){
-  clienteActual=clientes.find(c=>c.id===id);
-  clienteHeader.innerText=clienteActual.nombre;
-  ventasCliente.innerHTML=ventas.filter(v=>v.cliente==id).map(v=>`
-    <div class="item" onclick="abrirVenta(${v.id})">
-      ${v.concepto} – $${v.saldo}
-    </div>`).join("");
-  show('clienteView');
-}
-function abrirVenta(id){
-  ventaActual=ventas.find(v=>v.id===id);
-  infoVenta.innerText=ventaActual.concepto+" | Saldo: $"+ventaActual.saldo;
-  generarComprobanteVenta();
-  show('cobroView');
-}
-function registrarCobro(){
-  let monto=+montoCobro.value;
-  if(!monto||monto>ventaActual.saldo){alert("Monto inválido");return;}
-  ventaActual.saldo-=monto;
-  abonos.push({venta:ventaActual.id,monto,fecha:new Date().toLocaleString()});
-  generarComprobantePago(monto);
+function generarTextoRecepcion(r){
+  return `📄 RECEPCIÓN DE EQUIPO
+
+Folio: ${r.folio}
+Fecha: ${r.fecha}
+
+Cliente: ${r.cliente}
+Equipo: ${r.marca} ${r.modelo}
+
+Falla:
+${r.falla}
+
+Costo: $${r.costo}
+Anticipo: $${r.anticipo}
+Saldo: $${r.costo-r.anticipo}
+`;
 }
 
-/* COMPROBANTES */
-function generarComprobanteVenta(){
-  tipoComprobante="venta";
-  const c=document.getElementById("canvasVenta");
-  const ctx=c.getContext("2d");
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#000";ctx.font="18px Arial";
-  ctx.fillText("COMPROBANTE DE VENTA",40,30);
-  ctx.font="14px Arial";
-  ctx.fillText("Cobranza Móvil",20,70);
-  ctx.fillText("Promociones Culturales",20,90);
-  ctx.fillText("Concepto: "+ventaActual.concepto,20,130);
-  ctx.fillText("Total: $"+ventaActual.total,20,160);
-  ctx.fillText("Saldo: $"+ventaActual.saldo,20,190);
-  ctx.fillText("Fecha: "+new Date().toLocaleString(),20,230);
+/* LISTAS */
+function mostrarPendientes(){
+  modo="pendiente";
+  mostrarPaso("lista");
+  let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
+  cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus==="pendiente");
+  renderLista();
 }
 
-function generarComprobantePago(monto){
-  tipoComprobante="pago";
-  const c=document.getElementById("canvasPago");
-  const ctx=c.getContext("2d");
-  ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
-  ctx.fillStyle="#000";ctx.font="18px Arial";
-  ctx.fillText("COMPROBANTE DE PAGO",40,30);
-  ctx.font="14px Arial";
-  ctx.fillText("Cliente: "+clienteActual.nombre,20,80);
-  ctx.fillText("Concepto: "+ventaActual.concepto,20,110);
-  ctx.fillText("Monto pagado: $"+monto,20,140);
-  ctx.fillText("Saldo restante: $"+ventaActual.saldo,20,170);
-  ctx.fillText("Fecha: "+new Date().toLocaleString(),20,210);
+function mostrarEntregados(){
+  modo="entregado";
+  mostrarPaso("lista");
+  let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
+  cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus==="entregado");
+  renderLista();
 }
 
-/* DESCARGA */
-function descargarComprobante(){
-  const canvas = tipoComprobante==="venta" ? canvasVenta : canvasPago;
-  const fecha=new Date().toISOString().slice(0,10);
-  const nombre=(clienteActual?.nombre||"cliente").replace(/\s+/g,'_').toLowerCase();
-  const link=document.createElement("a");
-  link.download=`${tipoComprobante}_${nombre}_${fecha}.png`;
-  link.href=canvas.toDataURL("image/png");
-  link.click();
+function estadoGarantia(r){
+  if(!r.garantia) return `<span class="badge none">SIN GARANTÍA</span>`;
+  let hoy=new Date();
+  let fin=new Date(r.garantia.fin);
+  return hoy<=fin
+    ? `<span class="badge ok">VIGENTE</span>`
+    : `<span class="badge bad">VENCIDA</span>`;
 }
 
-/* VOLVER */
-function volverRuta(){show('rutaView');renderRuta();}
-function volverCliente(){show('clienteView');}
+function renderLista(){
+  if(!cache.length){
+    listaItems.innerHTML="<div class='card'>Sin registros</div>";
+    return;
+  }
+  listaItems.innerHTML=cache.map((r,i)=>`
+    <div class="card" onclick="verDetalle(${i})">
+      <strong>${r.cliente}</strong><br>
+      ${r.marca} ${r.modelo}<br>
+      Folio: ${r.folio}<br>
+      ${modo==="entregado"?`Entrega: ${r.fechaEntrega}<br>${estadoGarantia(r)}`:""}
+    </div>
+  `).join("");
+}
+
+function filtrar(){
+  let q=buscador.value.toLowerCase();
+  let f=cache.filter(r=>
+    r.cliente.toLowerCase().includes(q)||
+    r.folio.includes(q)
+  );
+  let tmp=cache;
+  cache=f;
+  renderLista();
+  cache=tmp;
+}
+
+/* DETALLE + ENTREGA */
+function verDetalle(i){
+  idx=i;
+  let r=cache[i];
+  mostrarPaso("detalle");
+  detalle.innerHTML=`
+    <div class="card">
+      <strong>${r.cliente}</strong><br>
+      ${r.marca} ${r.modelo}<br>
+      Folio: ${r.folio}
+    </div>
+
+    ${r.estatus==="pendiente"?`
+      <select id="diasGar">
+        <option value="0">Sin garantía</option>
+        <option value="15">15 días</option>
+        <option value="30">30 días</option>
+        <option value="60">60 días</option>
+      </select>
+      <button class="btn warn" onclick="entregarEquipo()">📦 Entregar</button>
+    `:""}
+
+    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
+  `;
+}
+
+function entregarEquipo(){
+  let data=JSON.parse(localStorage.getItem("reparaciones"));
+  let real=data[cache[idx]._i];
+  let dias=Number(document.getElementById("diasGar").value);
+  let ini=new Date(), fin=null;
+
+  if(dias>0){
+    fin=new Date();
+    fin.setDate(ini.getDate()+dias);
+    real.garantia={dias,inicio:ini.toISOString(),fin:fin.toISOString()};
+  }
+
+  real.estatus="entregado";
+  real.fechaEntrega=fechaHora();
+  localStorage.setItem("reparaciones",JSON.stringify(data));
+
+  textoActual=
+    generarTextoRecepcion(real)+
+    `\n📦 ENTREGA DE EQUIPO
+Fecha de entrega: ${real.fechaEntrega}
+Garantía: ${dias>0?dias+" días (vence "+fin.toLocaleDateString()+")":"No aplica"}
+
+Gracias por su preferencia.`;
+
+  textoComprobante.value=textoActual;
+  mostrarPaso("comprobante");
+}
+
+function enviarWhatsApp(){
+  window.open("https://wa.me/?text="+encodeURIComponent(textoActual),"_blank");
+}
+
+/* RESPALDO */
+function exportarDatos(){
+  let data=localStorage.getItem("reparaciones")||"[]";
+  let blob=new Blob([data],{type:"application/json"});
+  let a=document.createElement("a");
+  a.href=URL.createObjectURL(blob);
+  a.download="respaldo_reparaciones.json";
+  a.click();
+}
+
+function importarDatos(){
+  let f=document.getElementById("importFile").files[0];
+  if(!f)return;
+  let r=new FileReader();
+  r.onload=e=>{
+    localStorage.setItem("reparaciones",e.target.result);
+    alert("Respaldo restaurado");
+    mostrarPaso("inicio");
+  };
+  r.readAsText(f);
+}
 </script>
 
 </body>
 </html>
-
-
 
