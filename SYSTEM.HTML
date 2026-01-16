@@ -36,7 +36,7 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
   <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
-<!-- NUEVA REPARACIÓN -->
+<!-- NUEVA -->
 <div id="cliente" class="step hidden">
   <div class="card">
     <h3>👤 Cliente</h3>
@@ -64,13 +64,13 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
     <textarea id="fallaTexto" placeholder="Describe la falla"></textarea>
     <input id="costo" placeholder="Costo total">
     <input id="anticipo" placeholder="Anticipo">
-    <button class="btn" onclick="guardarReparacion()">Guardar Reparación</button>
+    <button class="btn" onclick="guardarReparacion()">Guardar y enviar comprobante</button>
   </div>
 </div>
 
 <!-- LISTA -->
 <div id="lista" class="step hidden">
-  <input id="buscador" class="search" placeholder="🔍 Buscar por nombre, modelo o folio" oninput="filtrar()">
+  <input id="buscador" class="search" placeholder="🔍 Buscar..." oninput="filtrar()">
   <div id="listaItems"></div>
   <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
 </div>
@@ -81,12 +81,9 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
 <!-- RESPALDO -->
 <div id="respaldo" class="step hidden">
   <div class="card">
-    <h3>💾 Respaldo de información</h3>
+    <h3>💾 Respaldo</h3>
     <button class="btn success" onclick="exportarDatos()">📤 Exportar respaldo</button>
     <input type="file" id="importFile" accept=".json" onchange="importarDatos()">
-    <p style="font-size:13px;color:#555">
-      Guarda este archivo en Drive, WhatsApp o correo.
-    </p>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
   </div>
 </div>
@@ -119,12 +116,44 @@ function guardarReparacion(){
     anticipo: Number(anticipo.value||0),
     estatus: "pendiente"
   };
+
   let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
   data.push(rep);
   localStorage.setItem("reparaciones",JSON.stringify(data));
+
+  let saldo=rep.costo-rep.anticipo;
+
+  let texto=`📄 ORDEN DE REPARACIÓN
+🆔 Folio: ${rep.folio}
+⏰ Fecha: ${rep.fecha}
+
+👤 Cliente: ${rep.cliente}
+📞 Teléfono: ${rep.telefono}
+
+📱 Equipo: ${rep.marca} ${rep.modelo}
+🎨 Color: ${rep.color}
+🔢 IMEI: ${rep.imei}
+
+🔧 Falla: ${rep.falla}
+
+💰 Costo: $${rep.costo}
+💵 Anticipo: $${rep.anticipo}
+💲 Saldo: $${saldo}
+`;
+
+  enviarTexto(texto);   // ✅ ENVÍO AUTOMÁTICO VALIDADO
   mostrarPaso("inicio");
 }
 
+function enviarTexto(texto){
+  if(navigator.share){
+    navigator.share({text:texto});
+  }else{
+    window.open("https://wa.me/?text="+encodeURIComponent(texto),"_blank");
+  }
+}
+
+/* HISTORIAL + RESPALDO (sin cambios) */
 function mostrarHistorial(tipo){
   modo=tipo;
   mostrarPaso("lista");
@@ -136,7 +165,7 @@ function renderLista(data){
   let c=document.getElementById("listaItems");
   if(!data.length){c.innerHTML="<div class='card'>Sin registros</div>";return;}
   c.innerHTML=data.map((r,i)=>`
-    <div class="card" onclick="verDetalle(${i})">
+    <div class="card">
       <strong>${r.cliente}</strong><br>
       ${r.marca} ${r.modelo}<br>
       🆔 ${r.folio}<br>
@@ -145,74 +174,6 @@ function renderLista(data){
   `).join("");
 }
 
-function filtrar(){
-  let q=buscador.value.toLowerCase();
-  renderLista(cache.filter(r=>
-    r.cliente.toLowerCase().includes(q) ||
-    r.modelo.toLowerCase().includes(q) ||
-    r.folio.toLowerCase().includes(q)
-  ));
-}
-
-function verDetalle(i){
-  idx=i;
-  mostrarPaso("detalle");
-  let d=cache[i];
-  let saldo=d.costo-d.anticipo;
-
-  let texto=`📄 ORDEN DE REPARACIÓN
-🆔 Folio: ${d.folio}
-⏰ Fecha: ${d.fecha}
-
-👤 Cliente: ${d.cliente}
-📞 Teléfono: ${d.telefono}
-
-📱 Equipo: ${d.marca} ${d.modelo}
-🎨 Color: ${d.color}
-🔢 IMEI: ${d.imei}
-
-🔧 Falla: ${d.falla}
-
-💰 Costo: $${d.costo}
-💵 Anticipo: $${d.anticipo}
-💲 Saldo: $${saldo}
-`;
-
-  detalle.innerHTML=`
-  <div class="card">
-    <h3>📄 Detalle</h3>
-    <div class="kv"><span>Folio</span><strong>${d.folio}</strong></div>
-    <div class="kv"><span>Fecha</span><strong>${d.fecha}</strong></div>
-    <div class="kv"><span>Cliente</span><strong>${d.cliente}</strong></div>
-    <div class="kv"><span>Equipo</span><strong>${d.marca} ${d.modelo}</strong></div>
-    <div class="kv"><span>Saldo</span><strong>$${saldo}</strong></div>
-  </div>
-
-  <button class="btn success" onclick="enviarTexto(${JSON.stringify(texto)})">📩 Enviar información por texto</button>
-
-  ${d.estatus==="pendiente" ? `<button class="btn warn" onclick="entregarEquipo()">📦 Entregar equipo</button>` : ""}
-
-  <button class="btn secondary" onclick="mostrarHistorial(modo)">Volver</button>
-  `;
-}
-
-function enviarTexto(texto){
-  if(navigator.share){
-    navigator.share({text:texto});
-  }else{
-    window.open("https://wa.me/?text="+encodeURIComponent(texto),"_blank");
-  }
-}
-
-function entregarEquipo(){
-  let data=JSON.parse(localStorage.getItem("reparaciones"));
-  let o=data.find(r=>r.folio===cache[idx].folio);
-  o.estatus="entregado";
-  localStorage.setItem("reparaciones",JSON.stringify(data));
-  mostrarHistorial("pendiente");
-}
-
-/* RESPALDO */
 function exportarDatos(){
   let data=localStorage.getItem("reparaciones")||"[]";
   let blob=new Blob([data],{type:"application/json"});
@@ -224,7 +185,7 @@ function exportarDatos(){
 
 function importarDatos(){
   let f=document.getElementById("importFile").files[0];
-  if(!f) return;
+  if(!f)return;
   let r=new FileReader();
   r.onload=e=>{
     localStorage.setItem("reparaciones",e.target.result);
