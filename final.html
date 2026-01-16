@@ -33,6 +33,7 @@ textarea.texto{height:300px;font-family:monospace;}
 
 <div class="container">
 
+<!-- INICIO -->
 <div id="inicio" class="step">
   <button class="btn" onclick="mostrarPaso('cliente')">➕ Nueva Reparación</button>
   <button class="btn secondary" onclick="mostrarPendientes()">📋 Pendientes</button>
@@ -40,6 +41,7 @@ textarea.texto{height:300px;font-family:monospace;}
   <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
+<!-- CLIENTE -->
 <div id="cliente" class="step hidden">
   <div class="card">
     <h3>👤 Cliente</h3>
@@ -49,6 +51,7 @@ textarea.texto{height:300px;font-family:monospace;}
   </div>
 </div>
 
+<!-- EQUIPO -->
 <div id="equipo" class="step hidden">
   <div class="card">
     <h3>📱 Equipo</h3>
@@ -60,6 +63,7 @@ textarea.texto{height:300px;font-family:monospace;}
   </div>
 </div>
 
+<!-- FALLA -->
 <div id="falla" class="step hidden">
   <div class="card">
     <h3>🔧 Falla y Pago</h3>
@@ -70,6 +74,7 @@ textarea.texto{height:300px;font-family:monospace;}
   </div>
 </div>
 
+<!-- COMPROBANTE -->
 <div id="comprobante" class="step hidden">
   <div class="card">
     <h3>📄 Comprobante</h3>
@@ -79,14 +84,17 @@ textarea.texto{height:300px;font-family:monospace;}
   </div>
 </div>
 
+<!-- LISTA -->
 <div id="lista" class="step hidden">
   <input id="buscador" class="search" placeholder="🔍 Buscar por cliente o folio" oninput="filtrar()">
   <div id="listaItems"></div>
   <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
 </div>
 
+<!-- DETALLE -->
 <div id="detalle" class="step hidden"></div>
 
+<!-- RESPALDO -->
 <div id="respaldo" class="step hidden">
   <div class="card">
     <h3>💾 Respaldo</h3>
@@ -127,6 +135,14 @@ function confirmarEnvio(){
   if(confirm("¿Enviar comprobante por WhatsApp?")){
     window.open("https://wa.me/"+ordenActual.telefono+"?text="+encodeURIComponent(textoActual),"_blank");
   }
+}
+
+/* ===== GARANTÍA ===== */
+function estadoGarantia(r){
+  if(!r.garantia) return `<span class="badge none">SIN GARANTÍA</span>`;
+  return new Date() <= new Date(r.garantia.fin)
+    ? `<span class="badge ok">VIGENTE</span>`
+    : `<span class="badge bad">VENCIDA</span>`;
 }
 
 /* ===== TEXTOS ===== */
@@ -203,17 +219,33 @@ renderLista();
 }
 
 function renderLista(){
-listaItems.innerHTML=cache.length?cache.map((r,i)=>`
-<div class="card" onclick="verDetalle(${i})">
-<strong>${r.cliente}</strong><br>
-${r.marca} ${r.modelo}<br>
-Folio: ${r.folio}
-</div>`).join(""):"<div class='card'>Sin registros</div>";
+  if(!cache.length){
+    listaItems.innerHTML="<div class='card'>Sin registros</div>";
+    return;
+  }
+  listaItems.innerHTML = cache.map((r,i)=>`
+    <div class="card" onclick="verDetalle(${i})">
+      <strong>${r.cliente}</strong><br>
+      ${r.marca} ${r.modelo}<br>
+      Folio: ${r.folio}<br>
+      ${modo==="entregado" ? `<div style="margin-top:6px">${estadoGarantia(r)}</div>` : ``}
+    </div>
+  `).join("");
 }
 
 function filtrar(){
 let q=buscador.value.toLowerCase();
-renderLista(cache.filter(r=>r.cliente.toLowerCase().includes(q)||r.folio.includes(q)));
+let tmp=cache.filter(r=>r.cliente.toLowerCase().includes(q)||r.folio.includes(q));
+listaItems.innerHTML="";
+tmp.forEach((r,i)=>{
+listaItems.innerHTML+=`
+<div class="card" onclick="verDetalle(${i})">
+<strong>${r.cliente}</strong><br>
+${r.marca} ${r.modelo}<br>
+Folio: ${r.folio}<br>
+${modo==="entregado"?estadoGarantia(r):""}
+</div>`;
+});
 }
 
 /* ===== DETALLE ===== */
@@ -309,5 +341,8 @@ mostrarPaso("inicio");
 r.readAsText(f);
 }
 </script>
+
 </body>
 </html>
+
+
