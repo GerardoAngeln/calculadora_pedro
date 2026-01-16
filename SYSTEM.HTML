@@ -20,6 +20,10 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 .kv{display:flex;justify-content:space-between;margin:6px 0;}
 .search{margin-bottom:10px;}
+textarea.texto{
+  height:260px;
+  font-family:monospace;
+}
 </style>
 </head>
 
@@ -53,7 +57,7 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
     <input id="marca" placeholder="Marca">
     <input id="modelo" placeholder="Modelo">
     <input id="color" placeholder="Color">
-    <input id="imei" placeholder="IMEI">
+    <input id="imei" placeholder="IMEI (opcional)">
     <button class="btn" onclick="mostrarPaso('falla')">Siguiente</button>
   </div>
 </div>
@@ -64,19 +68,26 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
     <textarea id="fallaTexto" placeholder="Describe la falla"></textarea>
     <input id="costo" placeholder="Costo total">
     <input id="anticipo" placeholder="Anticipo">
-    <button class="btn" onclick="guardarReparacion()">Guardar y enviar comprobante</button>
+    <button class="btn success" onclick="guardarReparacion()">Guardar reparación</button>
+  </div>
+</div>
+
+<!-- COMPROBANTE TEXTO -->
+<div id="comprobante" class="step hidden">
+  <div class="card">
+    <h3>📄 Comprobante (Texto)</h3>
+    <textarea id="textoComprobante" class="texto" readonly></textarea>
+    <button class="btn success" onclick="enviarWhatsApp()">📩 Enviar por WhatsApp</button>
+    <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
   </div>
 </div>
 
 <!-- LISTA -->
 <div id="lista" class="step hidden">
-  <input id="buscador" class="search" placeholder="🔍 Buscar..." oninput="filtrar()">
+  <input id="buscador" class="search" placeholder="🔍 Buscar" oninput="filtrar()">
   <div id="listaItems"></div>
   <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
 </div>
-
-<!-- DETALLE -->
-<div id="detalle" class="step hidden"></div>
 
 <!-- RESPALDO -->
 <div id="respaldo" class="step hidden">
@@ -91,7 +102,7 @@ input,textarea{width:100%;padding:12px;margin-top:8px;font-size:15px;border-radi
 </div>
 
 <script>
-let cache=[], idx=null, modo="pendiente";
+let cache=[], textoActual="", modo="pendiente";
 
 function mostrarPaso(id){
   document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
@@ -110,11 +121,11 @@ function guardarReparacion(){
     marca: marca.value,
     modelo: modelo.value,
     color: color.value,
-    imei: imei.value,
+    imei: imei.value || "No proporcionado",
     falla: fallaTexto.value,
     costo: Number(costo.value||0),
     anticipo: Number(anticipo.value||0),
-    estatus: "pendiente"
+    estatus:"pendiente"
   };
 
   let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
@@ -123,7 +134,8 @@ function guardarReparacion(){
 
   let saldo=rep.costo-rep.anticipo;
 
-  let texto=`📄 ORDEN DE REPARACIÓN
+  textoActual=`📄 ORDEN DE REPARACIÓN
+
 🆔 Folio: ${rep.folio}
 ⏰ Fecha: ${rep.fecha}
 
@@ -134,46 +146,38 @@ function guardarReparacion(){
 🎨 Color: ${rep.color}
 🔢 IMEI: ${rep.imei}
 
-🔧 Falla: ${rep.falla}
+🔧 Falla:
+${rep.falla}
 
 💰 Costo: $${rep.costo}
 💵 Anticipo: $${rep.anticipo}
 💲 Saldo: $${saldo}
 `;
 
-  enviarTexto(texto);   // ✅ ENVÍO AUTOMÁTICO VALIDADO
-  mostrarPaso("inicio");
+  textoComprobante.value = textoActual;
+  mostrarPaso("comprobante");
 }
 
-function enviarTexto(texto){
-  if(navigator.share){
-    navigator.share({text:texto});
-  }else{
-    window.open("https://wa.me/?text="+encodeURIComponent(texto),"_blank");
-  }
+function enviarWhatsApp(){
+  window.open("https://wa.me/?text="+encodeURIComponent(textoActual),"_blank");
 }
 
-/* HISTORIAL + RESPALDO (sin cambios) */
+/* HISTORIAL */
 function mostrarHistorial(tipo){
   modo=tipo;
   mostrarPaso("lista");
   cache=JSON.parse(localStorage.getItem("reparaciones")||"[]").filter(r=>r.estatus===tipo);
-  renderLista(cache);
-}
-
-function renderLista(data){
-  let c=document.getElementById("listaItems");
-  if(!data.length){c.innerHTML="<div class='card'>Sin registros</div>";return;}
-  c.innerHTML=data.map((r,i)=>`
+  listaItems.innerHTML=cache.map(r=>`
     <div class="card">
       <strong>${r.cliente}</strong><br>
       ${r.marca} ${r.modelo}<br>
       🆔 ${r.folio}<br>
       ⏰ ${r.fecha}
     </div>
-  `).join("");
+  `).join("") || "<div class='card'>Sin registros</div>";
 }
 
+/* RESPALDO */
 function exportarDatos(){
   let data=localStorage.getItem("reparaciones")||"[]";
   let blob=new Blob([data],{type:"application/json"});
@@ -185,7 +189,7 @@ function exportarDatos(){
 
 function importarDatos(){
   let f=document.getElementById("importFile").files[0];
-  if(!f)return;
+  if(!f) return;
   let r=new FileReader();
   r.onload=e=>{
     localStorage.setItem("reparaciones",e.target.result);
