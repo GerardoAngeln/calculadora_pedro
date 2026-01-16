@@ -18,7 +18,7 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
 .hidden{display:none;}
 .step{animation:fade .25s ease-in-out;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-textarea.texto{height:260px;font-family:monospace;}
+textarea.texto{height:280px;font-family:monospace;}
 </style>
 </head>
 
@@ -35,7 +35,7 @@ textarea.texto{height:260px;font-family:monospace;}
   <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
-<!-- NUEVA -->
+<!-- CLIENTE -->
 <div id="cliente" class="step hidden">
   <div class="card">
     <h3>👤 Cliente</h3>
@@ -45,6 +45,7 @@ textarea.texto{height:260px;font-family:monospace;}
   </div>
 </div>
 
+<!-- EQUIPO -->
 <div id="equipo" class="step hidden">
   <div class="card">
     <h3>📱 Equipo</h3>
@@ -56,6 +57,7 @@ textarea.texto{height:260px;font-family:monospace;}
   </div>
 </div>
 
+<!-- FALLA -->
 <div id="falla" class="step hidden">
   <div class="card">
     <h3>🔧 Falla y Pago</h3>
@@ -66,10 +68,10 @@ textarea.texto{height:260px;font-family:monospace;}
   </div>
 </div>
 
-<!-- COMPROBANTE -->
+<!-- TEXTO -->
 <div id="comprobante" class="step hidden">
   <div class="card">
-    <h3>📄 Texto</h3>
+    <h3>📄 Texto generado</h3>
     <textarea id="textoComprobante" class="texto" readonly></textarea>
     <button class="btn success" onclick="enviarWhatsApp()">📩 Enviar por WhatsApp</button>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
@@ -82,7 +84,7 @@ textarea.texto{height:260px;font-family:monospace;}
   <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
 </div>
 
-<!-- 🔴 DETALLE (ESTO FALTABA) -->
+<!-- DETALLE -->
 <div id="detalle" class="step hidden"></div>
 
 <!-- RESPALDO -->
@@ -98,9 +100,9 @@ textarea.texto{height:260px;font-family:monospace;}
 </div>
 
 <script>
-let cache=[], textoActual="", idx=null;
+let cache=[], idx=null, textoActual="";
 
-/* FOLIO 001 */
+/* FOLIO DESDE 001 */
 function obtenerFolio(){
   let f = Number(localStorage.getItem("folioActual") || 1);
   localStorage.setItem("folioActual", f + 1);
@@ -114,7 +116,7 @@ function mostrarPaso(id){
 
 function fechaHora(){ return new Date().toLocaleString(); }
 
-/* GUARDAR */
+/* RECEPCIÓN */
 function guardarReparacion(){
   let rep={
     folio: obtenerFolio(),
@@ -131,19 +133,39 @@ function guardarReparacion(){
     estatus:"pendiente",
     garantia:null
   };
+
   let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
   data.push(rep);
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual = `📄 RECEPCIÓN DE EQUIPO
-Folio: ${rep.folio}
-Cliente: ${rep.cliente}
-Equipo: ${rep.marca} ${rep.modelo}`;
+  textoActual = generarTextoRecepcion(rep);
   textoComprobante.value = textoActual;
   mostrarPaso("comprobante");
 }
 
-/* PENDIENTES */
+function generarTextoRecepcion(r){
+  return `📄 RECEPCIÓN DE EQUIPO
+
+🆔 Folio: ${r.folio}
+⏰ Fecha: ${r.fecha}
+
+👤 Cliente: ${r.cliente}
+📞 Teléfono: ${r.telefono}
+
+📱 Equipo: ${r.marca} ${r.modelo}
+🎨 Color: ${r.color}
+🔢 IMEI: ${r.imei}
+
+🔧 Falla:
+${r.falla}
+
+💰 Costo: $${r.costo}
+💵 Anticipo: $${r.anticipo}
+💲 Saldo: $${r.costo - r.anticipo}
+`;
+}
+
+/* LISTAS */
 function mostrarPendientes(){
   mostrarPaso("lista");
   let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
@@ -168,7 +190,7 @@ function renderLista(){
   `).join("") || "<div class='card'>Sin registros</div>";
 }
 
-/* ✅ DETALLE FUNCIONAL */
+/* DETALLE + ENTREGA */
 function verDetalle(i){
   idx=i;
   let r=cache[i];
@@ -186,6 +208,7 @@ function verDetalle(i){
         <option value="0">Sin garantía</option>
         <option value="15">15 días</option>
         <option value="30">30 días</option>
+        <option value="60">60 días</option>
       </select>
       <button class="btn warn" onclick="entregarEquipo()">📦 Entregar</button>
     `:""}
@@ -199,9 +222,11 @@ function entregarEquipo(){
   let real=data[cache[idx]._i];
   let dias=Number(document.getElementById("diasGar").value);
 
+  let ini=new Date();
+  let fin=null;
+
   if(dias>0){
-    let ini=new Date();
-    let fin=new Date();
+    fin=new Date();
     fin.setDate(ini.getDate()+dias);
     real.garantia={dias,inicio:ini.toISOString(),fin:fin.toISOString()};
   }
@@ -209,10 +234,15 @@ function entregarEquipo(){
   real.estatus="entregado";
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual = `📦 ENTREGA
-Folio: ${real.folio}
-Garantía: ${dias>0?dias+" días":"No aplica"}`;
-  textoComprobante.value=textoActual;
+  textoActual =
+    generarTextoRecepcion(real) +
+    `\n📦 ENTREGA DE EQUIPO
+⏰ Fecha de entrega: ${fechaHora()}
+🛡️ Garantía: ${dias>0 ? dias+" días (vence "+fin.toLocaleDateString()+")" : "No aplica"}
+
+Gracias por su preferencia.`;
+
+  textoComprobante.value = textoActual;
   mostrarPaso("comprobante");
 }
 
