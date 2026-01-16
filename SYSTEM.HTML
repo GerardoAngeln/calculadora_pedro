@@ -5,8 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SISTEMA PARA REPARACIÓN DE EQUIPOS</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
 <style>
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f2f4f7;}
 header{background:#0d6efd;color:#fff;padding:15px;text-align:center;font-size:18px;font-weight:bold;}
@@ -21,12 +19,7 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
 .step{animation:fade .25s ease-in-out;}
 @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
 .kv{display:flex;justify-content:space-between;margin:6px 0;}
-.badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:13px;color:#fff;}
-.ok{background:#198754;}
-.bad{background:#dc3545;}
 .search{margin-bottom:10px;}
-.tabs{display:flex;gap:5px;margin-bottom:10px;}
-.tabs button{flex:1;}
 </style>
 </head>
 
@@ -40,7 +33,6 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
   <button class="btn" onclick="mostrarPaso('cliente')">➕ Nueva Reparación</button>
   <button class="btn secondary" onclick="mostrarHistorial('pendiente')">📋 Pendientes</button>
   <button class="btn secondary" onclick="mostrarHistorial('entregado')">📦 Entregados</button>
-  <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
 <!-- NUEVA -->
@@ -48,7 +40,7 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
   <div class="card">
     <h3>👤 Cliente</h3>
     <input id="clienteNombre" placeholder="Nombre">
-    <input id="clienteTelefono" placeholder="Teléfono">
+    <input id="clienteTelefono" placeholder="Teléfono (WhatsApp)">
     <button class="btn" onclick="mostrarPaso('equipo')">Siguiente</button>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Cancelar</button>
   </div>
@@ -75,7 +67,7 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
   </div>
 </div>
 
-<!-- HISTORIAL -->
+<!-- LISTA -->
 <div id="lista" class="step hidden">
   <input id="buscador" class="search" placeholder="🔍 Buscar..." oninput="filtrar()">
   <div id="listaItems"></div>
@@ -85,23 +77,9 @@ input,textarea,select{width:100%;padding:12px;margin-top:8px;font-size:15px;bord
 <!-- DETALLE -->
 <div id="detalle" class="step hidden"></div>
 
-<!-- RESPALDO -->
-<div id="respaldo" class="step hidden">
-  <div class="card">
-    <h3>💾 Respaldo de información</h3>
-    <button class="btn success" onclick="exportarDatos()">📤 Exportar respaldo</button>
-    <input type="file" id="importFile" accept=".json" onchange="importarDatos()">
-    <p style="font-size:13px;color:#555">
-      Guarda el archivo en tu nube o envíatelo por WhatsApp.
-    </p>
-    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
-  </div>
-</div>
-
 </div>
 
 <script>
-const { jsPDF } = window.jspdf;
 let cache=[], idx=null, modo="pendiente";
 
 function mostrarPaso(id){
@@ -109,22 +87,28 @@ function mostrarPaso(id){
   document.getElementById(id).classList.remove('hidden');
 }
 
+function fechaHora(){
+  return new Date().toLocaleString();
+}
+
+function generarFolio(){
+  return "R-" + Date.now();
+}
+
 function guardarReparacion(){
   let rep={
-    folio:Date.now(),
-    cliente:clienteNombre.value,
-    telefono:clienteTelefono.value,
-    marca:marca.value,
-    modelo:modelo.value,
-    color:color.value,
-    imei:imei.value,
-    falla:fallaTexto.value,
-    costo:Number(costo.value||0),
-    pagos:[{monto:Number(anticipo.value||0),fecha:new Date().toLocaleString()}],
-    garantia:{aplica:false,dias:0,inicio:null,fin:null},
-    estatus:"pendiente",
-    fecha:new Date().toLocaleString(),
-    fechaEntrega:null
+    folio: generarFolio(),
+    fecha: fechaHora(),
+    cliente: clienteNombre.value,
+    telefono: clienteTelefono.value,
+    marca: marca.value,
+    modelo: modelo.value,
+    color: color.value,
+    imei: imei.value,
+    falla: fallaTexto.value,
+    costo: Number(costo.value||0),
+    anticipo: Number(anticipo.value||0),
+    estatus: "pendiente"
   };
   let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
   data.push(rep);
@@ -143,112 +127,86 @@ function mostrarHistorial(tipo){
 function renderLista(data){
   let c=document.getElementById("listaItems");
   if(!data.length){c.innerHTML="<div class='card'>Sin registros</div>";return;}
-  c.innerHTML=data.map((r,i)=>{
-    let pagado=r.pagos.reduce((s,p)=>s+p.monto,0);
-    return `<div class="card" onclick="verDetalle(${i})">
+  c.innerHTML=data.map((r,i)=>`
+    <div class="card" onclick="verDetalle(${i})">
       <strong>${r.cliente}</strong><br>
       ${r.marca} ${r.modelo}<br>
-      📞 ${r.telefono||"-"}<br>
-      💰 Saldo: $${r.costo-pagado}
-    </div>`;
-  }).join("");
+      🆔 ${r.folio}<br>
+      ⏰ ${r.fecha}
+    </div>
+  `).join("");
 }
 
 function filtrar(){
   let q=buscador.value.toLowerCase();
-  let f=cache.filter(r=>
+  renderLista(cache.filter(r=>
     r.cliente.toLowerCase().includes(q) ||
-    r.telefono.toLowerCase().includes(q) ||
-    r.modelo.toLowerCase().includes(q)
-  );
-  renderLista(f);
+    r.modelo.toLowerCase().includes(q) ||
+    r.folio.toLowerCase().includes(q)
+  ));
 }
 
 function verDetalle(i){
   idx=i;
   mostrarPaso("detalle");
   let d=cache[i];
-  let pagado=d.pagos.reduce((s,p)=>s+p.monto,0);
+  let saldo=d.costo-d.anticipo;
+
+  let texto=`📄 ORDEN DE REPARACIÓN
+🆔 Folio: ${d.folio}
+⏰ Fecha: ${d.fecha}
+
+👤 Cliente: ${d.cliente}
+📞 Teléfono: ${d.telefono}
+
+📱 Equipo: ${d.marca} ${d.modelo}
+🎨 Color: ${d.color}
+🔢 IMEI: ${d.imei}
+
+🔧 Falla: ${d.falla}
+
+💰 Costo: $${d.costo}
+💵 Anticipo: $${d.anticipo}
+💲 Saldo: $${saldo}
+`;
 
   detalle.innerHTML=`
   <div class="card">
     <h3>📄 Detalle</h3>
+    <div class="kv"><span>Folio</span><strong>${d.folio}</strong></div>
+    <div class="kv"><span>Fecha</span><strong>${d.fecha}</strong></div>
     <div class="kv"><span>Cliente</span><strong>${d.cliente}</strong></div>
     <div class="kv"><span>Equipo</span><strong>${d.marca} ${d.modelo}</strong></div>
-    <div class="kv"><span>Costo</span><strong>$${d.costo}</strong></div>
-    <div class="kv"><span>Pagado</span><strong>$${pagado}</strong></div>
-    <div class="kv"><span>Saldo</span><strong>$${d.costo-pagado}</strong></div>
-    <div class="kv"><span>Estatus</span><strong>${d.estatus}</strong></div>
+    <div class="kv"><span>Saldo</span><strong>$${saldo}</strong></div>
   </div>
 
-  ${d.estatus==="pendiente" ? `
-    <select id="diasGar">
-      <option value="0">Sin garantía</option>
-      <option value="15">15 días</option>
-      <option value="30">30 días</option>
-      <option value="60">60 días</option>
-    </select>
-    <button class="btn warn" onclick="entregarEquipo()">📦 Entregar equipo</button>
-  ` : ""}
+  <button class="btn success" onclick="enviarTexto(${JSON.stringify(texto)})">
+    📩 Enviar información por texto
+  </button>
 
-  <button class="btn success" onclick="generarPDF()">🧾 Comprobante</button>
+  ${d.estatus==="pendiente" ? `
+    <button class="btn warn" onclick="entregarEquipo()">📦 Entregar equipo</button>
+  `:""}
+
   <button class="btn secondary" onclick="mostrarHistorial(modo)">Volver</button>
   `;
+}
+
+function enviarTexto(texto){
+  if(navigator.share){
+    navigator.share({text:texto});
+  }else{
+    let url="https://wa.me/?text="+encodeURIComponent(texto);
+    window.open(url,"_blank");
+  }
 }
 
 function entregarEquipo(){
   let data=JSON.parse(localStorage.getItem("reparaciones"));
   let original=data.find(r=>r.folio===cache[idx].folio);
   original.estatus="entregado";
-  original.fechaEntrega=new Date().toLocaleString();
-
-  let dias=Number(document.getElementById("diasGar").value||0);
-  if(dias>0){
-    let ini=new Date(), fin=new Date();
-    fin.setDate(ini.getDate()+dias);
-    original.garantia={aplica:true,dias,inicio:ini.toISOString(),fin:fin.toISOString()};
-  }
-
   localStorage.setItem("reparaciones",JSON.stringify(data));
   mostrarHistorial("pendiente");
-}
-
-function generarPDF(){
-  let d=cache[idx];
-  let pagado=d.pagos.reduce((s,p)=>s+p.monto,0);
-  let pdf=new jsPDF();
-  pdf.setFontSize(14);
-  pdf.text("COMPROBANTE DE REPARACIÓN",20,20);
-  pdf.setFontSize(11);
-  pdf.text(`Folio: ${d.folio}`,20,35);
-  pdf.text(`Cliente: ${d.cliente}`,20,45);
-  pdf.text(`Equipo: ${d.marca} ${d.modelo}`,20,55);
-  pdf.text(`Costo: $${d.costo}`,20,70);
-  pdf.text(`Pagado: $${pagado}`,20,80);
-  pdf.text(`Saldo: $${d.costo-pagado}`,20,90);
-  pdf.open();
-}
-
-/* RESPALDO */
-function exportarDatos(){
-  let data=localStorage.getItem("reparaciones")||"[]";
-  let blob=new Blob([data],{type:"application/json"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="respaldo_reparaciones.json";
-  a.click();
-}
-
-function importarDatos(){
-  let file=document.getElementById("importFile").files[0];
-  if(!file) return;
-  let reader=new FileReader();
-  reader.onload=e=>{
-    localStorage.setItem("reparaciones",e.target.result);
-    alert("Respaldo restaurado correctamente");
-    mostrarPaso("inicio");
-  };
-  reader.readAsText(file);
 }
 </script>
 
