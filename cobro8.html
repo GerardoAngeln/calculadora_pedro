@@ -19,7 +19,7 @@ input,textarea,select{width:100%;padding:10px;margin-top:8px;font-size:15px;bord
 .step{animation:fade .2s ease-in-out;}
 @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
 textarea.texto{height:280px;font-family:monospace;}
-.badge{padding:4px 10px;border-radius:12px;font-size:12px;color:#fff;}
+.badge{padding:4px 10px;border-radius:12px;font-size:12px;color:#fff;display:inline-block;margin-top:4px;}
 .ok{background:#198754;}
 .bad{background:#dc3545;}
 .none{background:#6c757d;}
@@ -108,7 +108,6 @@ textarea.texto{height:280px;font-family:monospace;}
 <script>
 let cache=[], idx=null, textoActual="", modo="pendiente";
 
-/* FOLIO DESDE 001 */
 function obtenerFolio(){
   let f=Number(localStorage.getItem("folioActual")||1);
   localStorage.setItem("folioActual",f+1);
@@ -144,27 +143,9 @@ function guardarReparacion(){
   data.push(rep);
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual=generarTextoRecepcion(rep);
+  textoActual=`📄 RECEPCIÓN DE EQUIPO\nFolio: ${rep.folio}\nCliente: ${rep.cliente}`;
   textoComprobante.value=textoActual;
   mostrarPaso("comprobante");
-}
-
-function generarTextoRecepcion(r){
-  return `📄 RECEPCIÓN DE EQUIPO
-
-Folio: ${r.folio}
-Fecha: ${r.fecha}
-
-Cliente: ${r.cliente}
-Equipo: ${r.marca} ${r.modelo}
-
-Falla:
-${r.falla}
-
-Costo: $${r.costo}
-Anticipo: $${r.anticipo}
-Saldo: $${r.costo-r.anticipo}
-`;
 }
 
 /* LISTAS */
@@ -203,19 +184,21 @@ function renderLista(){
       <strong>${r.cliente}</strong><br>
       ${r.marca} ${r.modelo}<br>
       Folio: ${r.folio}<br>
-      ${modo==="entregado"?`Entrega: ${r.fechaEntrega}<br>${estadoGarantia(r)}`:""}
+      ${modo==="entregado"
+        ? `Entrega: ${r.fechaEntrega}<br>${estadoGarantia(r)}`
+        : ""}
     </div>
   `).join("");
 }
 
 function filtrar(){
   let q=buscador.value.toLowerCase();
-  let f=cache.filter(r=>
-    r.cliente.toLowerCase().includes(q)||
+  let res=cache.filter(r=>
+    r.cliente.toLowerCase().includes(q) ||
     r.folio.includes(q)
   );
   let tmp=cache;
-  cache=f;
+  cache=res;
   renderLista();
   cache=tmp;
 }
@@ -262,14 +245,7 @@ function entregarEquipo(){
   real.fechaEntrega=fechaHora();
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual=
-    generarTextoRecepcion(real)+
-    `\n📦 ENTREGA DE EQUIPO
-Fecha de entrega: ${real.fechaEntrega}
-Garantía: ${dias>0?dias+" días (vence "+fin.toLocaleDateString()+")":"No aplica"}
-
-Gracias por su preferencia.`;
-
+  textoActual=`📦 ENTREGA DE EQUIPO\nFolio: ${real.folio}\nGarantía: ${dias>0?dias+" días":"No aplica"}\nGracias por su preferencia.`;
   textoComprobante.value=textoActual;
   mostrarPaso("comprobante");
 }
@@ -303,4 +279,3 @@ function importarDatos(){
 
 </body>
 </html>
-
