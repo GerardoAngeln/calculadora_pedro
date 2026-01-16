@@ -30,8 +30,8 @@ textarea.texto{height:260px;font-family:monospace;}
 <!-- INICIO -->
 <div id="inicio" class="step">
   <button class="btn" onclick="mostrarPaso('cliente')">➕ Nueva Reparación</button>
-  <button class="btn secondary" onclick="mostrarHistorial('pendiente')">📋 Pendientes</button>
-  <button class="btn secondary" onclick="mostrarHistorial('entregado')">📦 Entregados</button>
+  <button class="btn secondary" onclick="mostrarPendientes()">📋 Pendientes</button>
+  <button class="btn secondary" onclick="mostrarEntregados()">📦 Entregados</button>
   <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
 </div>
 
@@ -66,10 +66,10 @@ textarea.texto{height:260px;font-family:monospace;}
   </div>
 </div>
 
-<!-- COMPROBANTE TEXTO -->
+<!-- COMPROBANTE -->
 <div id="comprobante" class="step hidden">
   <div class="card">
-    <h3>📄 Comprobante (Texto)</h3>
+    <h3>📄 Texto</h3>
     <textarea id="textoComprobante" class="texto" readonly></textarea>
     <button class="btn success" onclick="enviarWhatsApp()">📩 Enviar por WhatsApp</button>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
@@ -81,6 +81,9 @@ textarea.texto{height:260px;font-family:monospace;}
   <div id="listaItems"></div>
   <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
 </div>
+
+<!-- 🔴 DETALLE (ESTO FALTABA) -->
+<div id="detalle" class="step hidden"></div>
 
 <!-- RESPALDO -->
 <div id="respaldo" class="step hidden">
@@ -97,7 +100,7 @@ textarea.texto{height:260px;font-family:monospace;}
 <script>
 let cache=[], textoActual="", idx=null;
 
-/* FOLIO DESDE 001 */
+/* FOLIO 001 */
 function obtenerFolio(){
   let f = Number(localStorage.getItem("folioActual") || 1);
   localStorage.setItem("folioActual", f + 1);
@@ -111,7 +114,7 @@ function mostrarPaso(id){
 
 function fechaHora(){ return new Date().toLocaleString(); }
 
-/* GUARDAR = RECEPCIÓN */
+/* GUARDAR */
 function guardarReparacion(){
   let rep={
     folio: obtenerFolio(),
@@ -128,63 +131,49 @@ function guardarReparacion(){
     estatus:"pendiente",
     garantia:null
   };
-
   let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
   data.push(rep);
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual = generarTextoRecepcion(rep);
+  textoActual = `📄 RECEPCIÓN DE EQUIPO
+Folio: ${rep.folio}
+Cliente: ${rep.cliente}
+Equipo: ${rep.marca} ${rep.modelo}`;
   textoComprobante.value = textoActual;
   mostrarPaso("comprobante");
 }
 
-/* TEXTO RECEPCIÓN (SIN GARANTÍA) */
-function generarTextoRecepcion(r){
-  return `📄 RECEPCIÓN DE EQUIPO
-
-🆔 Folio: ${r.folio}
-⏰ Fecha: ${r.fecha}
-
-👤 Cliente: ${r.cliente}
-📞 Teléfono: ${r.telefono}
-
-📱 Equipo: ${r.marca} ${r.modelo}
-🎨 Color: ${r.color}
-🔢 IMEI: ${r.imei}
-
-🔧 Falla:
-${r.falla}
-
-💰 Costo: $${r.costo}
-💵 Anticipo: $${r.anticipo}
-💲 Saldo: $${r.costo - r.anticipo}
-
-Gracias por su preferencia.`;
-}
-
-function enviarWhatsApp(){
-  window.open("https://wa.me/?text="+encodeURIComponent(textoActual),"_blank");
-}
-
-/* HISTORIAL */
-function mostrarHistorial(tipo){
+/* PENDIENTES */
+function mostrarPendientes(){
   mostrarPaso("lista");
   let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
-  cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus===tipo);
+  cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus==="pendiente");
+  renderLista();
+}
+
+function mostrarEntregados(){
+  mostrarPaso("lista");
+  let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
+  cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus==="entregado");
+  renderLista();
+}
+
+function renderLista(){
   listaItems.innerHTML = cache.map((r,i)=>`
     <div class="card" onclick="verDetalle(${i})">
       <strong>${r.cliente}</strong><br>
       ${r.marca} ${r.modelo}<br>
-      🆔 Folio: ${r.folio}
+      Folio: ${r.folio}
     </div>
   `).join("") || "<div class='card'>Sin registros</div>";
 }
 
-/* DETALLE + ENTREGA */
+/* ✅ DETALLE FUNCIONAL */
 function verDetalle(i){
   idx=i;
   let r=cache[i];
   mostrarPaso("detalle");
+
   detalle.innerHTML=`
     <div class="card">
       <strong>${r.cliente}</strong><br>
@@ -197,16 +186,14 @@ function verDetalle(i){
         <option value="0">Sin garantía</option>
         <option value="15">15 días</option>
         <option value="30">30 días</option>
-        <option value="60">60 días</option>
       </select>
       <button class="btn warn" onclick="entregarEquipo()">📦 Entregar</button>
     `:""}
 
-    <button class="btn secondary" onclick="mostrarHistorial(r.estatus)">Volver</button>
+    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
   `;
 }
 
-/* ENTREGA + TEXTO CON GARANTÍA */
 function entregarEquipo(){
   let data=JSON.parse(localStorage.getItem("reparaciones"));
   let real=data[cache[idx]._i];
@@ -222,22 +209,15 @@ function entregarEquipo(){
   real.estatus="entregado";
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual = `📦 ENTREGA DE EQUIPO
-
-🆔 Folio: ${real.folio}
-⏰ Fecha entrega: ${fechaHora()}
-
-👤 Cliente: ${real.cliente}
-📱 Equipo: ${real.marca} ${real.modelo}
-
-🛡️ Garantía: ${real.garantia
-    ? `${real.garantia.dias} días (hasta ${new Date(real.garantia.fin).toLocaleDateString()})`
-    : "No aplica"}
-
-Gracias por su preferencia.`;
-
-  textoComprobante.value = textoActual;
+  textoActual = `📦 ENTREGA
+Folio: ${real.folio}
+Garantía: ${dias>0?dias+" días":"No aplica"}`;
+  textoComprobante.value=textoActual;
   mostrarPaso("comprobante");
+}
+
+function enviarWhatsApp(){
+  window.open("https://wa.me/?text="+encodeURIComponent(textoActual),"_blank");
 }
 
 /* RESPALDO */
@@ -252,7 +232,7 @@ function exportarDatos(){
 
 function importarDatos(){
   let f=document.getElementById("importFile").files[0];
-  if(!f) return;
+  if(!f)return;
   let r=new FileReader();
   r.onload=e=>{
     localStorage.setItem("reparaciones",e.target.result);
