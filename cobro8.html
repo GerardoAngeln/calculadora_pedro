@@ -17,8 +17,8 @@ header{background:#2ecc71;color:#fff;padding:16px;text-align:center;font-weight:
 .whatsapp{background:#25D366;color:#fff}
 input,select{width:100%;padding:12px;margin-bottom:10px;border-radius:8px;border:1px solid #ddd}
 .item{background:#f1f5f9;padding:12px;border-radius:10px;margin-bottom:8px}
-.small{font-size:13px;color:#555}
 canvas{width:100%;border:1px solid #ddd;border-radius:10px}
+.small{font-size:13px;color:#555}
 </style>
 </head>
 
@@ -86,7 +86,7 @@ canvas{width:100%;border:1px solid #ddd;border-radius:10px}
 
 <!-- COBRO -->
 <div id="cobroView" class="view">
-<header>Cobrar venta</header>
+<header>Cobrar / Comprobante</header>
 <div class="box">
 <div id="infoVenta" class="small"></div>
 <input type="number" id="montoCobro" placeholder="Monto a cobrar">
@@ -94,21 +94,12 @@ canvas{width:100%;border:1px solid #ddd;border-radius:10px}
 </div>
 
 <div class="box">
-<h4>Historial de abonos</h4>
-<div id="historial"></div>
+<canvas id="canvas" width="320" height="440"></canvas>
+<button class="btn admin" onclick="descargar()">Descargar comprobante</button>
+<button class="btn whatsapp" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
 </div>
 
 <button class="btn volver" onclick="volverCliente()">Volver</button>
-</div>
-
-<!-- COMPROBANTE -->
-<div id="comprobanteView" class="view">
-<header>Comprobante</header>
-<div class="box">
-<canvas id="comprobante" width="320" height="420"></canvas>
-<button class="btn whatsapp" onclick="enviarWhatsApp()">Enviar por WhatsApp</button>
-<button class="btn volver" onclick="volverRuta()">Finalizar</button>
-</div>
 </div>
 
 <script>
@@ -117,7 +108,7 @@ show('inicioView');
 
 /* DATA */
 let clientes=[], cobradores=[], ventas=[], abonos=[];
-let cobradorActivo=null, clienteActual=null, ventaActual=null, ultimoAbono=null;
+let cobradorActivo=null, clienteActual=null, ventaActual=null;
 
 /* NAV */
 function show(id){
@@ -137,8 +128,7 @@ function addCobrador(){
   renderAdmin();
 }
 function asignarCliente(){
-  let c=clientes.find(x=>x.id==asCliente.value);
-  c.cobrador=asCobrador.value;
+  clientes.find(c=>c.id==asCliente.value).cobrador=asCobrador.value;
   alert("Cliente asignado");
 }
 function registrarVenta(){
@@ -147,9 +137,9 @@ function registrarVenta(){
     id:Date.now(),
     cliente:vCliente.value,
     concepto:vConcepto.value,
+    total,
     saldo:total-abono
   });
-  vConcepto.value=vTotal.value=vAbono.value="";
   alert("Venta registrada");
 }
 function renderAdmin(){
@@ -159,67 +149,66 @@ function renderAdmin(){
 
 /* COBRADOR */
 function entrarCobrador(){
-  cobradorActivo=cobradores[0]?.id||null; // demo
+  cobradorActivo=cobradores[0]?.id||null;
   show('rutaView');renderRuta();
 }
 function renderRuta(){
-  let misClientes=clientes.filter(c=>c.cobrador==cobradorActivo);
-  listaClientes.innerHTML=misClientes.map(c=>{
+  listaClientes.innerHTML=clientes.filter(c=>c.cobrador==cobradorActivo).map(c=>{
     let saldo=ventas.filter(v=>v.cliente==c.id).reduce((s,v)=>s+v.saldo,0);
-    return `<div class="item" onclick="abrirCliente(${c.id})">
-      <strong>${c.nombre}</strong><br>Saldo total: $${saldo}
-    </div>`;
-  }).join("") || "Sin clientes asignados";
+    return `<div class="item" onclick="abrirCliente(${c.id})"><strong>${c.nombre}</strong><br>Saldo: $${saldo}</div>`;
+  }).join("") || "Sin clientes";
 }
 function abrirCliente(id){
   clienteActual=clientes.find(c=>c.id===id);
   clienteHeader.innerText=clienteActual.nombre;
   ventasCliente.innerHTML=ventas.filter(v=>v.cliente==id).map(v=>`
     <div class="item" onclick="abrirVenta(${v.id})">
-      <strong>${v.concepto}</strong><br>Saldo: $${v.saldo}
-    </div>`).join("") || "Sin ventas";
+      ${v.concepto} – $${v.saldo}
+    </div>`).join("");
   show('clienteView');
 }
 function abrirVenta(id){
   ventaActual=ventas.find(v=>v.id===id);
-  infoVenta.innerText=`${ventaActual.concepto} | Saldo: $${ventaActual.saldo}`;
-  renderHistorial();
+  infoVenta.innerText=ventaActual.concepto+" | Saldo: $"+ventaActual.saldo;
+  generarComprobante("VENTA",0);
   show('cobroView');
 }
 function registrarCobro(){
   let monto=+montoCobro.value;
-  if(!monto||monto<=0||monto>ventaActual.saldo){alert("Monto inválido");return;}
+  if(!monto||monto>ventaActual.saldo){alert("Monto inválido");return;}
   ventaActual.saldo-=monto;
-  ultimoAbono={monto,fecha:new Date().toLocaleString()};
-  abonos.push({venta:ventaActual.id,...ultimoAbono});
-  montoCobro.value="";
-  generarComprobante();
-}
-function renderHistorial(){
-  historial.innerHTML=abonos.filter(a=>a.venta==ventaActual.id)
-    .map(a=>`<div class="small">💰 $${a.monto} – ${a.fecha}</div>`).join("") || "Sin abonos";
+  abonos.push({venta:ventaActual.id,monto,fecha:new Date().toLocaleString()});
+  generarComprobante("PAGO",monto);
 }
 
 /* COMPROBANTE */
-function generarComprobante(){
-  show('comprobanteView');
-  const c=document.getElementById("comprobante");
+function generarComprobante(tipo,monto){
+  const c=document.getElementById("canvas");
   const ctx=c.getContext("2d");
   ctx.fillStyle="#fff";ctx.fillRect(0,0,c.width,c.height);
   ctx.fillStyle="#000";
-  ctx.font="18px Arial";ctx.fillText("COMPROBANTE DE PAGO",40,30);
+  ctx.font="18px Arial";ctx.fillText("COMPROBANTE DE "+tipo,50,30);
   ctx.font="14px Arial";
   ctx.fillText("Cobranza Móvil",20,70);
   ctx.fillText("Promociones Culturales",20,90);
   ctx.fillText("Cliente: "+clienteActual.nombre,20,130);
   ctx.fillText("Concepto: "+ventaActual.concepto,20,160);
-  ctx.fillText("Pago: $"+ultimoAbono.monto,20,190);
-  ctx.fillText("Saldo restante: $"+ventaActual.saldo,20,220);
-  ctx.fillText("Fecha: "+ultimoAbono.fecha,20,260);
-  ctx.fillText("Gracias por su pago",70,320);
+  if(tipo==="PAGO") ctx.fillText("Monto pagado: $"+monto,20,190);
+  ctx.fillText("Saldo: $"+ventaActual.saldo,20,220);
+  ctx.fillText("Fecha: "+new Date().toLocaleString(),20,260);
 }
+
+/* DESCARGA */
+function descargar(){
+  const link=document.createElement("a");
+  link.download="comprobante.png";
+  link.href=canvas.toDataURL();
+  link.click();
+}
+
+/* WHATSAPP */
 function enviarWhatsApp(){
-  const msg="Hola, te envío tu comprobante de pago. Gracias.";
+  const msg="Hola, te envío tu comprobante de venta/pago. Gracias.";
   window.open(`https://wa.me/${clienteActual.telefono}?text=${encodeURIComponent(msg)}`,"_blank");
 }
 function volverRuta(){show('rutaView');renderRuta();}
@@ -228,3 +217,4 @@ function volverCliente(){show('clienteView');}
 
 </body>
 </html>
+
