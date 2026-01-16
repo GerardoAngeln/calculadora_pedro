@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SISTEMA PARA REPARACIÓN DE EQUIPOS</title>
+<title>Sistema de Reparación de Equipos</title>
 
 <style>
 body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f2f4f7;}
@@ -19,7 +19,7 @@ input,textarea,select{width:100%;padding:10px;margin-top:8px;font-size:15px;bord
 .hidden{display:none;}
 .step{animation:fade .2s ease-in-out;}
 @keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-textarea.texto{height:280px;font-family:monospace;}
+textarea.texto{height:300px;font-family:monospace;}
 .badge{padding:4px 10px;border-radius:12px;font-size:12px;color:#fff;display:inline-block;}
 .ok{background:#198754;}
 .bad{background:#dc3545;}
@@ -45,8 +45,8 @@ textarea.texto{height:280px;font-family:monospace;}
 <div id="cliente" class="step hidden">
   <div class="card">
     <h3>👤 Cliente</h3>
-    <input id="clienteNombre" placeholder="Nombre">
-    <input id="clienteTelefono" placeholder="Teléfono / WhatsApp (10 dígitos)">
+    <input id="clienteNombre" placeholder="Nombre del cliente">
+    <input id="clienteTelefono" placeholder="Teléfono WhatsApp (10 dígitos)">
     <button class="btn" onclick="mostrarPaso('equipo')">Siguiente</button>
   </div>
 </div>
@@ -77,7 +77,7 @@ textarea.texto{height:280px;font-family:monospace;}
 <!-- COMPROBANTE -->
 <div id="comprobante" class="step hidden">
   <div class="card">
-    <h3>📄 Comprobante (Texto)</h3>
+    <h3>📄 Comprobante en texto</h3>
     <textarea id="textoComprobante" class="texto" readonly></textarea>
     <button class="btn success" onclick="confirmarEnvio()">📩 Enviar por WhatsApp</button>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
@@ -107,36 +107,33 @@ textarea.texto{height:280px;font-family:monospace;}
 </div>
 
 <script>
-let cache=[], idx=null, textoActual="", modo="pendiente";
+let cache=[], idx=null, textoActual="", modo="pendiente", ordenActual=null;
 
-/* ===== UTILIDADES ===== */
+/* ========= FOLIO (OPCIÓN A) ========= */
 function obtenerFolio(){
-  let f=Number(localStorage.getItem("folioActual")||1);
-  localStorage.setItem("folioActual",f+1);
+  let f = Number(localStorage.getItem("folioActual"));
+  if(!f) f = 1;
+  localStorage.setItem("folioActual", f + 1);
   return String(f).padStart(3,"0");
 }
+
+/* ========= UTILIDADES ========= */
 function mostrarPaso(id){
   document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
 function fechaHora(){ return new Date().toLocaleString(); }
 
-/* ===== WHATSAPP ===== */
+/* ========= WHATSAPP ========= */
 function normalizarTelefono(tel){
-  let limpio=tel.replace(/\D/g,'');
-  if(limpio.length===10) limpio="52"+limpio;
-  return limpio;
+  let n = tel.replace(/\D/g,'');
+  if(n.length === 10) n = "52" + n;
+  return n;
 }
 function enviarWhatsApp(){
-  if(!textoActual) return alert("No hay texto para enviar");
-  let tel=null;
-  if(idx!==null && cache[idx]) tel=cache[idx].telefono;
-  if(!tel){
-    let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
-    tel=all.length?all[all.length-1].telefono:null;
-  }
-  if(!tel) return alert("No hay teléfono registrado");
-  let url="https://wa.me/"+normalizarTelefono(tel)+"?text="+encodeURIComponent(textoActual);
+  if(!ordenActual) return alert("No hay orden activa");
+  let tel = normalizarTelefono(ordenActual.telefono);
+  let url = "https://wa.me/" + tel + "?text=" + encodeURIComponent(textoActual);
   window.open(url,"_blank");
 }
 function confirmarEnvio(){
@@ -145,7 +142,7 @@ function confirmarEnvio(){
   }
 }
 
-/* ===== TEXTO ===== */
+/* ========= TEXTO ========= */
 function generarTextoRecepcion(r){
   return `📄 RECEPCIÓN DE EQUIPO
 
@@ -164,11 +161,11 @@ ${r.falla}
 
 💰 Costo: $${r.costo}
 💵 Anticipo: $${r.anticipo}
-💲 Saldo: $${r.costo-r.anticipo}
+💲 Saldo: $${r.costo - r.anticipo}
 `;
 }
 
-/* ===== GUARDAR ===== */
+/* ========= GUARDAR ========= */
 function guardarReparacion(){
   let rep={
     folio:obtenerFolio(),
@@ -186,17 +183,19 @@ function guardarReparacion(){
     garantia:null,
     fechaEntrega:null
   };
+
   let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
   data.push(rep);
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual=generarTextoRecepcion(rep);
-  textoComprobante.value=textoActual;
+  ordenActual = rep;
+  textoActual = generarTextoRecepcion(rep);
+  textoComprobante.value = textoActual;
   mostrarPaso("comprobante");
   confirmarEnvio();
 }
 
-/* ===== LISTAS ===== */
+/* ========= LISTAS ========= */
 function mostrarPendientes(){ modo="pendiente"; cargarLista("pendiente"); }
 function mostrarEntregados(){ modo="entregado"; cargarLista("entregado"); }
 
@@ -237,11 +236,13 @@ function filtrar(){
   cache=tmp;
 }
 
-/* ===== DETALLE / EDITAR / ELIMINAR ===== */
+/* ========= DETALLE / EDITAR / ELIMINAR ========= */
 function verDetalle(i){
   idx=i;
   let r=cache[i];
+  ordenActual = r;
   mostrarPaso("detalle");
+
   detalle.innerHTML=`
     <div class="card">
       <input id="eCliente" value="${r.cliente}">
@@ -293,7 +294,7 @@ function eliminarOrden(){
   mostrarPaso("inicio");
 }
 
-/* ===== ENTREGA ===== */
+/* ========= ENTREGA ========= */
 function entregarEquipo(){
   let data=JSON.parse(localStorage.getItem("reparaciones"));
   let real=data[cache[idx]._i];
@@ -310,7 +311,7 @@ function entregarEquipo(){
   real.fechaEntrega=fechaHora();
   localStorage.setItem("reparaciones",JSON.stringify(data));
 
-  textoActual=
+  textoActual =
     generarTextoRecepcion(real)+
     `\n📦 ENTREGA DE EQUIPO
 ⏰ Fecha de entrega: ${real.fechaEntrega}
@@ -318,12 +319,13 @@ function entregarEquipo(){
 
 Gracias por su preferencia.`;
 
-  textoComprobante.value=textoActual;
+  ordenActual = real;
+  textoComprobante.value = textoActual;
   mostrarPaso("comprobante");
   confirmarEnvio();
 }
 
-/* ===== RESPALDO ===== */
+/* ========= RESPALDO ========= */
 function exportarDatos(){
   let data=localStorage.getItem("reparaciones")||"[]";
   let blob=new Blob([data],{type:"application/json"});
