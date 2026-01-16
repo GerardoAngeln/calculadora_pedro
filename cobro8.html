@@ -77,7 +77,7 @@ textarea.texto{height:300px;font-family:monospace;}
 <!-- COMPROBANTE -->
 <div id="comprobante" class="step hidden">
   <div class="card">
-    <h3>📄 Comprobante en texto</h3>
+    <h3>📄 Comprobante</h3>
     <textarea id="textoComprobante" class="texto" readonly></textarea>
     <button class="btn success" onclick="confirmarEnvio()">📩 Enviar por WhatsApp</button>
     <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
@@ -109,42 +109,45 @@ textarea.texto{height:300px;font-family:monospace;}
 <script>
 let cache=[], idx=null, textoActual="", modo="pendiente", ordenActual=null;
 
-/* ========= FOLIO (OPCIÓN A) ========= */
+/* ===== FOLIO SEGURO ===== */
 function obtenerFolio(){
-  let f = Number(localStorage.getItem("folioActual"));
-  if(!f) f = 1;
-  localStorage.setItem("folioActual", f + 1);
+  let f=parseInt(localStorage.getItem("folioActual"),10);
+  if(isNaN(f)||f<1) f=1;
+  localStorage.setItem("folioActual",f+1);
   return String(f).padStart(3,"0");
 }
 
-/* ========= UTILIDADES ========= */
+/* ===== UTIL ===== */
 function mostrarPaso(id){
   document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
   document.getElementById(id).classList.remove('hidden');
 }
-function fechaHora(){ return new Date().toLocaleString(); }
+function fechaHora(){return new Date().toLocaleString();}
 
-/* ========= WHATSAPP ========= */
-function normalizarTelefono(tel){
-  let n = tel.replace(/\D/g,'');
-  if(n.length === 10) n = "52" + n;
+/* ===== WHATSAPP ===== */
+function normalizarTelefono(t){
+  let n=t.replace(/\D/g,'');
+  if(n.length===10) n="52"+n;
   return n;
 }
-function enviarWhatsApp(){
-  if(!ordenActual) return alert("No hay orden activa");
-  let tel = normalizarTelefono(ordenActual.telefono);
-  let url = "https://wa.me/" + tel + "?text=" + encodeURIComponent(textoActual);
-  window.open(url,"_blank");
-}
 function confirmarEnvio(){
-  if(confirm("¿Deseas enviar este comprobante por WhatsApp al cliente?")){
-    enviarWhatsApp();
+  if(!ordenActual) return;
+  if(confirm("¿Enviar comprobante por WhatsApp?")){
+    window.open("https://wa.me/"+ordenActual.telefono+"?text="+encodeURIComponent(textoActual),"_blank");
   }
 }
 
-/* ========= TEXTO ========= */
-function generarTextoRecepcion(r){
-  return `📄 RECEPCIÓN DE EQUIPO
+/* ===== GARANTÍA ===== */
+function estadoGarantia(r){
+  if(!r.garantia) return `<span class="badge none">SIN GARANTÍA</span>`;
+  return new Date() <= new Date(r.garantia.fin)
+    ? `<span class="badge ok">VIGENTE</span>`
+    : `<span class="badge bad">VENCIDA</span>`;
+}
+
+/* ===== TEXTOS ===== */
+function textoRecepcion(r){
+return `📄 RECEPCIÓN DE EQUIPO
 
 🆔 Folio: ${r.folio}
 ⏰ Fecha: ${r.fecha}
@@ -161,56 +164,58 @@ ${r.falla}
 
 💰 Costo: $${r.costo}
 💵 Anticipo: $${r.anticipo}
-💲 Saldo: $${r.costo - r.anticipo}
+💲 Saldo: $${r.costo-r.anticipo}
 `;
 }
 
-/* ========= GUARDAR ========= */
+function textoEntrega(r){
+let g=r.garantia;
+return textoRecepcion(r)+`
+📦 ENTREGA DE EQUIPO
+⏰ Fecha entrega: ${r.fechaEntrega}
+
+🛡️ Garantía:
+${g?`${g.dias} días (vence ${new Date(g.fin).toLocaleDateString()})`:"Sin garantía"}
+
+Gracias por su preferencia.`;
+}
+
+/* ===== GUARDAR ===== */
 function guardarReparacion(){
-  let rep={
-    folio:obtenerFolio(),
-    fecha:fechaHora(),
-    cliente:clienteNombre.value,
-    telefono:clienteTelefono.value,
-    marca:marca.value,
-    modelo:modelo.value,
-    color:color.value,
-    imei:imei.value||"No proporcionado",
-    falla:fallaTexto.value,
-    costo:Number(costo.value||0),
-    anticipo:Number(anticipo.value||0),
-    estatus:"pendiente",
-    garantia:null,
-    fechaEntrega:null
-  };
-
-  let data=JSON.parse(localStorage.getItem("reparaciones")||"[]");
-  data.push(rep);
-  localStorage.setItem("reparaciones",JSON.stringify(data));
-
-  ordenActual = rep;
-  textoActual = generarTextoRecepcion(rep);
-  textoComprobante.value = textoActual;
-  mostrarPaso("comprobante");
-  confirmarEnvio();
+let rep={
+folio:obtenerFolio(),
+fecha:fechaHora(),
+cliente:clienteNombre.value,
+telefono:normalizarTelefono(clienteTelefono.value),
+marca:marca.value,
+modelo:modelo.value,
+color:color.value,
+imei:imei.value||"No proporcionado",
+falla:fallaTexto.value,
+costo:Number(costo.value||0),
+anticipo:Number(anticipo.value||0),
+estatus:"pendiente",
+garantia:null,
+fechaEntrega:null
+};
+let d=JSON.parse(localStorage.getItem("reparaciones")||"[]");
+d.push(rep);
+localStorage.setItem("reparaciones",JSON.stringify(d));
+ordenActual=rep;
+textoActual=textoRecepcion(rep);
+textoComprobante.value=textoActual;
+mostrarPaso("comprobante");
 }
 
-/* ========= LISTAS ========= */
-function mostrarPendientes(){ modo="pendiente"; cargarLista("pendiente"); }
-function mostrarEntregados(){ modo="entregado"; cargarLista("entregado"); }
+/* ===== LISTAS ===== */
+function mostrarPendientes(){modo="pendiente";cargarLista("pendiente");}
+function mostrarEntregados(){modo="entregado";cargarLista("entregado");}
 
-function cargarLista(tipo){
-  mostrarPaso("lista");
-  let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
-  cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus===tipo);
-  renderLista();
-}
-
-function estadoGarantia(r){
-  if(!r.garantia) return `<span class="badge none">SIN GARANTÍA</span>`;
-  return new Date()<=new Date(r.garantia.fin)
-    ? `<span class="badge ok">VIGENTE</span>`
-    : `<span class="badge bad">VENCIDA</span>`;
+function cargarLista(t){
+mostrarPaso("lista");
+let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
+cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus===t);
+renderLista();
 }
 
 function renderLista(){
@@ -218,132 +223,122 @@ function renderLista(){
     listaItems.innerHTML="<div class='card'>Sin registros</div>";
     return;
   }
-  listaItems.innerHTML=cache.map((r,i)=>`
+  listaItems.innerHTML = cache.map((r,i)=>`
     <div class="card" onclick="verDetalle(${i})">
       <strong>${r.cliente}</strong><br>
       ${r.marca} ${r.modelo}<br>
       Folio: ${r.folio}<br>
-      ${modo==="entregado"?`Entrega: ${r.fechaEntrega}<br>${estadoGarantia(r)}`:""}
+      ${modo==="entregado" ? `<div style="margin-top:6px">${estadoGarantia(r)}</div>` : ``}
     </div>
   `).join("");
 }
 
 function filtrar(){
-  let q=buscador.value.toLowerCase();
-  let tmp=cache;
-  cache=tmp.filter(r=>r.cliente.toLowerCase().includes(q)||r.folio.includes(q));
-  renderLista();
-  cache=tmp;
+let q=buscador.value.toLowerCase();
+let tmp=cache.filter(r=>r.cliente.toLowerCase().includes(q)||r.folio.includes(q));
+listaItems.innerHTML="";
+tmp.forEach((r,i)=>{
+listaItems.innerHTML+=`
+<div class="card" onclick="verDetalle(${i})">
+<strong>${r.cliente}</strong><br>
+${r.marca} ${r.modelo}<br>
+Folio: ${r.folio}<br>
+${modo==="entregado"?estadoGarantia(r):""}
+</div>`;
+});
 }
 
-/* ========= DETALLE / EDITAR / ELIMINAR ========= */
+/* ===== DETALLE ===== */
 function verDetalle(i){
-  idx=i;
-  let r=cache[i];
-  ordenActual = r;
-  mostrarPaso("detalle");
-
-  detalle.innerHTML=`
-    <div class="card">
-      <input id="eCliente" value="${r.cliente}">
-      <input id="eTelefono" value="${r.telefono}">
-      <input id="eMarca" value="${r.marca}">
-      <input id="eModelo" value="${r.modelo}">
-      <textarea id="eFalla">${r.falla}</textarea>
-      <input id="eCosto" value="${r.costo}">
-      <input id="eAnticipo" value="${r.anticipo}">
-    </div>
-
-    ${r.estatus==="pendiente"?`
-      <select id="diasGar">
-        <option value="0">Sin garantía</option>
-        <option value="15">15 días</option>
-        <option value="30">30 días</option>
-        <option value="60">60 días</option>
-      </select>
-      <button class="btn warn" onclick="entregarEquipo()">📦 Entregar</button>
-    `:""}
-
-    <button class="btn success" onclick="guardarEdicion()">💾 Guardar cambios</button>
-    <button class="btn danger" onclick="eliminarOrden()">🗑️ Eliminar orden</button>
-    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
-  `;
+idx=i;
+let r=cache[i];
+ordenActual=r;
+mostrarPaso("detalle");
+detalle.innerHTML=`
+<div class="card">
+<input id="eCliente" value="${r.cliente}">
+<input id="eTelefono" value="${r.telefono}">
+<input id="eMarca" value="${r.marca}">
+<input id="eModelo" value="${r.modelo}">
+<textarea id="eFalla">${r.falla}</textarea>
+<input id="eCosto" value="${r.costo}">
+<input id="eAnticipo" value="${r.anticipo}">
+</div>
+${r.estatus==="pendiente"?`
+<select id="diasGar">
+<option value="0">Sin garantía</option>
+<option value="15">15 días</option>
+<option value="30">30 días</option>
+<option value="60">60 días</option>
+</select>
+<button class="btn warn" onclick="entregarEquipo()">📦 Entregar</button>`:""}
+<button class="btn success" onclick="guardarEdicion()">💾 Guardar cambios</button>
+<button class="btn danger" onclick="eliminarOrden()">🗑️ Eliminar</button>
+<button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>`;
 }
 
 function guardarEdicion(){
-  let data=JSON.parse(localStorage.getItem("reparaciones"));
-  let real=data[cache[idx]._i];
-  real.cliente=eCliente.value;
-  real.telefono=eTelefono.value;
-  real.marca=eMarca.value;
-  real.modelo=eModelo.value;
-  real.falla=eFalla.value;
-  real.costo=Number(eCosto.value||0);
-  real.anticipo=Number(eAnticipo.value||0);
-  localStorage.setItem("reparaciones",JSON.stringify(data));
-  alert("Orden actualizada");
-  mostrarPaso("inicio");
+let d=JSON.parse(localStorage.getItem("reparaciones"));
+let r=d[cache[idx]._i];
+r.cliente=eCliente.value;
+r.telefono=normalizarTelefono(eTelefono.value);
+r.marca=eMarca.value;
+r.modelo=eModelo.value;
+r.falla=eFalla.value;
+r.costo=Number(eCosto.value||0);
+r.anticipo=Number(eAnticipo.value||0);
+localStorage.setItem("reparaciones",JSON.stringify(d));
+alert("Actualizado");
+mostrarPaso("inicio");
 }
 
 function eliminarOrden(){
-  if(!confirm("¿Eliminar esta orden definitivamente?")) return;
-  let data=JSON.parse(localStorage.getItem("reparaciones"));
-  data.splice(cache[idx]._i,1);
-  localStorage.setItem("reparaciones",JSON.stringify(data));
-  alert("Orden eliminada");
-  mostrarPaso("inicio");
+if(!confirm("¿Eliminar definitivamente?"))return;
+let d=JSON.parse(localStorage.getItem("reparaciones"));
+d.splice(cache[idx]._i,1);
+localStorage.setItem("reparaciones",JSON.stringify(d));
+alert("Eliminada");
+mostrarPaso("inicio");
 }
 
-/* ========= ENTREGA ========= */
+/* ===== ENTREGA ===== */
 function entregarEquipo(){
-  let data=JSON.parse(localStorage.getItem("reparaciones"));
-  let real=data[cache[idx]._i];
-  let dias=Number(document.getElementById("diasGar").value);
-  let ini=new Date(), fin=null;
-
-  if(dias>0){
-    fin=new Date();
-    fin.setDate(ini.getDate()+dias);
-    real.garantia={dias,inicio:ini.toISOString(),fin:fin.toISOString()};
-  }
-
-  real.estatus="entregado";
-  real.fechaEntrega=fechaHora();
-  localStorage.setItem("reparaciones",JSON.stringify(data));
-
-  textoActual =
-    generarTextoRecepcion(real)+
-    `\n📦 ENTREGA DE EQUIPO
-⏰ Fecha de entrega: ${real.fechaEntrega}
-🛡️ Garantía: ${dias>0?dias+" días (vence "+fin.toLocaleDateString()+")":"No aplica"}
-
-Gracias por su preferencia.`;
-
-  ordenActual = real;
-  textoComprobante.value = textoActual;
-  mostrarPaso("comprobante");
-  confirmarEnvio();
+let d=JSON.parse(localStorage.getItem("reparaciones"));
+let r=d[cache[idx]._i];
+let dias=Number(diasGar.value);
+if(dias>0){
+let ini=new Date(),fin=new Date();
+fin.setDate(ini.getDate()+dias);
+r.garantia={dias,inicio:ini.toISOString(),fin:fin.toISOString()};
+}
+r.estatus="entregado";
+r.fechaEntrega=fechaHora();
+localStorage.setItem("reparaciones",JSON.stringify(d));
+ordenActual=r;
+textoActual=textoEntrega(r);
+textoComprobante.value=textoActual;
+mostrarPaso("comprobante");
 }
 
-/* ========= RESPALDO ========= */
+/* ===== RESPALDO ===== */
 function exportarDatos(){
-  let data=localStorage.getItem("reparaciones")||"[]";
-  let blob=new Blob([data],{type:"application/json"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="respaldo_reparaciones.json";
-  a.click();
+let d=localStorage.getItem("reparaciones")||"[]";
+let b=new Blob([d],{type:"application/json"});
+let a=document.createElement("a");
+a.href=URL.createObjectURL(b);
+a.download="respaldo_reparaciones.json";
+a.click();
 }
 function importarDatos(){
-  let f=document.getElementById("importFile").files[0];
-  if(!f) return;
-  let r=new FileReader();
-  r.onload=e=>{
-    localStorage.setItem("reparaciones",e.target.result);
-    alert("Respaldo restaurado");
-    mostrarPaso("inicio");
-  };
-  r.readAsText(f);
+let f=importFile.files[0];
+if(!f)return;
+let r=new FileReader();
+r.onload=e=>{
+localStorage.setItem("reparaciones",e.target.result);
+alert("Restaurado");
+mostrarPaso("inicio");
+};
+r.readAsText(f);
 }
 </script>
 
