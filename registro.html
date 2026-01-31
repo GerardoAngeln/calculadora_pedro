@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Personal</title>
+
+<!-- Librerías para exportar -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+<style>
+body{margin:0;font-family:Arial;background:#f2f4f8}
+header{background:#111827;color:#fff;padding:15px;text-align:center;font-weight:bold}
+.container{padding:15px}
+.card{background:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
+h2{margin:0 0 10px;font-size:16px}
+input,select,button{width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc}
+button{background:#2563eb;color:#fff;border:none;font-weight:bold}
+.secondary{background:#6b7280}
+.danger{background:#dc2626}
+.list{border-bottom:1px solid #eee;padding:8px 0}
+.small{font-size:12px;color:#555}
+.hidden{display:none}
+.flex{display:flex;gap:6px}
+.flex button{flex:1}
+</style>
+</head>
+
+<body>
+<header>Registro de Personal</header>
+<div class="container">
+
+<!-- LOGIN ADMIN -->
+<div class="card" id="admin">
+<h2>Administrador</h2>
+<input id="adminUser" placeholder="Usuario">
+<input id="adminPass" type="password" placeholder="Contraseña">
+<button onclick="loginAdmin()">Entrar</button>
+</div>
+
+<!-- PANEL ADMIN -->
+<div class="card hidden" id="panel">
+<h2>Panel Administrador</h2>
+<button onclick="mostrarAlta()">Alta Colaborador</button>
+<button onclick="mostrarLista()">Colaboradores</button>
+<button class="secondary" onclick="exportarExcel()">Exportar Excel</button>
+<button class="secondary" onclick="exportarPDF()">Exportar PDF</button>
+</div>
+
+<!-- ALTA / EDICIÓN COLABORADOR -->
+<div class="card hidden" id="alta">
+<h2>Alta / Edición Colaborador</h2>
+<input id="nombre" placeholder="Nombre completo">
+<input id="password" type="password" placeholder="Contraseña (solo al crear)">
+<input id="zona" placeholder="Zona">
+<select id="estatus">
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<button onclick="guardarColaborador()">Guardar</button>
+<button class="secondary" onclick="volver()">Cancelar</button>
+</div>
+
+<!-- LISTA COLABORADORES -->
+<div class="card hidden" id="lista">
+<h2>Colaboradores</h2>
+<select id="fZona" onchange="mostrarLista()">
+<option value="">Todas las zonas</option>
+</select>
+<select id="fEstatus" onchange="mostrarLista()">
+<option value="">Todos</option>
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<div id="listaCol"></div>
+<button class="secondary" onclick="volver()">Volver</button>
+</div>
+
+<!-- BENEFICIARIOS -->
+<div class="card hidden" id="benef">
+<h2>Beneficiarios</h2>
+<input id="bNombre" placeholder="Nombre">
+<input id="bTel" placeholder="Teléfono">
+<input id="bCorreo" placeholder="Correo">
+<input id="bDir" placeholder="Dirección">
+<select id="bEst">
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<button onclick="guardarBeneficiario()">Guardar Beneficiario</button>
+<div id="listaBen"></div>
+<button class="secondary" onclick="volver()">Volver</button>
+</div>
+
+</div>
+
+<script>
+let editIndex=null, actual=null;
+
+// hash simple (local)
+const hash = t => btoa(t);
+
+// localStorage helpers
+const get = () => JSON.parse(localStorage.getItem('colaboradores')) || [];
+const set = d => localStorage.setItem('colaboradores', JSON.stringify(d));
+
+// LOGIN ADMIN (USUARIO: admin / PASSWORD: 1234)
+function loginAdmin(){
+  if(adminUser.value === 'admin' && adminPass.value === '1234'){
+    admin.classList.add('hidden');
+    panel.classList.remove('hidden');
+  } else {
+    alert('Credenciales incorrectas');
+  }
+}
+
+// MOSTRAR FORM ALTA / EDICIÓN
+function mostrarAlta(i=null){
+  editIndex=i;
+  alta.classList.remove('hidden');
+  panel.classList.add('hidden');
+
+  if(i !== null){
+    let c = get()[i];
+    nombre.value = c.nombre;
+    zona.value = c.zona;
+    estatus.value = c.estatus;
+    password.value = '';
+  } else {
+    nombre.value = zona.value = password.value = '';
+    estatus.value = 'activo';
+  }
+}
+
+// GUARDAR COLABORADOR
+function guardarColaborador(){
+  let cols = get();
+
+  if(editIndex === null){
+    cols.push({
+      numero: cols.length + 1,
+      nombre: nombre.value,
+      password: hash(password.value),
+      zona: zona.value,
+      estatus: estatus.value,
+      fechaAlta: new Date().toLocaleDateString(),
+      beneficiarios: []
+    });
+  } else {
+    cols[editIndex].nombre = nombre.value;
+    cols[editIndex].zona = zona.value;
+    cols[editIndex].estatus = estatus.value;
+  }
+
+  set(cols);
+  volver();
+}
+
+// LISTAR COLABORADORES + FILTROS
+function mostrarLista(){
+  panel.classList.add('hidden');
+  lista.classList.remove('hidden');
+
+  let cols = get();
+  let html = '';
+  let zonas = new Set();
+
+  cols.forEach((c,i)=>{
+    zonas.add(c.zona);
+    if((!fZona.value || c.zona === fZona.value) &&
+       (!fEstatus.value || c.estatus === fEstatus.value)){
+      html += `
+      <div class="list">
+        <b>${c.numero}</b> - ${c.nombre}<br>
+        <span class="small">${c.zona} | ${c.estatus}</span>
+        <div class="flex">
+          <button onclick="mostrarAlta(${i})">Editar</button>
+          <button onclick="verBenef(${i})">Beneficiarios</button>
+          <button class="danger" onclick="eliminar(${i})">Eliminar</button>
+        </div>
+      </div>`;
+    }
+  });
+
+  listaCol.innerHTML = html;
+  fZona.innerHTML = '<option value="">Todas las zonas</option>' +
+    [...zonas].map(z=>`<option value="${z}">${z}</option>`).join('');
+}
+
+// ELIMINAR COLABORADOR
+function eliminar(i){
+  if(confirm('¿Eliminar colaborador?')){
+    let cols = get();
+    cols.splice(i,1);
+    set(cols);
+    mostrarLista();
+  }
+}
+
+// BENEFICIARIOS
+function verBenef(i){
+  actual = i;
+  lista.classList.add('hidden');
+  benef.classList.remove('hidden');
+  listarBenef();
+}
+
+function guardarBeneficiario(){
+  let cols = get();
+  cols[actual].beneficiarios.push({
+    nombre: bNombre.value,
+    telefono: bTel.value,
+    correo: bCorreo.value,
+    direccion: bDir.value,
+    estatus: bEst.value,
+    fechaIngreso: new Date().toLocaleDateString()
+  });
+  set(cols);
+  listarBenef();
+}
+
+function listarBenef(){
+  let html = '';
+  get()[actual].beneficiarios.forEach((b,i)=>{
+    html += `
+    <div class="list">
+      <b>${b.nombre}</b><br>
+      <span class="small">${b.telefono} | ${b.estatus}</span>
+      <button class="danger" onclick="delBen(${i})">Eliminar</button>
+    </div>`;
+  });
+  listaBen.innerHTML = html;
+}
+
+function delBen(i){
+  let cols = get();
+  cols[actual].beneficiarios.splice(i,1);
+  set(cols);
+  listarBenef();
+}
+
+// VOLVER AL PANEL
+function volver(){
+  document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
+  panel.classList.remove('hidden');
+}
+
+// EXPORTAR
+function exportarExcel(){
+  let data=[];
+  get().forEach(c=>{
+    c.beneficiarios.forEach(b=>{
+      data.push({
+        Numero:c.numero,
+        Colaborador:c.nombre,
+        Zona:c.zona,
+        Estatus:c.estatus,
+        Beneficiario:b.nombre,
+        Telefono:b.telefono,
+        Correo:b.correo,
+        Direccion:b.direccion
+      });
+    });
+  });
+  let ws=XLSX.utils.json_to_sheet(data);
+  let wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,"Datos");
+  XLSX.writeFile(wb,"registro_personal.xlsx");
+}
+
+function exportarPDF(){
+  html2pdf().from(document.body).save('registro_personal.pdf');
+}
+</script>
+
+</body>
+</html>
