@@ -5,25 +5,50 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Personal</title>
 
-<!-- Librerías para exportar -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <style>
-body{margin:0;font-family:Arial;background:#f2f4f8}
-header{background:#111827;color:#fff;padding:15px;text-align:center;font-weight:bold}
-.container{padding:15px}
-.card{background:#fff;border-radius:10px;padding:15px;margin-bottom:15px;box-shadow:0 2px 6px rgba(0,0,0,.08)}
-h2{margin:0 0 10px;font-size:16px}
-input,select,button{width:100%;padding:10px;margin-bottom:10px;border-radius:6px;border:1px solid #ccc}
-button{background:#2563eb;color:#fff;border:none;font-weight:bold}
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto}
+body{margin:0;background:#eef1f5;color:#111}
+header{
+  background:#111827;
+  color:#fff;
+  padding:12px;
+  text-align:center;
+  font-size:15px;
+  font-weight:600;
+}
+.container{padding:12px}
+.card{
+  background:#fff;
+  border-radius:12px;
+  padding:12px;
+  margin-bottom:10px;
+  box-shadow:0 3px 8px rgba(0,0,0,.06);
+}
+h2{margin:0 0 8px;font-size:14px;font-weight:600}
+input,select,button{
+  width:100%;
+  padding:8px 10px;
+  margin-bottom:8px;
+  border-radius:8px;
+  border:1px solid #d1d5db;
+  font-size:13px;
+}
+button{
+  background:#2563eb;
+  color:#fff;
+  border:none;
+  font-weight:600;
+}
 .secondary{background:#6b7280}
 .danger{background:#dc2626}
-.list{border-bottom:1px solid #eee;padding:8px 0}
-.small{font-size:12px;color:#555}
 .hidden{display:none}
-.flex{display:flex;gap:6px}
+.flex{display:flex;gap:8px}
 .flex button{flex:1}
+.list{padding:8px 0;border-bottom:1px solid #e5e7eb}
+.small{font-size:11px;color:#6b7280}
 </style>
 </head>
 
@@ -31,50 +56,66 @@ button{background:#2563eb;color:#fff;border:none;font-weight:bold}
 <header>Registro de Personal</header>
 <div class="container">
 
+<!-- SELECCIÓN DE ROL -->
+<div class="card" id="rol">
+<h2>Selecciona acceso</h2>
+<div class="flex">
+  <button onclick="accesoAdmin()">ADMIN</button>
+  <button class="secondary" onclick="accesoCol()">COLABORADOR</button>
+</div>
+</div>
+
 <!-- LOGIN ADMIN -->
-<div class="card" id="admin">
+<div class="card hidden" id="loginAdmin">
 <h2>Administrador</h2>
-<input id="adminUser" placeholder="Usuario">
 <input id="adminPass" type="password" placeholder="Contraseña">
 <button onclick="loginAdmin()">Entrar</button>
+<button class="secondary" onclick="volverInicio()">Volver</button>
+</div>
+
+<!-- LOGIN COLABORADOR -->
+<div class="card hidden" id="loginCol">
+<h2>Colaborador</h2>
+<select id="selectCol"></select>
+<input id="colPass" type="password" placeholder="Contraseña">
+<button onclick="loginColaborador()">Entrar</button>
+<button class="secondary" onclick="volverInicio()">Volver</button>
 </div>
 
 <!-- PANEL ADMIN -->
 <div class="card hidden" id="panel">
-<h2>Panel Administrador</h2>
-<button onclick="mostrarAlta()">Alta Colaborador</button>
-<button onclick="mostrarLista()">Colaboradores</button>
-<button class="secondary" onclick="exportarExcel()">Exportar Excel</button>
-<button class="secondary" onclick="exportarPDF()">Exportar PDF</button>
+<h2>Panel Admin</h2>
+<button onclick="mostrarAlta()">➕ Alta colaborador</button>
+<button onclick="mostrarLista()">📋 Colaboradores</button>
+<button class="secondary" onclick="exportarExcel()">📤 Excel</button>
+<button class="secondary" onclick="exportarPDF()">📄 PDF</button>
 </div>
 
 <!-- ALTA / EDICIÓN COLABORADOR -->
 <div class="card hidden" id="alta">
-<h2>Alta / Edición Colaborador</h2>
+<h2>Colaborador</h2>
 <input id="nombre" placeholder="Nombre completo">
-<input id="password" type="password" placeholder="Contraseña (solo al crear)">
+<input id="password" type="password" placeholder="Contraseña">
 <input id="zona" placeholder="Zona">
 <select id="estatus">
 <option value="activo">Activo</option>
 <option value="baja">Baja</option>
 </select>
 <button onclick="guardarColaborador()">Guardar</button>
-<button class="secondary" onclick="volver()">Cancelar</button>
+<button class="secondary" onclick="volverPanel()">Cancelar</button>
 </div>
 
 <!-- LISTA COLABORADORES -->
 <div class="card hidden" id="lista">
 <h2>Colaboradores</h2>
-<select id="fZona" onchange="mostrarLista()">
-<option value="">Todas las zonas</option>
-</select>
+<select id="fZona" onchange="mostrarLista()"><option value="">Zona</option></select>
 <select id="fEstatus" onchange="mostrarLista()">
-<option value="">Todos</option>
+<option value="">Estatus</option>
 <option value="activo">Activo</option>
 <option value="baja">Baja</option>
 </select>
 <div id="listaCol"></div>
-<button class="secondary" onclick="volver()">Volver</button>
+<button class="secondary" onclick="volverPanel()">Volver</button>
 </div>
 
 <!-- BENEFICIARIOS -->
@@ -88,189 +129,143 @@ button{background:#2563eb;color:#fff;border:none;font-weight:bold}
 <option value="activo">Activo</option>
 <option value="baja">Baja</option>
 </select>
-<button onclick="guardarBeneficiario()">Guardar Beneficiario</button>
+<button onclick="guardarBeneficiario()">Guardar</button>
 <div id="listaBen"></div>
-<button class="secondary" onclick="volver()">Volver</button>
+<button class="secondary" onclick="volverPanel()">Volver</button>
 </div>
 
 </div>
 
 <script>
 let editIndex=null, actual=null;
+const hash=t=>btoa(t);
+const get=()=>JSON.parse(localStorage.getItem('colaboradores'))||[];
+const set=d=>localStorage.setItem('colaboradores',JSON.stringify(d));
 
-// hash simple (local)
-const hash = t => btoa(t);
+function ocultarTodo(){
+document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
+}
 
-// localStorage helpers
-const get = () => JSON.parse(localStorage.getItem('colaboradores')) || [];
-const set = d => localStorage.setItem('colaboradores', JSON.stringify(d));
+function accesoAdmin(){ocultarTodo();loginAdmin.classList.remove('hidden');}
+function accesoCol(){ocultarTodo();cargarSelect();loginCol.classList.remove('hidden');}
+function volverInicio(){ocultarTodo();rol.classList.remove('hidden');}
 
-// LOGIN ADMIN (USUARIO: admin / PASSWORD: 1234)
 function loginAdmin(){
-  if(adminUser.value === 'admin' && adminPass.value === '1234'){
-    admin.classList.add('hidden');
-    panel.classList.remove('hidden');
-  } else {
-    alert('Credenciales incorrectas');
-  }
+if(adminPass.value==='1234'){
+ocultarTodo();panel.classList.remove('hidden');
+}else alert('Contraseña incorrecta');
 }
 
-// MOSTRAR FORM ALTA / EDICIÓN
+function cargarSelect(){
+selectCol.innerHTML='';
+get().forEach((c,i)=>{
+selectCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`;
+});
+}
+
+function loginColaborador(){
+let i=selectCol.value;
+if(get()[i].password!==hash(colPass.value)){
+alert('Contraseña incorrecta');return;
+}
+actual=i;
+ocultarTodo();benef.classList.remove('hidden');listarBenef();
+}
+
 function mostrarAlta(i=null){
-  editIndex=i;
-  alta.classList.remove('hidden');
-  panel.classList.add('hidden');
-
-  if(i !== null){
-    let c = get()[i];
-    nombre.value = c.nombre;
-    zona.value = c.zona;
-    estatus.value = c.estatus;
-    password.value = '';
-  } else {
-    nombre.value = zona.value = password.value = '';
-    estatus.value = 'activo';
-  }
+editIndex=i;ocultarTodo();alta.classList.remove('hidden');
+if(i!==null){
+let c=get()[i];
+nombre.value=c.nombre;zona.value=c.zona;estatus.value=c.estatus;
+}else nombre.value=zona.value=password.value='';
 }
 
-// GUARDAR COLABORADOR
 function guardarColaborador(){
-  let cols = get();
-
-  if(editIndex === null){
-    cols.push({
-      numero: cols.length + 1,
-      nombre: nombre.value,
-      password: hash(password.value),
-      zona: zona.value,
-      estatus: estatus.value,
-      fechaAlta: new Date().toLocaleDateString(),
-      beneficiarios: []
-    });
-  } else {
-    cols[editIndex].nombre = nombre.value;
-    cols[editIndex].zona = zona.value;
-    cols[editIndex].estatus = estatus.value;
-  }
-
-  set(cols);
-  volver();
+let c=get();
+if(editIndex===null){
+c.push({
+numero:c.length+1,
+nombre:nombre.value,
+password:hash(password.value),
+zona:zona.value,
+estatus:estatus.value,
+fechaAlta:new Date().toLocaleDateString(),
+beneficiarios:[]
+});
+}else{
+Object.assign(c[editIndex],{nombre:nombre.value,zona:zona.value,estatus:estatus.value});
+}
+set(c);volverPanel();
 }
 
-// LISTAR COLABORADORES + FILTROS
 function mostrarLista(){
-  panel.classList.add('hidden');
-  lista.classList.remove('hidden');
-
-  let cols = get();
-  let html = '';
-  let zonas = new Set();
-
-  cols.forEach((c,i)=>{
-    zonas.add(c.zona);
-    if((!fZona.value || c.zona === fZona.value) &&
-       (!fEstatus.value || c.estatus === fEstatus.value)){
-      html += `
-      <div class="list">
-        <b>${c.numero}</b> - ${c.nombre}<br>
-        <span class="small">${c.zona} | ${c.estatus}</span>
-        <div class="flex">
-          <button onclick="mostrarAlta(${i})">Editar</button>
-          <button onclick="verBenef(${i})">Beneficiarios</button>
-          <button class="danger" onclick="eliminar(${i})">Eliminar</button>
-        </div>
-      </div>`;
-    }
-  });
-
-  listaCol.innerHTML = html;
-  fZona.innerHTML = '<option value="">Todas las zonas</option>' +
-    [...zonas].map(z=>`<option value="${z}">${z}</option>`).join('');
+ocultarTodo();lista.classList.remove('hidden');
+let html='',zones=new Set();
+get().forEach((c,i)=>{
+zones.add(c.zona);
+if((!fZona.value||c.zona===fZona.value)&&(!fEstatus.value||c.estatus===fEstatus.value)){
+html+=`
+<div class="list">
+<b>${c.numero}</b> ${c.nombre}<br>
+<span class="small">${c.zona} | ${c.estatus}</span>
+<div class="flex">
+<button onclick="mostrarAlta(${i})">Editar</button>
+<button onclick="verBenef(${i})">Benef</button>
+<button class="danger" onclick="eliminar(${i})">✕</button>
+</div>
+</div>`;
+}});
+listaCol.innerHTML=html;
+fZona.innerHTML='<option value="">Zona</option>'+[...zones].map(z=>`<option>${z}</option>`).join('');
 }
 
-// ELIMINAR COLABORADOR
 function eliminar(i){
-  if(confirm('¿Eliminar colaborador?')){
-    let cols = get();
-    cols.splice(i,1);
-    set(cols);
-    mostrarLista();
-  }
+if(confirm('¿Eliminar colaborador?')){
+let c=get();c.splice(i,1);set(c);mostrarLista();
+}
 }
 
-// BENEFICIARIOS
-function verBenef(i){
-  actual = i;
-  lista.classList.add('hidden');
-  benef.classList.remove('hidden');
-  listarBenef();
-}
+function verBenef(i){actual=i;ocultarTodo();benef.classList.remove('hidden');listarBenef();}
 
 function guardarBeneficiario(){
-  let cols = get();
-  cols[actual].beneficiarios.push({
-    nombre: bNombre.value,
-    telefono: bTel.value,
-    correo: bCorreo.value,
-    direccion: bDir.value,
-    estatus: bEst.value,
-    fechaIngreso: new Date().toLocaleDateString()
-  });
-  set(cols);
-  listarBenef();
+let c=get();
+c[actual].beneficiarios.push({
+nombre:bNombre.value,telefono:bTel.value,correo:bCorreo.value,
+direccion:bDir.value,estatus:bEst.value,fechaIngreso:new Date().toLocaleDateString()
+});
+set(c);listarBenef();
 }
 
 function listarBenef(){
-  let html = '';
-  get()[actual].beneficiarios.forEach((b,i)=>{
-    html += `
-    <div class="list">
-      <b>${b.nombre}</b><br>
-      <span class="small">${b.telefono} | ${b.estatus}</span>
-      <button class="danger" onclick="delBen(${i})">Eliminar</button>
-    </div>`;
-  });
-  listaBen.innerHTML = html;
+let html='';
+get()[actual].beneficiarios.forEach((b,i)=>{
+html+=`
+<div class="list">
+<b>${b.nombre}</b><br>
+<span class="small">${b.telefono} | ${b.estatus}</span>
+<button class="danger" onclick="delBen(${i})">Eliminar</button>
+</div>`;
+});
+listaBen.innerHTML=html;
 }
 
 function delBen(i){
-  let cols = get();
-  cols[actual].beneficiarios.splice(i,1);
-  set(cols);
-  listarBenef();
+let c=get();c[actual].beneficiarios.splice(i,1);set(c);listarBenef();
 }
 
-// VOLVER AL PANEL
-function volver(){
-  document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
-  panel.classList.remove('hidden');
-}
+function volverPanel(){ocultarTodo();panel.classList.remove('hidden');}
 
-// EXPORTAR
 function exportarExcel(){
-  let data=[];
-  get().forEach(c=>{
-    c.beneficiarios.forEach(b=>{
-      data.push({
-        Numero:c.numero,
-        Colaborador:c.nombre,
-        Zona:c.zona,
-        Estatus:c.estatus,
-        Beneficiario:b.nombre,
-        Telefono:b.telefono,
-        Correo:b.correo,
-        Direccion:b.direccion
-      });
-    });
-  });
-  let ws=XLSX.utils.json_to_sheet(data);
-  let wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,"Datos");
-  XLSX.writeFile(wb,"registro_personal.xlsx");
+let data=[];
+get().forEach(c=>c.beneficiarios.forEach(b=>data.push({...c,...b})));
+let ws=XLSX.utils.json_to_sheet(data);
+let wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'Datos');
+XLSX.writeFile(wb,'registro.xlsx');
 }
 
 function exportarPDF(){
-  html2pdf().from(document.body).save('registro_personal.pdf');
+html2pdf().from(document.body).save('registro.pdf');
 }
 </script>
 
