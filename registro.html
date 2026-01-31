@@ -5,224 +5,211 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Personal</title>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
 <style>
-*{
-  box-sizing:border-box;
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto
-}
-
-body{
-  margin:0;
-  background:#f1f3f6;
-  color:#111;
-}
-
-/* HEADER */
-header{
-  background:#0f172a;
-  color:#fff;
-  padding:14px;
-  text-align:center;
-  cursor:pointer;
-}
-
-header h1{
-  margin:0;
-  font-size:16px;
-  font-weight:600;
-}
-
-/* CONTENEDOR */
-.container{
-  padding:22px 14px;
-  max-width:520px;
-  margin:auto;
-}
-
-/* FECHA / HORA */
-.datetime{
-  text-align:center;
-  margin-bottom:26px;
-}
-
-.datetime .date{
-  font-size:13px;
-  color:#374151;
-}
-
-.datetime .time{
-  font-size:22px;
-  font-weight:600;
-  margin-top:4px;
-}
-
-/* CARD */
-.card{
-  background:#fff;
-  border-radius:14px;
-  padding:20px;
-  box-shadow:0 6px 16px rgba(0,0,0,.06);
-  margin-bottom:22px;
-}
-
-/* BOTONES */
-button{
-  width:100%;
-  padding:12px;
-  border-radius:10px;
-  border:none;
-  font-size:14px;
-  font-weight:600;
-  cursor:pointer;
-}
-
-.btn-admin{
-  background:#2563eb;
-  color:#fff;
-  margin-bottom:30px;
-}
-
-.btn-col{
-  background:#6b7280;
-  color:#fff;
-}
-
-/* INPUTS */
-input, select{
-  width:100%;
-  padding:10px;
-  margin-bottom:16px;
-  border-radius:10px;
-  border:1px solid #d1d5db;
-  font-size:14px;
-}
-
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto}
+body{margin:0;background:#f1f3f6;color:#111}
+header{background:#0f172a;color:#fff;padding:14px;text-align:center;cursor:pointer}
+header h1{margin:0;font-size:16px}
+.container{padding:20px 14px;max-width:520px;margin:auto}
+.datetime{text-align:center;margin-bottom:24px}
+.datetime .date{font-size:13px;color:#374151}
+.datetime .time{font-size:22px;font-weight:600}
+.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 16px rgba(0,0,0,.06);margin-bottom:22px}
+button{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}
+.btn-admin{background:#2563eb;color:#fff}
+.btn-col{background:#6b7280;color:#fff}
+.btn-back{background:#e5e7eb;color:#111}
+input,select{width:100%;padding:10px;margin-bottom:14px;border-radius:10px;border:1px solid #d1d5db;font-size:14px}
 .hidden{display:none}
-
-h2{
-  margin:0 0 18px;
-  font-size:15px;
-  text-align:center;
-}
+.list{border-bottom:1px solid #e5e7eb;padding:10px 0}
+.small{font-size:12px;color:#6b7280}
 </style>
 </head>
 
 <body>
 
 <header onclick="volverInicio()">
-  <h1>Registro de Personal</h1>
+<h1>Registro de Personal</h1>
 </header>
 
 <div class="container">
 
-<!-- FECHA Y HORA -->
 <div class="datetime" id="datetime"></div>
 
 <!-- INICIO -->
 <div class="card" id="inicio">
-  <button class="btn-admin" onclick="abrirAdmin()">⚙️ ADMIN</button>
-  <button class="btn-col" onclick="abrirColaborador()">👤 COLABORADOR</button>
+<button class="btn-admin" onclick="abrirAdmin()">⚙️ ADMIN</button>
+<button class="btn-col" onclick="abrirColaborador()">👤 COLABORADOR</button>
 </div>
 
 <!-- LOGIN ADMIN -->
 <div class="card hidden" id="loginAdmin">
-  <h2>Administrador</h2>
-  <input id="adminPass" type="password" placeholder="Contraseña">
-  <button class="btn-admin" onclick="validarAdmin()">Entrar</button>
-</div>
-
-<!-- LOGIN COLABORADOR -->
-<div class="card hidden" id="loginCol">
-  <h2>Colaborador</h2>
-  <select id="selectCol"></select>
-  <input id="colPass" type="password" placeholder="Contraseña">
-  <button class="btn-col" onclick="validarColaborador()">Entrar</button>
+<h2>Administrador</h2>
+<input id="adminPass" type="password" placeholder="Contraseña">
+<button class="btn-admin" onclick="validarAdmin()">Entrar</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Regresar</button>
 </div>
 
 <!-- PANEL ADMIN -->
 <div class="card hidden" id="panelAdmin">
-  <h2>Panel Administrador</h2>
-  <p style="text-align:center;font-size:13px;color:#374151">
-    Acceso concedido correctamente
-  </p>
+<h2>Panel Administrador</h2>
+<button class="btn-admin" onclick="mostrarAlta()">➕ Alta colaborador</button>
+<button class="btn-admin" onclick="mostrarLista()">📋 Colaboradores</button>
+<button class="btn-admin" onclick="mostrarReporte()">📊 Reporte de beneficiarios</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Cerrar sesión</button>
+</div>
+
+<!-- ALTA COLABORADOR -->
+<div class="card hidden" id="altaCol">
+<h2>Alta Colaborador</h2>
+<input id="colNombre" placeholder="Nombre completo">
+<input id="colPassNew" type="password" placeholder="Contraseña">
+<input id="colZona" placeholder="Zona">
+<select id="colEstatus">
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<button class="btn-admin" onclick="guardarColaborador()">Guardar</button>
+<button class="btn-back" onclick="volverPanelAdmin()">⬅️ Regresar</button>
+</div>
+
+<!-- LISTA COLABORADORES -->
+<div class="card hidden" id="listaCol">
+<h2>Colaboradores</h2>
+<div id="lista"></div>
+<button class="btn-back" onclick="volverPanelAdmin()">⬅️ Regresar</button>
+</div>
+
+<!-- REPORTE -->
+<div class="card hidden" id="reporte">
+<h2>Reporte de Beneficiarios</h2>
+<select id="filtroCol" onchange="cargarReporte()"></select>
+<div id="tablaReporte"></div>
+<button class="btn-admin" onclick="exportarExcel()">Exportar Excel</button>
+<button class="btn-admin" onclick="exportarPDF()">Exportar PDF</button>
+<button class="btn-back" onclick="volverPanelAdmin()">⬅️ Regresar</button>
+</div>
+
+<!-- LOGIN COLABORADOR -->
+<div class="card hidden" id="loginCol">
+<h2>Colaborador</h2>
+<select id="selectCol"></select>
+<input id="colPass" type="password" placeholder="Contraseña">
+<button class="btn-col" onclick="validarColaborador()">Entrar</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Regresar</button>
+</div>
+
+<!-- PANEL COLABORADOR -->
+<div class="card hidden" id="panelCol">
+<h2>Mi Información</h2>
+<div id="infoCol"></div>
+<button class="btn-col" onclick="mostrarBenefCol()">👨‍👩‍👧 Mis Beneficiarios</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Cerrar sesión</button>
+</div>
+
+<!-- BENEFICIARIOS COLABORADOR -->
+<div class="card hidden" id="benefCol">
+<h2>Mis Beneficiarios</h2>
+<input id="bNombre" placeholder="Nombre">
+<input id="bTel" placeholder="Teléfono">
+<input id="bCorreo" placeholder="Correo">
+<input id="bDir" placeholder="Dirección">
+<select id="bEst">
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<button class="btn-col" onclick="guardarBenefCol()">Guardar Beneficiario</button>
+<div id="listaBen"></div>
+<button class="btn-back" onclick="volverPanelCol()">⬅️ Regresar</button>
 </div>
 
 </div>
 
 <script>
-/* ========= FECHA Y HORA ========= */
+/* FECHA Y HORA */
 function actualizarFechaHora(){
-  const now = new Date();
-  const opcionesFecha = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
-  const fecha = now.toLocaleDateString('es-MX', opcionesFecha);
-
-  let h = now.getHours();
-  let m = now.getMinutes().toString().padStart(2,'0');
-  let ampm = h >= 12 ? 'PM' : 'AM';
-  h = h % 12 || 12;
-
-  document.getElementById('datetime').innerHTML = `
-    <div class="date">${fecha}</div>
-    <div class="time">${h}:${m} ${ampm}</div>
-  `;
+const n=new Date();
+const f=n.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+let h=n.getHours(),m=n.getMinutes().toString().padStart(2,'0'),a=h>=12?'PM':'AM';
+h=h%12||12;
+datetime.innerHTML=`<div class="date">${f}</div><div class="time">${h}:${m} ${a}</div>`;
 }
-setInterval(actualizarFechaHora,1000);
-actualizarFechaHora();
+setInterval(actualizarFechaHora,1000);actualizarFechaHora();
 
-/* ========= UTIL ========= */
-const hash = t => btoa(t);
-const getCols = () => JSON.parse(localStorage.getItem('colaboradores')) || [];
+/* STORAGE */
+const hash=t=>btoa(t);
+const getCols=()=>JSON.parse(localStorage.getItem('colaboradores'))||[];
+const setCols=d=>localStorage.setItem('colaboradores',JSON.stringify(d));
+let actual=null;
 
-function ocultarTodo(){
-  document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
+/* NAV */
+function ocultar(){document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'))}
+function volverInicio(){ocultar();inicio.classList.remove('hidden')}
+function volverPanelAdmin(){ocultar();panelAdmin.classList.remove('hidden')}
+function volverPanelCol(){ocultar();panelCol.classList.remove('hidden')}
+
+/* ADMIN */
+function abrirAdmin(){ocultar();loginAdmin.classList.remove('hidden')}
+function validarAdmin(){adminPass.value==='1234'?(ocultar(),panelAdmin.classList.remove('hidden')):alert('Contraseña incorrecta')}
+function mostrarAlta(){ocultar();altaCol.classList.remove('hidden')}
+function guardarColaborador(){
+let c=getCols();
+c.push({numero:c.length+1,nombre:colNombre.value,password:hash(colPassNew.value),
+zona:colZona.value,estatus:colEstatus.value,fechaAlta:new Date().toLocaleDateString(),beneficiarios:[]});
+setCols(c);alert('Colaborador guardado');volverPanelAdmin()
 }
-
-/* ========= NAVEGACIÓN ========= */
-function volverInicio(){
-  ocultarTodo();
-  inicio.classList.remove('hidden');
+function mostrarLista(){
+ocultar();listaCol.classList.remove('hidden');lista.innerHTML='';
+getCols().forEach(c=>{
+lista.innerHTML+=`<div class="list"><b>${c.numero} - ${c.nombre}</b><br><span class="small">${c.zona} | ${c.estatus}</span></div>`;
+});
 }
-
-/* ========= ADMIN ========= */
-function abrirAdmin(){
-  ocultarTodo();
-  loginAdmin.classList.remove('hidden');
-  adminPass.value='';
+function mostrarReporte(){
+ocultar();reporte.classList.remove('hidden');
+filtroCol.innerHTML='<option value="">Selecciona colaborador</option>';
+getCols().forEach((c,i)=>filtroCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`);
+tablaReporte.innerHTML='';
 }
-
-function validarAdmin(){
-  if(adminPass.value === '1234'){
-    ocultarTodo();
-    panelAdmin.classList.remove('hidden');
-  }else{
-    alert('Contraseña incorrecta');
-  }
+function cargarReporte(){
+let i=filtroCol.value;if(i===''){tablaReporte.innerHTML='';return;}
+let c=getCols()[i],h='';
+c.beneficiarios.forEach(b=>h+=`<div class="list"><b>${b.nombre}</b><br><span class="small">${b.telefono} | ${b.correo}</span></div>`);
+tablaReporte.innerHTML=h||'<p class="small">Sin beneficiarios</p>';
 }
-
-/* ========= COLABORADOR ========= */
-function abrirColaborador(){
-  ocultarTodo();
-  cargarColaboradores();
-  loginCol.classList.remove('hidden');
-  colPass.value='';
+function exportarExcel(){
+let d=[];getCols().forEach(c=>c.beneficiarios.forEach(b=>d.push({Colaborador:c.nombre,Beneficiario:b.nombre,Telefono:b.telefono,Correo:b.correo})));
+let ws=XLSX.utils.json_to_sheet(d),wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'Reporte');
+XLSX.writeFile(wb,'reporte_beneficiarios.xlsx');
 }
+function exportarPDF(){html2pdf().from(tablaReporte).save('reporte_beneficiarios.pdf')}
 
+/* COLABORADOR */
+function abrirColaborador(){ocultar();cargarColaboradores();loginCol.classList.remove('hidden')}
 function cargarColaboradores(){
-  selectCol.innerHTML='';
-  getCols().forEach((c,i)=>{
-    selectCol.innerHTML += `<option value="${i}">${c.numero} - ${c.nombre}</option>`;
-  });
+selectCol.innerHTML='';
+getCols().forEach((c,i)=>selectCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`);
 }
-
 function validarColaborador(){
-  const i = selectCol.value;
-  const c = getCols()[i];
-  if(!c || c.password !== hash(colPass.value)){
-    alert('Contraseña incorrecta');
-    return;
-  }
-  alert('Acceso correcto del colaborador');
+let i=selectCol.value,c=getCols()[i];
+if(!c||c.password!==hash(colPass.value)){alert('Contraseña incorrecta');return}
+actual=i;ocultar();panelCol.classList.remove('hidden');
+infoCol.innerHTML=`<b>${c.nombre}</b><br>Zona: ${c.zona}<br>Estatus: ${c.estatus}<br>Fecha alta: ${c.fechaAlta}`;
 }
+function mostrarBenefCol(){ocultar();benefCol.classList.remove('hidden');listarBenefCol()}
+function guardarBenefCol(){
+let c=getCols();
+c[actual].beneficiarios.push({nombre:bNombre.value,telefono:bTel.value,correo:bCorreo.value,direccion:bDir.value,estatus:bEst.value,fechaIngreso:new Date().toLocaleDateString()});
+setCols(c);listarBenefCol()
+}
+function listarBenefCol(){
+listaBen.innerHTML='';
+getCols()[actual].beneficiarios.forEach((b,i)=>listaBen.innerHTML+=`<div class="list"><b>${b.nombre}</b><br><span class="small">${b.telefono}</span><button onclick="eliminarBenef(${i})">Eliminar</button></div>`);
+}
+function eliminarBenef(i){let c=getCols();c[actual].beneficiarios.splice(i,1);setCols(c);listarBenefCol()}
 </script>
 
 </body>
