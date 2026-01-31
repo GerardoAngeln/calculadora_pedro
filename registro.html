@@ -5,9 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Registro de Personal</title>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <style>
 *{
   box-sizing:border-box;
@@ -20,64 +17,61 @@ body{
   color:#111;
 }
 
+/* HEADER */
 header{
   background:#0f172a;
   color:#fff;
-  padding:10px 14px;
-  display:flex;
-  align-items:center;
-}
-
-header .back{
-  font-size:18px;
+  padding:14px;
+  text-align:center;
   cursor:pointer;
 }
 
-header .title{
-  flex:1;
-  text-align:center;
-  font-size:14px;
+header h1{
+  margin:0;
+  font-size:16px;
   font-weight:600;
 }
 
+/* CONTENEDOR */
 .container{
-  padding:14px;
+  padding:22px 14px;
   max-width:520px;
   margin:auto;
+}
+
+/* FECHA / HORA */
+.datetime{
+  text-align:center;
+  margin-bottom:26px;
+}
+
+.datetime .date{
+  font-size:13px;
+  color:#374151;
+}
+
+.datetime .time{
+  font-size:22px;
+  font-weight:600;
+  margin-top:4px;
 }
 
 /* CARD */
 .card{
   background:#fff;
-  border-radius:12px;
-  padding:14px;
-  margin-bottom:12px;
-  box-shadow:0 4px 10px rgba(0,0,0,.06);
-}
-
-h2{
-  margin:0 0 12px;
-  font-size:14px;
-  font-weight:600;
-}
-
-/* INPUTS */
-input,select{
-  width:100%;
-  padding:7px 10px;
-  margin-bottom:10px;
-  border-radius:8px;
-  border:1px solid #d1d5db;
-  font-size:13px;
+  border-radius:14px;
+  padding:20px;
+  box-shadow:0 6px 16px rgba(0,0,0,.06);
+  margin-bottom:22px;
 }
 
 /* BOTONES */
 button{
   width:100%;
-  padding:8px;
-  border-radius:8px;
+  padding:12px;
+  border-radius:10px;
   border:none;
-  font-size:13px;
+  font-size:14px;
   font-weight:600;
   cursor:pointer;
 }
@@ -85,6 +79,7 @@ button{
 .btn-admin{
   background:#2563eb;
   color:#fff;
+  margin-bottom:30px;
 }
 
 .btn-col{
@@ -92,112 +87,141 @@ button{
   color:#fff;
 }
 
-.secondary{background:#9ca3af}
-.danger{background:#dc2626}
+/* INPUTS */
+input, select{
+  width:100%;
+  padding:10px;
+  margin-bottom:16px;
+  border-radius:10px;
+  border:1px solid #d1d5db;
+  font-size:14px;
+}
 
 .hidden{display:none}
 
-/* LISTA */
-.list{
-  padding:8px 0;
-  border-bottom:1px solid #e5e7eb;
-}
-
-.small{
-  font-size:11px;
-  color:#6b7280;
+h2{
+  margin:0 0 18px;
+  font-size:15px;
+  text-align:center;
 }
 </style>
 </head>
 
 <body>
 
-<header>
-  <div class="back" onclick="volverInicio()">⬅</div>
-  <div class="title">Registro de Personal</div>
+<header onclick="volverInicio()">
+  <h1>Registro de Personal</h1>
 </header>
 
 <div class="container">
 
+<!-- FECHA Y HORA -->
+<div class="datetime" id="datetime"></div>
+
 <!-- INICIO -->
 <div class="card" id="inicio">
-<h2>Selecciona acceso</h2>
-<button class="btn-admin" onclick="irAdmin()">⚙️ ADMIN</button>
-<button class="btn-col" onclick="irCol()">👤 COLABORADOR</button>
+  <button class="btn-admin" onclick="abrirAdmin()">⚙️ ADMIN</button>
+  <button class="btn-col" onclick="abrirColaborador()">👤 COLABORADOR</button>
 </div>
 
 <!-- LOGIN ADMIN -->
 <div class="card hidden" id="loginAdmin">
-<h2>Administrador</h2>
-<input id="adminPass" type="password" placeholder="Contraseña">
-<button class="btn-admin" onclick="loginAdmin()">Entrar</button>
+  <h2>Administrador</h2>
+  <input id="adminPass" type="password" placeholder="Contraseña">
+  <button class="btn-admin" onclick="validarAdmin()">Entrar</button>
 </div>
 
 <!-- LOGIN COLABORADOR -->
 <div class="card hidden" id="loginCol">
-<h2>Colaborador</h2>
-<select id="selectCol"></select>
-<input id="colPass" type="password" placeholder="Contraseña">
-<button class="btn-col" onclick="loginCol()">Entrar</button>
+  <h2>Colaborador</h2>
+  <select id="selectCol"></select>
+  <input id="colPass" type="password" placeholder="Contraseña">
+  <button class="btn-col" onclick="validarColaborador()">Entrar</button>
 </div>
 
 <!-- PANEL ADMIN -->
 <div class="card hidden" id="panelAdmin">
-<h2>Panel administrador</h2>
-<button class="btn-admin" onclick="alert('Alta colaborador')">Alta colaborador</button>
-<button class="btn-admin" onclick="alert('Listado')">Colaboradores</button>
+  <h2>Panel Administrador</h2>
+  <p style="text-align:center;font-size:13px;color:#374151">
+    Acceso concedido correctamente
+  </p>
 </div>
 
 </div>
 
 <script>
-const hash=t=>btoa(t);
-const get=()=>JSON.parse(localStorage.getItem('colaboradores'))||[];
+/* ========= FECHA Y HORA ========= */
+function actualizarFechaHora(){
+  const now = new Date();
+  const opcionesFecha = { weekday:'long', year:'numeric', month:'long', day:'numeric' };
+  const fecha = now.toLocaleDateString('es-MX', opcionesFecha);
 
-function ocultar(){
+  let h = now.getHours();
+  let m = now.getMinutes().toString().padStart(2,'0');
+  let ampm = h >= 12 ? 'PM' : 'AM';
+  h = h % 12 || 12;
+
+  document.getElementById('datetime').innerHTML = `
+    <div class="date">${fecha}</div>
+    <div class="time">${h}:${m} ${ampm}</div>
+  `;
+}
+setInterval(actualizarFechaHora,1000);
+actualizarFechaHora();
+
+/* ========= UTIL ========= */
+const hash = t => btoa(t);
+const getCols = () => JSON.parse(localStorage.getItem('colaboradores')) || [];
+
+function ocultarTodo(){
   document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'));
 }
 
+/* ========= NAVEGACIÓN ========= */
 function volverInicio(){
-  ocultar();
+  ocultarTodo();
   inicio.classList.remove('hidden');
 }
 
-function irAdmin(){
-  ocultar();
+/* ========= ADMIN ========= */
+function abrirAdmin(){
+  ocultarTodo();
   loginAdmin.classList.remove('hidden');
   adminPass.value='';
 }
 
-function irCol(){
-  ocultar();
-  cargarSelect();
+function validarAdmin(){
+  if(adminPass.value === '1234'){
+    ocultarTodo();
+    panelAdmin.classList.remove('hidden');
+  }else{
+    alert('Contraseña incorrecta');
+  }
+}
+
+/* ========= COLABORADOR ========= */
+function abrirColaborador(){
+  ocultarTodo();
+  cargarColaboradores();
   loginCol.classList.remove('hidden');
   colPass.value='';
 }
 
-function loginAdmin(){
-  if(adminPass.value==='1234'){
-    ocultar();
-    panelAdmin.classList.remove('hidden');
-  }else alert('Contraseña incorrecta');
-}
-
-function cargarSelect(){
+function cargarColaboradores(){
   selectCol.innerHTML='';
-  get().forEach((c,i)=>{
-    selectCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`;
+  getCols().forEach((c,i)=>{
+    selectCol.innerHTML += `<option value="${i}">${c.numero} - ${c.nombre}</option>`;
   });
 }
 
-function loginCol(){
-  let i=selectCol.value;
-  let c=get()[i];
-  if(!c || c.password!==hash(colPass.value)){
+function validarColaborador(){
+  const i = selectCol.value;
+  const c = getCols()[i];
+  if(!c || c.password !== hash(colPass.value)){
     alert('Contraseña incorrecta');
     return;
   }
-  alert('Ingreso correcto (perfil colaborador)');
+  alert('Acceso correcto del colaborador');
 }
 </script>
 
