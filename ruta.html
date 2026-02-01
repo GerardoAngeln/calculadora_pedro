@@ -89,100 +89,100 @@ header{
 <!-- INICIO -->
 <div id="inicioView" class="view">
   <div class="box" style="text-align:center;margin-top:60px">
-    <h2>PRODUCCIONES CULTURALES DE MÉXICO</h2>
+    <h2>🏢 PRODUCCIONES CULTURALES DE MÉXICO</h2>
     <p class="small" id="fechaHoraInicio"></p>
-    <button class="btn green" onclick="show('adminView')">ADMINISTRADOR</button>
-    <button class="btn gray" onclick="show('rutaView')">COBRADOR</button>
+    <button class="btn green" onclick="show('adminView')">⚙️ ADMINISTRADOR</button>
+    <button class="btn gray" onclick="show('rutaView')">🚶 COBRADOR</button>
   </div>
 </div>
 
 <!-- ADMIN DASHBOARD -->
 <div id="adminView" class="view">
 <header>
-  <strong>Administrador</strong><br>
+  ⚙️ <strong>Administrador</strong><br>
   <span class="small" id="fechaHoraAdmin"></span>
 </header>
 
 <div class="dashboard">
   <div class="card greenLine">
-    <span>Cobrado hoy</span>
+    <span>💰 Cobrado hoy</span>
     <strong>$3,500</strong>
   </div>
   <div class="card blueLine">
-    <span>Cobrado mes</span>
+    <span>📅 Cobrado mes</span>
     <strong>$18,200</strong>
   </div>
   <div class="card orangeLine">
-    <span>Saldo pendiente</span>
+    <span>⏳ Saldo pendiente</span>
     <strong>$42,800</strong>
   </div>
   <div class="card grayLine">
-    <span>Cobradores activos</span>
+    <span>👥 Cobradores activos</span>
     <strong>2</strong>
   </div>
 </div>
 
 <div class="box">
-  <h4>Últimos cobros</h4>
+  <h4>🧾 Últimos cobros</h4>
 
   <div class="item">
-    <strong>Juan Pérez</strong><br>
-    $500 · Carlos<br>
-    <span class="small">01/02/2026 10:35</span>
+    <strong>👤 Juan Pérez</strong><br>
+    💵 $500 · Carlos<br>
+    <span class="small">📅 01/02/2026 10:35</span>
   </div>
 
   <div class="item">
-    <strong>Ana López</strong><br>
-    $300 · María<br>
-    <span class="small">01/02/2026 09:50</span>
+    <strong>👤 Ana López</strong><br>
+    💵 $300 · María<br>
+    <span class="small">📅 01/02/2026 09:50</span>
   </div>
 </div>
 
 <nav class="bottom-nav">
-  <button>Clientes</button>
-  <button>Cobradores</button>
-  <button>Ventas</button>
-  <button>Reportes</button>
+  <button>👥 Clientes</button>
+  <button>🧑‍💼 Cobradores</button>
+  <button>🧾 Ventas</button>
+  <button>📊 Reportes</button>
 </nav>
 
-<button class="btn gray exit-btn" onclick="show('inicioView')">Salir</button>
+<button class="btn gray exit-btn" onclick="show('inicioView')">🚪 Salir</button>
 </div>
 
 <!-- RUTA COBRADOR -->
 <div id="rutaView" class="view">
 <header>
-  <strong>Ruta del cobrador</strong><br>
+  🚶 <strong>Ruta del cobrador</strong><br>
   <span class="small" id="fechaHoraRuta"></span>
 </header>
 
 <div class="box">
   <div class="item" onclick="show('cobroView')">
-    <strong>Juan Pérez</strong><br>
-    Saldo: $1,200
+    <strong>👤 Juan Pérez</strong><br>
+    💵 Saldo: $1,200
   </div>
   <div class="item" onclick="show('cobroView')">
-    <strong>Ana López</strong><br>
-    Saldo: $800
+    <strong>👤 Ana López</strong><br>
+    💵 Saldo: $800
   </div>
 </div>
 
-<button class="btn gray" onclick="show('inicioView')">Salir</button>
+<button class="btn gray" onclick="show('inicioView')">🚪 Salir</button>
 </div>
 
 <!-- COBRO -->
 <div id="cobroView" class="view">
 <header>
-  <strong>Juan Pérez</strong><br>
+  👤 <strong>Juan Pérez</strong><br>
   <span class="small" id="fechaHoraCobro"></span>
 </header>
 
 <div class="box">
-  <p>Saldo pendiente: $1,200</p>
-  <input type="number" placeholder="Monto a cobrar" style="width:100%;padding:14px;font-size:18px">
-  <button class="btn green">COBRAR Y ENVIAR WHATSAPP</button>
+  <p>💵 Saldo pendiente: <strong>$1,200</strong></p>
+  <input type="number" placeholder="💰 Monto a cobrar" style="width:100%;padding:14px;font-size:18px">
+  <button class="btn green">📤 COBRAR Y ENVIAR WHATSAPP</button>
 </div>
 
-<button class="btn gray" onclick="show('rutaView')">Volver</button>
+<button class="btn gray" onclick="show('rutaView')">🔙 Volver</button>
 </div>
 
 <script>
