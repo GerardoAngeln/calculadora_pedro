@@ -12,31 +12,32 @@ header{background:#111827;color:#fff;padding:16px;display:flex;justify-content:s
 .small{font-size:12px;color:#9ca3af}
 .box{background:#fff;margin:16px;padding:16px;border-radius:16px;box-shadow:0 4px 10px rgba(0,0,0,.06)}
 .item{padding:14px;border-radius:14px;background:#f9fafb;margin-bottom:10px}
-.btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:16px;margin-top:10px}
+.btn{width:100%;padding:14px;border:none;border-radius:14px;font-size:16px;margin-top:8px}
 .green{background:#16a34a;color:#fff}
 .gray{background:#e5e7eb}
 .red{background:#ef4444;color:#fff}
-input,select{width:100%;padding:12px;margin-top:8px;border-radius:10px;border:1px solid #ddd}
-
-.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:16px}
+.blue{background:#2563eb;color:#fff}
+input,select,textarea{width:100%;padding:12px;margin-top:6px;border-radius:10px;border:1px solid #ddd}
+.dashboard{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .card{background:#fff;border-radius:16px;padding:14px;box-shadow:0 4px 10px rgba(0,0,0,.06)}
 .greenLine{border-left:6px solid #16a34a}
 .blueLine{border-left:6px solid #2563eb}
 .orangeLine{border-left:6px solid #f97316}
 .grayLine{border-left:6px solid #6b7280}
-
 .bottom-nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:#fff;border-top:1px solid #e5e7eb}
 .bottom-nav button{flex:1;padding:10px 4px;border:none;background:none;font-size:16px;line-height:1.1}
-
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;justify-content:center;align-items:center;z-index:1000}
-.modal-box{background:#fff;padding:24px;border-radius:18px;width:90%;max-width:360px;text-align:center}
+.modal-box{background:#fff;padding:24px;border-radius:18px;width:90%;max-width:380px;text-align:center}
+.actions{display:flex;gap:8px;margin-top:8px}
+.actions button{flex:1}
+hr{border:none;border-top:1px solid #e5e7eb;margin:16px 0}
 .hidden{display:none}
 </style>
 </head>
 
 <body>
 
-<!-- INICIO -->
+<!-- ================= INICIO ================= -->
 <div id="inicioView" class="view">
   <div class="box" style="text-align:center;margin-top:60px">
     <h2>🏢 PRODUCCIONES CULTURALES DE MÉXICO</h2>
@@ -46,7 +47,7 @@ input,select{width:100%;padding:12px;margin-top:8px;border-radius:10px;border:1p
   </div>
 </div>
 
-<!-- LOGIN ADMIN -->
+<!-- ================= LOGIN ADMIN ================= -->
 <div id="loginAdminModal" class="modal">
   <div class="modal-box">
     <h3>⚙️ Acceso Administrador</h3>
@@ -56,150 +57,431 @@ input,select{width:100%;padding:12px;margin-top:8px;border-radius:10px;border:1p
   </div>
 </div>
 
-<!-- LOGIN COBRADOR -->
+<!-- ================= LOGIN COBRADOR ================= -->
 <div id="loginCobradorModal" class="modal">
   <div class="modal-box">
     <h3>🚶 Acceso Cobrador</h3>
-    <select id="cobradorLogin"></select>
-    <input type="password" id="cobradorPass" placeholder="Contraseña">
+    <select id="loginCobradorSelect"></select>
+    <input type="password" id="loginCobradorPass" placeholder="Contraseña">
     <button class="btn green" onclick="loginCobrador()">Entrar</button>
     <button class="btn gray" onclick="cerrarLoginCobrador()">Cancelar</button>
   </div>
 </div>
 
-<!-- ADMIN -->
+<!-- ================= ADMIN ================= -->
 <div id="adminView" class="view">
 <header>
   <div>⚙️ <strong>Administrador</strong><br><span class="small" id="fechaHoraAdmin"></span></div>
   <button class="btn red" style="width:auto" onclick="logout()">Salir</button>
 </header>
 
-<!-- DASHBOARD -->
-<div id="adminDashboard">
+<div id="adminDashboard" class="box">
+  <h4>📊 Resumen</h4>
   <div class="dashboard">
-    <div class="card greenLine"><span>💰 Cobrado hoy</span><strong>$0</strong></div>
-    <div class="card blueLine"><span>📅 Cobrado mes</span><strong>$0</strong></div>
-    <div class="card orangeLine"><span>⏳ Saldo pendiente</span><strong>$0</strong></div>
-    <div class="card grayLine"><span>👥 Clientes</span><strong id="totalClientes">0</strong></div>
+    <div class="card greenLine">💰 Ventas<br><strong id="resVentas">$0</strong></div>
+    <div class="card blueLine">💵 Cobros<br><strong id="resCobros">$0</strong></div>
+    <div class="card orangeLine">⏳ Saldo<br><strong id="resSaldo">$0</strong></div>
+    <div class="card grayLine">👥 Clientes<br><strong id="resClientes">0</strong></div>
   </div>
 </div>
 
-<!-- CLIENTES -->
-<div id="adminClientes" class="hidden">
-  <div class="box">
-    <h4>👥 Clientes</h4>
-    <input id="cliNombre" placeholder="Nombre">
-    <input id="cliTel" placeholder="Teléfono">
-    <select id="cliCobrador"></select>
-    <button class="btn gray" onclick="capturarUbicacion()">📍 Capturar ubicación</button>
-    <button class="btn green" onclick="guardarCliente()">Guardar cliente</button>
-    <hr>
-    <div id="listaClientes"></div>
-  </div>
+<div id="adminClientes" class="box hidden">
+  <h4>👥 Clientes</h4>
+  <input id="cliNombre" placeholder="Nombre">
+  <input id="cliTel" placeholder="Teléfono">
+  <select id="cliCobrador"></select>
+  <button class="btn green" onclick="guardarCliente()">Guardar cliente</button>
+  <hr>
+  <div id="listaClientes"></div>
 </div>
 
-<!-- COBRADORES (RESTAURADO) -->
-<div id="adminCobradores" class="hidden">
-  <div class="box">
-    <h4>🧑‍💼 Cobradores</h4>
-    <input id="cobNombre" placeholder="Nombre">
-    <input id="cobPass" placeholder="Contraseña">
-    <button class="btn green" onclick="guardarCobrador()">Guardar cobrador</button>
-    <hr>
-    <div id="listaCobradores"></div>
-  </div>
+<div id="adminCobradores" class="box hidden">
+  <h4>🧑‍💼 Cobradores</h4>
+  <input id="cobNombre" placeholder="Nombre">
+  <input id="cobPass" placeholder="Contraseña">
+  <button class="btn green" onclick="guardarCobrador()">Guardar cobrador</button>
+  <hr>
+  <div id="listaCobradores"></div>
+</div>
+
+<div id="adminVentas" class="box hidden">
+  <h4>🧾 Venta</h4>
+  <select id="ventaCliente"></select>
+  <input id="ventaConcepto" placeholder="Concepto">
+  <input type="number" id="ventaTotal" placeholder="Total">
+  <input type="number" id="ventaAbono" placeholder="Abono inicial">
+  <textarea id="ventaObs" placeholder="Ej. PASAR EN HORARIO DE 2 A 4 PM"></textarea>
+  <button class="btn blue" onclick="registrarVenta()">Registrar venta</button>
+  <hr>
+  <div id="listaVentas"></div>
+</div>
+
+<div id="adminReportes" class="box hidden">
+  <h4>📊 Reportes de Cobros</h4>
+
+  <!-- filtros añadidos -->
+  <input type="date" id="repInicio">
+  <input type="date" id="repFin">
+  <select id="repCobrador"></select>
+  <button class="btn blue" onclick="filtrarReportes()">Aplicar filtros</button>
+  <p><strong>Total periodo:</strong> $<span id="totalFiltrado">0</span></p>
+
+  <div id="listaReportes"></div>
 </div>
 
 <nav class="bottom-nav">
-  <button onclick="verDashboard()">🏠<br><span class="small">Inicio</span></button>
-  <button onclick="verClientes()">👥<br><span class="small">Clientes</span></button>
-  <button onclick="verCobradores()">🧑‍💼<br><span class="small">Cobradores</span></button>
+  <button onclick="verSeccion('dashboard')">🏠<br><span class="small">Inicio</span></button>
+  <button onclick="verSeccion('clientes')">👥<br><span class="small">Clientes</span></button>
+  <button onclick="verSeccion('cobradores')">🧑‍💼<br><span class="small">Cobradores</span></button>
+  <button onclick="verSeccion('ventas')">🧾<br><span class="small">Ventas</span></button>
+  <button onclick="verSeccion('reportes')">📊<br><span class="small">Reportes</span></button>
 </nav>
 </div>
 
-<!-- COBRADOR -->
+<!-- ================= COBRADOR ================= -->
 <div id="cobradorView" class="view">
 <header>
   <div>🚶 <strong id="cobradorNombre"></strong><br><span class="small" id="fechaHoraCobrador"></span></div>
   <button class="btn red" style="width:auto" onclick="logout()">Salir</button>
 </header>
-
 <div class="box">
-  <h4>📋 Mis clientes</h4>
+  <!-- selector de fecha añadido -->
+  <input type="date" id="rutaFecha">
   <div id="rutaClientes"></div>
 </div>
 </div>
 
 <script>
+/* ===================== FECHA COMPLETA ===================== */
+function fechaCompleta(fecha=new Date()){
+  const dias=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const meses=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const f=new Date(fecha);
+  let h=f.getHours(), m=String(f.getMinutes()).padStart(2,"0");
+  let ampm=h>=12?"PM":"AM"; h=h%12||12;
+  return `${dias[f.getDay()]} ${f.getDate()} de ${meses[f.getMonth()]} de ${f.getFullYear()} – ${h}:${m} ${ampm}`;
+}
+
+function actualizarFechaHora(){
+  const t=fechaCompleta();
+  ['fechaHoraInicio','fechaHoraAdmin','fechaHoraCobrador'].forEach(id=>{
+    const e=document.getElementById(id); if(e)e.innerText=t;
+  });
+}
+setInterval(actualizarFechaHora,1000);
+
+/* ===================== BASE ===================== */
 const ADMIN_PASSWORD="1010";
 let cobradores=JSON.parse(localStorage.getItem("cobradores"))||[];
 let clientes=JSON.parse(localStorage.getItem("clientes"))||[];
+let ventas=JSON.parse(localStorage.getItem("ventas"))||[];
+let cobros=JSON.parse(localStorage.getItem("cobros"))||[];
 let cobradorActivo=null;
-let ubicacionTemp=null;
 
-function show(id){document.querySelectorAll('.view').forEach(v=>v.style.display='none');document.getElementById(id).style.display='block'}
-window.onload=()=>{show('inicioView');actualizarFechaHora()}
+window.onload=()=>{
+  show('inicioView');
+  actualizarFechaHora();
+  renderTodo();
+  rutaFecha.value=new Date().toISOString().split('T')[0];
+};
 
-/* LOGIN */
-function abrirLoginAdmin(){loginAdminModal.style.display="flex"}
-function cerrarLoginAdmin(){loginAdminModal.style.display="none"}
-function loginAdmin(){if(adminPass.value==="1010"){cerrarLoginAdmin();show('adminView');cargarCobradores();renderClientes();renderCobradores()}}
+/* ===================== NAVEGACIÓN ===================== */
+function show(id){
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById(id).style.display='block';
+}
+function verSeccion(sec){
+  ['adminDashboard','adminClientes','adminCobradores','adminVentas','adminReportes']
+  .forEach(id=>document.getElementById(id).classList.add('hidden'));
+  document.getElementById('admin'+sec.charAt(0).toUpperCase()+sec.slice(1)).classList.remove('hidden');
+  renderTodo();
+}
 
-function abrirLoginCobrador(){cargarCobradoresLogin();loginCobradorModal.style.display="flex"}
-function cerrarLoginCobrador(){loginCobradorModal.style.display="none"}
+/* ===================== LOGIN ===================== */
+function abrirLoginAdmin(){loginAdminModal.style.display="flex";}
+function cerrarLoginAdmin(){loginAdminModal.style.display="none";}
+function loginAdmin(){
+  if(adminPass.value===ADMIN_PASSWORD){
+    cerrarLoginAdmin();show('adminView');renderTodo();
+  }else alert("Contraseña incorrecta");
+}
+function abrirLoginCobrador(){
+  loginCobradorSelect.innerHTML=cobradores.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  loginCobradorModal.style.display="flex";
+}
+function cerrarLoginCobrador(){loginCobradorModal.style.display="none";}
 function loginCobrador(){
-  const c=cobradores.find(c=>c.id==cobradorLogin.value&&c.pass===cobradorPass.value);
-  if(!c){alert("Error");return;}
-  cobradorActivo=c;cerrarLoginCobrador();show('cobradorView');cobradorNombre.innerText=c.nombre;renderRuta()
+  const c=cobradores.find(c=>c.id==loginCobradorSelect.value && c.pass===loginCobradorPass.value);
+  if(!c){alert("Credenciales incorrectas");return;}
+  cobradorActivo=c;
+  cerrarLoginCobrador();
+  show('cobradorView');
+  cobradorNombre.innerText=c.nombre;
+  renderRuta();
 }
+function logout(){show('inicioView');}
 
-/* SECCIONES */
-function verDashboard(){adminDashboard.classList.remove("hidden");adminClientes.classList.add("hidden");adminCobradores.classList.add("hidden")}
-function verClientes(){adminDashboard.classList.add("hidden");adminClientes.classList.remove("hidden");adminCobradores.classList.add("hidden")}
-function verCobradores(){adminDashboard.classList.add("hidden");adminClientes.classList.add("hidden");adminCobradores.classList.remove("hidden")}
-
-/* COBRADORES */
-function guardarCobrador(){cobradores.push({id:Date.now(),nombre:cobNombre.value,pass:cobPass.value});localStorage.setItem("cobradores",JSON.stringify(cobradores));renderCobradores()}
-function renderCobradores(){listaCobradores.innerHTML="";cobradores.forEach(c=>listaCobradores.innerHTML+=`<div class="item">👤 ${c.nombre}</div>`)}
-function cargarCobradores(){cliCobrador.innerHTML='<option value="">Sin asignar</option>';cobradores.forEach(c=>cliCobrador.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`)}
-function cargarCobradoresLogin(){cobradorLogin.innerHTML="";cobradores.forEach(c=>cobradorLogin.innerHTML+=`<option value="${c.id}">${c.nombre}</option>`)}
-
-/* CLIENTES */
-function capturarUbicacion(){
-  navigator.geolocation.getCurrentPosition(p=>{
-    ubicacionTemp={lat:p.coords.latitude,lng:p.coords.longitude};
-    alert("Ubicación capturada");
-  });
-}
+/* ===================== CLIENTES ===================== */
 function guardarCliente(){
-  clientes.push({id:Date.now(),nombre:cliNombre.value,tel:cliTel.value,cobrador:cliCobrador.value,ubicacion:ubicacionTemp});
+  if(!cliNombre.value.trim()) return alert("Nombre requerido");
+  clientes.push({id:Date.now(),nombre:cliNombre.value.trim(),tel:cliTel.value.trim(),cobrador:cliCobrador.value});
   localStorage.setItem("clientes",JSON.stringify(clientes));
-  renderClientes();
+  cliNombre.value="";cliTel.value="";
+  renderTodo();
 }
-function renderClientes(){
-  listaClientes.innerHTML="";
-  clientes.forEach(c=>listaClientes.innerHTML+=`<div class="item">👤 ${c.nombre}</div>`);
-  totalClientes.innerText=clientes.length;
+function editarCliente(id){
+  const c=clientes.find(x=>x.id===id); if(!c)return;
+  const n=prompt("Nombre:",c.nombre); if(n===null)return;
+  const t=prompt("Teléfono:",c.tel||"");
+  c.nombre=n.trim(); c.tel=t.trim();
+  localStorage.setItem("clientes",JSON.stringify(clientes));
+  renderTodo();
+}
+function eliminarCliente(id){
+  if(!confirm("¿Eliminar cliente?"))return;
+  clientes=clientes.filter(c=>c.id!==id);
+  localStorage.setItem("clientes",JSON.stringify(clientes));
+  renderTodo();
 }
 
-/* RUTA */
+/* ===================== COBRADORES ===================== */
+function guardarCobrador(){
+  if(!cobNombre.value.trim()||!cobPass.value.trim())return alert("Datos incompletos");
+  cobradores.push({id:Date.now(),nombre:cobNombre.value.trim(),pass:cobPass.value.trim()});
+  localStorage.setItem("cobradores",JSON.stringify(cobradores));
+  cobNombre.value="";cobPass.value="";
+  renderTodo();
+}
+function editarCobrador(id){
+  const c=cobradores.find(x=>x.id===id); if(!c)return;
+  const n=prompt("Nombre:",c.nombre); if(n===null)return;
+  const p=prompt("Contraseña:",c.pass);
+  c.nombre=n.trim(); c.pass=p.trim();
+  localStorage.setItem("cobradores",JSON.stringify(cobradores));
+  renderTodo();
+}
+function eliminarCobrador(id){
+  if(!confirm("¿Eliminar cobrador?"))return;
+  cobradores=cobradores.filter(c=>c.id!==id);
+  clientes.forEach(cl=>{if(cl.cobrador==id)cl.cobrador=""});
+  localStorage.setItem("cobradores",JSON.stringify(cobradores));
+  localStorage.setItem("clientes",JSON.stringify(clientes));
+  renderTodo();
+}
+
+/* ===================== VENTAS ===================== */
+function registrarVenta(){
+  if(!ventaCliente.value||!ventaTotal.value)return alert("Datos incompletos");
+  const total=+ventaTotal.value;
+  const abono=+ventaAbono.value||0;
+  const f=new Date();
+  const venta={
+    id:Date.now(),
+    cliente:ventaCliente.value,
+    concepto:ventaConcepto.value,
+    total,abono,
+    saldo:total-abono,
+    obs:ventaObs.value,
+    cancelada:false,
+    folio:"V-"+String(ventas.length+1).padStart(6,'0'),
+    fechaISO:f.toISOString(),
+    fechaTexto:fechaCompleta(f)
+  };
+  ventas.push(venta);
+  localStorage.setItem("ventas",JSON.stringify(ventas));
+  enviarWhatsApp(ticketVenta(venta));
+  renderTodo();
+}
+
+function cancelarVenta(id){
+  const v=ventas.find(v=>v.id===id);
+  if(!v||v.cancelada)return;
+  if(!confirm("¿Cancelar esta venta?"))return;
+  v.cancelada=true;
+  v.saldo=0;
+  localStorage.setItem("ventas",JSON.stringify(ventas));
+  renderTodo();
+}
+
+/* ===================== COBROS ===================== */
+function registrarCobro(id){
+  const monto=+prompt("Monto"); if(!monto)return;
+  const v=ventas.find(v=>v.id===id); if(monto>v.saldo)return;
+  v.saldo-=monto;
+  const f=new Date();
+  const cobro={
+    id:Date.now(),
+    venta:id,
+    monto,
+    cobrador:cobradorActivo.nombre,
+    folio:"C-"+String(cobros.length+1).padStart(6,'0'),
+    fechaISO:f.toISOString(),
+    fechaTexto:fechaCompleta(f)
+  };
+  cobros.push(cobro);
+  localStorage.setItem("ventas",JSON.stringify(ventas));
+  localStorage.setItem("cobros",JSON.stringify(cobros));
+  enviarWhatsApp(ticketCobro(v,cobro));
+  renderTodo();
+  renderRuta();
+}
+
+/* ===================== REPORTES FILTRADOS ===================== */
+function filtrarReportes(){
+  const fi=repInicio.value?new Date(repInicio.value):null;
+  const ff=repFin.value?new Date(repFin.value+"T23:59:59"):null;
+  const cob=repCobrador.value;
+  let total=0;
+
+  listaReportes.innerHTML=cobros.filter(c=>{
+    const f=new Date(c.fechaISO);
+    if(fi && f<fi) return false;
+    if(ff && f>ff) return false;
+    if(cob && c.cobrador!==cob) return false;
+    return true;
+  }).map(c=>{
+    total+=c.monto;
+    const v=ventas.find(v=>v.id===c.venta);
+    return `
+      <div class="item">
+        <strong>${c.folio}</strong><br>
+        ${c.fechaTexto}<br>
+        ${c.cobrador} | ${v?.concepto||''} | $${c.monto}
+        <div class="actions">
+          <button class="btn gray" onclick="reenviarTicketCobro(${c.id})">📲 Reenviar ticket</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  totalFiltrado.innerText=total;
+}
+
+/* ===================== RENDER ===================== */
+function renderTodo(){
+  cliCobrador.innerHTML='<option value="">Sin asignar</option>'+cobradores.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  ventaCliente.innerHTML=clientes.map(c=>`<option value="${c.id}">${c.nombre}</option>`).join('');
+  repCobrador.innerHTML='<option value="">Todos</option>'+cobradores.map(c=>`<option value="${c.nombre}">${c.nombre}</option>`).join('');
+
+  listaClientes.innerHTML=clientes.map(c=>`
+    <div class="item">${c.nombre}
+      <div class="actions">
+        <button class="btn gray" onclick="editarCliente(${c.id})">✏️</button>
+        <button class="btn red" onclick="eliminarCliente(${c.id})">🗑️</button>
+      </div>
+    </div>`).join('');
+
+  listaCobradores.innerHTML=cobradores.map(c=>`
+    <div class="item">${c.nombre}
+      <div class="actions">
+        <button class="btn gray" onclick="editarCobrador(${c.id})">✏️</button>
+        <button class="btn red" onclick="eliminarCobrador(${c.id})">🗑️</button>
+      </div>
+    </div>`).join('');
+
+  listaVentas.innerHTML=ventas.map(v=>{
+    const cl=clientes.find(c=>c.id==v.cliente);
+    return `
+      <div class="item" style="${v.cancelada?'opacity:.6':''}">
+        <strong>${v.folio}</strong><br>
+        ${v.fechaTexto}<br>
+        <strong>${v.concepto}</strong><br>
+        ${cl?cl.nombre:"Cliente eliminado"} | Saldo: $${v.saldo}
+        ${v.cancelada?'<br><span style="color:red">VENTA CANCELADA</span>':''}
+        <div class="actions">
+          <button class="btn gray" onclick="reenviarTicketVenta(${v.id})">📲 Reenviar ticket</button>
+          ${!v.cancelada?`<button class="btn red" onclick="cancelarVenta(${v.id})">🛑 Cancelar</button>`:''}
+        </div>
+      </div>`;
+  }).join('');
+
+  listaReportes.innerHTML=cobros.map(c=>{
+    const v=ventas.find(v=>v.id===c.venta);
+    const cl=v?clientes.find(x=>x.id==v.cliente):null;
+    return `
+      <div class="item">
+        <strong>${c.folio}</strong><br>
+        ${c.fechaTexto}<br>
+        <strong>${v?.concepto||''}</strong><br>
+        ${cl?cl.nombre:"N/A"} | ${c.cobrador} | $${c.monto}
+        <div class="actions">
+          <button class="btn gray" onclick="reenviarTicketCobro(${c.id})">📲 Reenviar ticket</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  resVentas.innerText="$"+ventas.reduce((s,v)=>s+v.total,0);
+  resCobros.innerText="$"+cobros.reduce((s,c)=>s+c.monto,0);
+  resSaldo.innerText="$"+ventas.reduce((s,v)=>s+v.saldo,0);
+  resClientes.innerText=clientes.length;
+}
+
+/* ===================== RUTA COBRADOR ===================== */
 function renderRuta(){
   rutaClientes.innerHTML="";
-  clientes.filter(c=>c.cobrador==cobradorActivo.id).forEach(c=>{
-    const link=c.ubicacion?`https://maps.google.com/?q=${c.ubicacion.lat},${c.ubicacion.lng}`:"#";
-    rutaClientes.innerHTML+=`<div class="item">👤 ${c.nombre}<br><a href="${link}" target="_blank">📍 Ver mapa</a></div>`;
+  ventas.filter(v=>v.saldo>0 && !v.cancelada).forEach(v=>{
+    const cl=clientes.find(c=>c.id==v.cliente);
+    if(!cl||cl.cobrador!=cobradorActivo.id)return;
+    rutaClientes.innerHTML+=`
+      <div class="item">
+        <strong>${cl.nombre}</strong><br>
+        ${v.concepto}<br>
+        <strong>Observaciones:</strong><br>
+        <span class="small">${v.obs || 'Sin observaciones'}</span><br>
+        Saldo: $${v.saldo}
+        <button class="btn green" onclick="registrarCobro(${v.id})">Cobrar</button>
+      </div>`;
   });
 }
+rutaFecha.onchange=renderRuta;
 
-function logout(){show('inicioView')}
+/* ===================== TICKETS ===================== */
+function ticketVenta(v){
+  const cl=clientes.find(c=>c.id==v.cliente);
+  return `COMPROBANTE DE VENTA
+${v.folio}
 
-/* FECHA */
-function actualizarFechaHora(){
-  const d=new Date();
-  const t=d.toLocaleString();
-  ["fechaHoraInicio","fechaHoraAdmin","fechaHoraCobrador"].forEach(id=>{const e=document.getElementById(id);if(e)e.innerText=t});
+PRODUCCIONES CULTURALES DE MÉXICO
+Cliente: ${cl?cl.nombre:"N/A"}
+Concepto: ${v.concepto}
+Total: $${v.total}
+Abono: $${v.abono}
+Saldo: $${v.saldo}
+
+Observaciones:
+${v.obs}
+
+Fecha: ${v.fechaTexto}`;
 }
-setInterval(actualizarFechaHora,1000);
+
+function ticketCobro(v,c){
+  const cl=clientes.find(x=>x.id==v.cliente);
+  return `COMPROBANTE DE COBRO
+${c.folio}
+
+PRODUCCIONES CULTURALES DE MÉXICO
+Cliente: ${cl?cl.nombre:"N/A"}
+Monto cobrado: $${c.monto}
+Saldo actual: $${v.saldo}
+
+Cobrador: ${c.cobrador}
+Fecha: ${c.fechaTexto}`;
+}
+
+function enviarWhatsApp(texto){
+  window.open(`https://wa.me/?text=${encodeURIComponent(texto)}`,'_blank');
+}
+function reenviarTicketVenta(id){
+  const v=ventas.find(v=>v.id===id);
+  if(!v){alert("Venta no encontrada");return;}
+  enviarWhatsApp(ticketVenta(v));
+}
+function reenviarTicketCobro(id){
+  const c=cobros.find(c=>c.id===id);
+  if(!c){alert("Cobro no encontrado");return;}
+  const v=ventas.find(v=>v.id===c.venta);
+  if(!v){alert("Venta no encontrada");return;}
+  enviarWhatsApp(ticketCobro(v,c));
+}
 </script>
 
 </body>
