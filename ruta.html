@@ -17,7 +17,7 @@ header{
   color:#fff;
   padding:16px;
 }
-.small{font-size:13px;color:#9ca3af}
+.small{font-size:12px;color:#9ca3af}
 .box{
   background:#fff;
   margin:16px;
@@ -41,6 +41,14 @@ header{
 }
 .green{background:#16a34a;color:#fff}
 .gray{background:#e5e7eb}
+.red{background:#ef4444;color:#fff}
+input{
+  width:100%;
+  padding:12px;
+  margin-top:8px;
+  border-radius:10px;
+  border:1px solid #ddd;
+}
 
 .dashboard{
   display:grid;
@@ -54,9 +62,6 @@ header{
   padding:14px;
   box-shadow:0 4px 10px rgba(0,0,0,.06);
 }
-.card span{font-size:13px;color:#6b7280}
-.card strong{font-size:20px}
-
 .greenLine{border-left:6px solid #16a34a}
 .blueLine{border-left:6px solid #2563eb}
 .orangeLine{border-left:6px solid #f97316}
@@ -73,14 +78,14 @@ header{
 }
 .bottom-nav button{
   flex:1;
-  padding:12px;
+  padding:10px 4px;
   border:none;
   background:none;
-  font-size:14px;
+  font-size:16px;
+  line-height:1.1;
 }
-.exit-btn{
-  margin:80px 16px 16px;
-}
+.exit-btn{margin:80px 16px 16px}
+.hidden{display:none}
 </style>
 </head>
 
@@ -91,118 +96,147 @@ header{
   <div class="box" style="text-align:center;margin-top:60px">
     <h2>🏢 PRODUCCIONES CULTURALES DE MÉXICO</h2>
     <p class="small" id="fechaHoraInicio"></p>
-    <button class="btn green" onclick="show('adminView')">⚙️ ADMINISTRADOR</button>
-    <button class="btn gray" onclick="show('rutaView')">🚶 COBRADOR</button>
+    <button class="btn green" onclick="show('loginAdminView')">⚙️ ADMINISTRADOR</button>
+    <button class="btn gray" onclick="alert('Login cobrador después')">🚶 COBRADOR</button>
   </div>
 </div>
 
-<!-- ADMIN DASHBOARD -->
+<!-- LOGIN ADMIN -->
+<div id="loginAdminView" class="view">
+<header>⚙️ Administrador</header>
+<div class="box">
+  <input type="password" id="adminPass" placeholder="Contraseña admin">
+  <button class="btn green" onclick="loginAdmin()">Entrar</button>
+  <button class="btn gray" onclick="show('inicioView')">Volver</button>
+</div>
+</div>
+
+<!-- ADMIN -->
 <div id="adminView" class="view">
 <header>
   ⚙️ <strong>Administrador</strong><br>
   <span class="small" id="fechaHoraAdmin"></span>
 </header>
 
-<div class="dashboard">
-  <div class="card greenLine">
-    <span>💰 Cobrado hoy</span>
-    <strong>$3,500</strong>
-  </div>
-  <div class="card blueLine">
-    <span>📅 Cobrado mes</span>
-    <strong>$18,200</strong>
-  </div>
-  <div class="card orangeLine">
-    <span>⏳ Saldo pendiente</span>
-    <strong>$42,800</strong>
-  </div>
-  <div class="card grayLine">
-    <span>👥 Cobradores activos</span>
-    <strong>2</strong>
+<!-- DASHBOARD -->
+<div id="adminDashboard">
+  <div class="dashboard">
+    <div class="card greenLine"><span>💰 Cobrado hoy</span><strong>$0</strong></div>
+    <div class="card blueLine"><span>📅 Cobrado mes</span><strong>$0</strong></div>
+    <div class="card orangeLine"><span>⏳ Saldo pendiente</span><strong>$0</strong></div>
+    <div class="card grayLine"><span>👥 Cobradores</span><strong id="totalCobradores">0</strong></div>
   </div>
 </div>
 
-<div class="box">
-  <h4>🧾 Últimos cobros</h4>
+<!-- COBRADORES -->
+<div id="adminCobradores" class="hidden">
+  <div class="box">
+    <h4>🧑‍💼 Cobradores</h4>
 
-  <div class="item">
-    <strong>👤 Juan Pérez</strong><br>
-    💵 $500 · Carlos<br>
-    <span class="small">📅 01/02/2026 10:35</span>
-  </div>
+    <input id="cobNombre" placeholder="Nombre">
+    <input id="cobPass" placeholder="Contraseña">
+    <button class="btn green" onclick="guardarCobrador()">Guardar cobrador</button>
 
-  <div class="item">
-    <strong>👤 Ana López</strong><br>
-    💵 $300 · María<br>
-    <span class="small">📅 01/02/2026 09:50</span>
+    <hr style="margin:16px 0">
+
+    <div id="listaCobradores"></div>
   </div>
 </div>
+
+<button class="btn gray exit-btn" onclick="logout()">🚪 Salir</button>
 
 <nav class="bottom-nav">
-  <button>👥 Clientes</button>
-  <button>🧑‍💼 Cobradores</button>
-  <button>🧾 Ventas</button>
-  <button>📊 Reportes</button>
+  <button onclick="verDashboard()">🏠<br><span class="small">Inicio</span></button>
+  <button onclick="verCobradores()">🧑‍💼<br><span class="small">Cobradores</span></button>
+  <button>🧾<br><span class="small">Ventas</span></button>
+  <button>📊<br><span class="small">Reportes</span></button>
 </nav>
-
-<button class="btn gray exit-btn" onclick="show('inicioView')">🚪 Salir</button>
-</div>
-
-<!-- RUTA COBRADOR -->
-<div id="rutaView" class="view">
-<header>
-  🚶 <strong>Ruta del cobrador</strong><br>
-  <span class="small" id="fechaHoraRuta"></span>
-</header>
-
-<div class="box">
-  <div class="item" onclick="show('cobroView')">
-    <strong>👤 Juan Pérez</strong><br>
-    💵 Saldo: $1,200
-  </div>
-  <div class="item" onclick="show('cobroView')">
-    <strong>👤 Ana López</strong><br>
-    💵 Saldo: $800
-  </div>
-</div>
-
-<button class="btn gray" onclick="show('inicioView')">🚪 Salir</button>
-</div>
-
-<!-- COBRO -->
-<div id="cobroView" class="view">
-<header>
-  👤 <strong>Juan Pérez</strong><br>
-  <span class="small" id="fechaHoraCobro"></span>
-</header>
-
-<div class="box">
-  <p>💵 Saldo pendiente: <strong>$1,200</strong></p>
-  <input type="number" placeholder="💰 Monto a cobrar" style="width:100%;padding:14px;font-size:18px">
-  <button class="btn green">📤 COBRAR Y ENVIAR WHATSAPP</button>
-</div>
-
-<button class="btn gray" onclick="show('rutaView')">🔙 Volver</button>
 </div>
 
 <script>
+const ADMIN_PASSWORD="1010";
+let cobradores=JSON.parse(localStorage.getItem("cobradores"))||[];
+let editId=null;
+
 function show(id){
   document.querySelectorAll('.view').forEach(v=>v.style.display='none');
   document.getElementById(id).style.display='block';
 }
 show('inicioView');
 
-/* ===== FECHA Y HORA EN TIEMPO REAL ===== */
+function loginAdmin(){
+  if(adminPass.value===ADMIN_PASSWORD){
+    show('adminView');
+    verDashboard();
+    renderCobradores();
+  }else alert("Contraseña incorrecta");
+}
+function logout(){show('inicioView')}
+
+function verDashboard(){
+  adminDashboard.classList.remove("hidden");
+  adminCobradores.classList.add("hidden");
+}
+function verCobradores(){
+  adminDashboard.classList.add("hidden");
+  adminCobradores.classList.remove("hidden");
+}
+
+function guardarCobrador(){
+  if(!cobNombre.value||!cobPass.value){alert("Datos incompletos");return;}
+  if(editId){
+    const c=cobradores.find(c=>c.id===editId);
+    c.nombre=cobNombre.value;
+    c.pass=cobPass.value;
+    editId=null;
+  }else{
+    cobradores.push({id:Date.now(),nombre:cobNombre.value,pass:cobPass.value});
+  }
+  localStorage.setItem("cobradores",JSON.stringify(cobradores));
+  cobNombre.value=cobPass.value="";
+  renderCobradores();
+}
+
+function renderCobradores(){
+  listaCobradores.innerHTML="";
+  cobradores.forEach(c=>{
+    const d=document.createElement("div");
+    d.className="item";
+    d.innerHTML=`
+      <strong>👤 ${c.nombre}</strong><br>
+      <span class="small">🔐 ${c.pass}</span><br>
+      <button class="btn gray" onclick="editar(${c.id})">✏️ Editar</button>
+      <button class="btn red" onclick="eliminar(${c.id})">🗑 Eliminar</button>
+    `;
+    listaCobradores.appendChild(d);
+  });
+  totalCobradores.innerText=cobradores.length;
+}
+
+function editar(id){
+  const c=cobradores.find(c=>c.id===id);
+  cobNombre.value=c.nombre;
+  cobPass.value=c.pass;
+  editId=id;
+}
+
+function eliminar(id){
+  if(confirm("¿Eliminar cobrador?")){
+    cobradores=cobradores.filter(c=>c.id!==id);
+    localStorage.setItem("cobradores",JSON.stringify(cobradores));
+    renderCobradores();
+  }
+}
+
+/* FECHA Y HORA */
 function actualizarFechaHora(){
-  const ahora = new Date();
-  const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
-  const meses = ["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
-
-  const texto = `${dias[ahora.getDay()]} ${ahora.getDate()} de ${meses[ahora.getMonth()]} ${ahora.getFullYear()} · ${ahora.toLocaleTimeString()}`;
-
-  ["fechaHoraInicio","fechaHoraAdmin","fechaHoraRuta","fechaHoraCobro"].forEach(id=>{
+  const d=new Date();
+  const dias=["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+  const meses=["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"];
+  const t=`${dias[d.getDay()]} ${d.getDate()} de ${meses[d.getMonth()]} ${d.getFullYear()} · ${d.toLocaleTimeString()}`;
+  ["fechaHoraInicio","fechaHoraAdmin"].forEach(id=>{
     const el=document.getElementById(id);
-    if(el) el.innerText=texto;
+    if(el) el.innerText=t;
   });
 }
 setInterval(actualizarFechaHora,1000);
