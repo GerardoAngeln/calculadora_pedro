@@ -1,195 +1,219 @@
-<script type="module">
-/* ===============================
-   🔥 FIREBASE IMPORTS
-================================ */
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.8.0/firebase-app.js";
-import {
-  getFirestore, collection, addDoc, getDocs, doc, updateDoc
-} from "https://www.gstatic.com/firebasejs/12.8.0/firebase-firestore.js";
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Registro de Personal</title>
 
-/* ===============================
-   🔧 FIREBASE CONFIG (TUYO)
-================================ */
-const firebaseConfig = {
-  apiKey: "AIzaSyD1ut8X7XBvB2i0586jjmDMlD1c4cDCk",
-  authDomain: "registrospersonal-c63f1.firebaseapp.com",
-  projectId: "registrospersonal-c63f1",
-  storageBucket: "registrospersonal-c63f1.firebasestorage.app",
-  messagingSenderId: "480338151670",
-  appId: "1:480338151670:web:213d61fd5ac4cfd3c844d7"
-};
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const colRef = collection(db, "colaboradores");
+<style>
+*{box-sizing:border-box;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto}
+body{margin:0;background:#f1f3f6;color:#111}
+header{background:#0f172a;color:#fff;padding:14px;text-align:center;cursor:pointer}
+header h1{margin:0;font-size:16px}
+.container{padding:20px 14px;max-width:520px;margin:auto}
+.datetime{text-align:center;margin-bottom:24px}
+.datetime .date{font-size:13px;color:#374151}
+.datetime .time{font-size:22px;font-weight:600}
+.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 6px 16px rgba(0,0,0,.06);margin-bottom:22px}
+button{width:100%;padding:12px;border-radius:10px;border:none;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:10px}
+.btn-admin{background:#2563eb;color:#fff}
+.btn-col{background:#6b7280;color:#fff}
+.btn-back{background:#e5e7eb;color:#111}
+input,select{width:100%;padding:10px;margin-bottom:14px;border-radius:10px;border:1px solid #d1d5db;font-size:14px}
+.hidden{display:none}
+.list{border-bottom:1px solid #e5e7eb;padding:10px 0}
+.small{font-size:12px;color:#6b7280}
+</style>
+</head>
 
-console.log("🔥 Firebase conectado");
+<body>
 
-/* ===============================
-   🕒 FECHA Y HORA
-================================ */
+<header onclick="volverInicio()">
+<h1>Registro de Personal</h1>
+</header>
+
+<div class="container">
+
+<div class="datetime" id="datetime"></div>
+
+<!-- INICIO -->
+<div class="card" id="inicio">
+<button class="btn-admin" onclick="abrirAdmin()">⚙️ ADMIN</button>
+<button class="btn-col" onclick="abrirColaborador()">👤 COLABORADOR</button>
+</div>
+
+<!-- LOGIN ADMIN -->
+<div class="card hidden" id="loginAdmin">
+<h2>Administrador</h2>
+<input id="adminPass" type="password" placeholder="Contraseña">
+<button class="btn-admin" onclick="validarAdmin()">Entrar</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Regresar</button>
+</div>
+
+<!-- PANEL ADMIN -->
+<div class="card hidden" id="panelAdmin">
+<h2>Panel Administrador</h2>
+<button class="btn-admin" onclick="mostrarAlta()">➕ Alta colaborador</button>
+<button class="btn-admin" onclick="mostrarLista()">📋 Colaboradores</button>
+<button class="btn-admin" onclick="mostrarReporte()">📊 Reporte de beneficiarios</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Cerrar sesión</button>
+</div>
+
+<!-- ALTA COLABORADOR -->
+<div class="card hidden" id="altaCol">
+<h2>Alta Colaborador</h2>
+<input id="colNombre" placeholder="Nombre completo">
+<input id="colPassNew" type="password" placeholder="Contraseña">
+<input id="colZona" placeholder="Zona">
+<select id="colEstatus">
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<button class="btn-admin" onclick="guardarColaborador()">Guardar</button>
+<button class="btn-back" onclick="volverPanelAdmin()">⬅️ Regresar</button>
+</div>
+
+<!-- LISTA COLABORADORES -->
+<div class="card hidden" id="listaCol">
+<h2>Colaboradores</h2>
+<div id="lista"></div>
+<button class="btn-back" onclick="volverPanelAdmin()">⬅️ Regresar</button>
+</div>
+
+<!-- REPORTE -->
+<div class="card hidden" id="reporte">
+<h2>Reporte de Beneficiarios</h2>
+<select id="filtroCol" onchange="cargarReporte()"></select>
+<div id="tablaReporte"></div>
+<button class="btn-admin" onclick="exportarExcel()">Exportar Excel</button>
+<button class="btn-admin" onclick="exportarPDF()">Exportar PDF</button>
+<button class="btn-back" onclick="volverPanelAdmin()">⬅️ Regresar</button>
+</div>
+
+<!-- LOGIN COLABORADOR -->
+<div class="card hidden" id="loginCol">
+<h2>Colaborador</h2>
+<select id="selectCol"></select>
+<input id="colPass" type="password" placeholder="Contraseña">
+<button class="btn-col" onclick="validarColaborador()">Entrar</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Regresar</button>
+</div>
+
+<!-- PANEL COLABORADOR -->
+<div class="card hidden" id="panelCol">
+<h2>Mi Información</h2>
+<div id="infoCol"></div>
+<button class="btn-col" onclick="mostrarBenefCol()">👨‍👩‍👧 Mis Beneficiarios</button>
+<button class="btn-back" onclick="volverInicio()">⬅️ Cerrar sesión</button>
+</div>
+
+<!-- BENEFICIARIOS COLABORADOR -->
+<div class="card hidden" id="benefCol">
+<h2>Mis Beneficiarios</h2>
+<input id="bNombre" placeholder="Nombre">
+<input id="bTel" placeholder="Teléfono">
+<input id="bCorreo" placeholder="Correo">
+<input id="bDir" placeholder="Dirección">
+<select id="bEst">
+<option value="activo">Activo</option>
+<option value="baja">Baja</option>
+</select>
+<button class="btn-col" onclick="guardarBenefCol()">Guardar Beneficiario</button>
+<div id="listaBen"></div>
+<button class="btn-back" onclick="volverPanelCol()">⬅️ Regresar</button>
+</div>
+
+</div>
+
+<script>
+/* FECHA Y HORA */
 function actualizarFechaHora(){
-  const n=new Date();
-  const f=n.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
-  let h=n.getHours(),m=n.getMinutes().toString().padStart(2,'0'),a=h>=12?'PM':'AM';
-  h=h%12||12;
-  datetime.innerHTML=`<div class="date">${f}</div><div class="time">${h}:${m} ${a}</div>`;
+const n=new Date();
+const f=n.toLocaleDateString('es-MX',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+let h=n.getHours(),m=n.getMinutes().toString().padStart(2,'0'),a=h>=12?'PM':'AM';
+h=h%12||12;
+datetime.innerHTML=`<div class="date">${f}</div><div class="time">${h}:${m} ${a}</div>`;
 }
 setInterval(actualizarFechaHora,1000);actualizarFechaHora();
 
-/* ===============================
-   🧠 UTILIDADES
-================================ */
+/* STORAGE */
 const hash=t=>btoa(t);
-let cacheCols=[]; // respaldo local
-let actualIndex=null;
+const getCols=()=>JSON.parse(localStorage.getItem('colaboradores'))||[];
+const setCols=d=>localStorage.setItem('colaboradores',JSON.stringify(d));
+let actual=null;
 
-/* ===============================
-   🔄 CARGAR COLABORADORES
-================================ */
-async function cargarDesdeFirebase(){
-  const snap = await getDocs(colRef);
-  cacheCols = snap.docs.map(d => ({ id:d.id, ...d.data() }));
-  localStorage.setItem("colaboradores", JSON.stringify(cacheCols));
-}
-await cargarDesdeFirebase();
-
-/* ===============================
-   🧭 NAVEGACIÓN (IGUAL)
-================================ */
+/* NAV */
 function ocultar(){document.querySelectorAll('.card').forEach(c=>c.classList.add('hidden'))}
-window.volverInicio=()=>{ocultar();inicio.classList.remove('hidden')}
-window.volverPanelAdmin=()=>{ocultar();panelAdmin.classList.remove('hidden')}
-window.volverPanelCol=()=>{ocultar();panelCol.classList.remove('hidden')}
+function volverInicio(){ocultar();inicio.classList.remove('hidden')}
+function volverPanelAdmin(){ocultar();panelAdmin.classList.remove('hidden')}
+function volverPanelCol(){ocultar();panelCol.classList.remove('hidden')}
 
-/* ===============================
-   👨‍💼 ADMIN
-================================ */
-window.abrirAdmin=()=>{ocultar();loginAdmin.classList.remove('hidden')}
-window.validarAdmin=()=>{
-  adminPass.value==='1234'
-  ? (ocultar(),panelAdmin.classList.remove('hidden'))
-  : alert('Contraseña incorrecta')
+/* ADMIN */
+function abrirAdmin(){ocultar();loginAdmin.classList.remove('hidden')}
+function validarAdmin(){adminPass.value==='1234'?(ocultar(),panelAdmin.classList.remove('hidden')):alert('Contraseña incorrecta')}
+function mostrarAlta(){ocultar();altaCol.classList.remove('hidden')}
+function guardarColaborador(){
+let c=getCols();
+c.push({numero:c.length+1,nombre:colNombre.value,password:hash(colPassNew.value),
+zona:colZona.value,estatus:colEstatus.value,fechaAlta:new Date().toLocaleDateString(),beneficiarios:[]});
+setCols(c);alert('Colaborador guardado');volverPanelAdmin()
 }
-window.mostrarAlta=()=>{ocultar();altaCol.classList.remove('hidden')}
+function mostrarLista(){
+ocultar();listaCol.classList.remove('hidden');lista.innerHTML='';
+getCols().forEach(c=>{
+lista.innerHTML+=`<div class="list"><b>${c.numero} - ${c.nombre}</b><br><span class="small">${c.zona} | ${c.estatus}</span></div>`;
+});
+}
+function mostrarReporte(){
+ocultar();reporte.classList.remove('hidden');
+filtroCol.innerHTML='<option value="">Selecciona colaborador</option>';
+getCols().forEach((c,i)=>filtroCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`);
+tablaReporte.innerHTML='';
+}
+function cargarReporte(){
+let i=filtroCol.value;if(i===''){tablaReporte.innerHTML='';return;}
+let c=getCols()[i],h='';
+c.beneficiarios.forEach(b=>h+=`<div class="list"><b>${b.nombre}</b><br><span class="small">${b.telefono} | ${b.correo}</span></div>`);
+tablaReporte.innerHTML=h||'<p class="small">Sin beneficiarios</p>';
+}
+function exportarExcel(){
+let d=[];getCols().forEach(c=>c.beneficiarios.forEach(b=>d.push({Colaborador:c.nombre,Beneficiario:b.nombre,Telefono:b.telefono,Correo:b.correo})));
+let ws=XLSX.utils.json_to_sheet(d),wb=XLSX.utils.book_new();
+XLSX.utils.book_append_sheet(wb,ws,'Reporte');
+XLSX.writeFile(wb,'reporte_beneficiarios.xlsx');
+}
+function exportarPDF(){html2pdf().from(tablaReporte).save('reporte_beneficiarios.pdf')}
 
-window.guardarColaborador=async ()=>{
-  const nuevo = {
-    numero: cacheCols.length+1,
-    nombre: colNombre.value,
-    password: hash(colPassNew.value),
-    zona: colZona.value,
-    estatus: colEstatus.value,
-    fechaAlta: new Date().toLocaleDateString(),
-    beneficiarios:[]
-  };
-  await addDoc(colRef,nuevo);
-  await cargarDesdeFirebase();
-  alert("Colaborador guardado en Firebase");
-  volverPanelAdmin();
+/* COLABORADOR */
+function abrirColaborador(){ocultar();cargarColaboradores();loginCol.classList.remove('hidden')}
+function cargarColaboradores(){
+selectCol.innerHTML='';
+getCols().forEach((c,i)=>selectCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`);
 }
-
-window.mostrarLista=()=>{
-  ocultar();listaCol.classList.remove('hidden');
-  lista.innerHTML='';
-  cacheCols.forEach(c=>{
-    lista.innerHTML+=`
-      <div class="list">
-        <b>${c.numero} - ${c.nombre}</b><br>
-        <span class="small">${c.zona} | ${c.estatus}</span>
-      </div>`;
-  });
+function validarColaborador(){
+let i=selectCol.value,c=getCols()[i];
+if(!c||c.password!==hash(colPass.value)){alert('Contraseña incorrecta');return}
+actual=i;ocultar();panelCol.classList.remove('hidden');
+infoCol.innerHTML=`<b>${c.nombre}</b><br>Zona: ${c.zona}<br>Estatus: ${c.estatus}<br>Fecha alta: ${c.fechaAlta}`;
 }
-
-window.mostrarReporte=()=>{
-  ocultar();reporte.classList.remove('hidden');
-  filtroCol.innerHTML='<option value="">Selecciona colaborador</option>';
-  cacheCols.forEach((c,i)=>{
-    filtroCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`;
-  });
-  tablaReporte.innerHTML='';
+function mostrarBenefCol(){ocultar();benefCol.classList.remove('hidden');listarBenefCol()}
+function guardarBenefCol(){
+let c=getCols();
+c[actual].beneficiarios.push({nombre:bNombre.value,telefono:bTel.value,correo:bCorreo.value,direccion:bDir.value,estatus:bEst.value,fechaIngreso:new Date().toLocaleDateString()});
+setCols(c);listarBenefCol()
 }
-
-window.cargarReporte=()=>{
-  const i=filtroCol.value;
-  if(i===''){tablaReporte.innerHTML='';return;}
-  const c=cacheCols[i];
-  let h='';
-  c.beneficiarios.forEach(b=>{
-    h+=`
-      <div class="list">
-        <b>${b.nombre}</b><br>
-        <span class="small">${b.telefono} | ${b.correo}</span>
-      </div>`;
-  });
-  tablaReporte.innerHTML=h||'<p class="small">Sin beneficiarios</p>';
+function listarBenefCol(){
+listaBen.innerHTML='';
+getCols()[actual].beneficiarios.forEach((b,i)=>listaBen.innerHTML+=`<div class="list"><b>${b.nombre}</b><br><span class="small">${b.telefono}</span><button onclick="eliminarBenef(${i})">Eliminar</button></div>`);
 }
-
-/* ===============================
-   👤 COLABORADOR
-================================ */
-window.abrirColaborador=()=>{
-  ocultar();loginCol.classList.remove('hidden');
-  selectCol.innerHTML='';
-  cacheCols.forEach((c,i)=>{
-    selectCol.innerHTML+=`<option value="${i}">${c.numero} - ${c.nombre}</option>`;
-  });
-}
-
-window.validarColaborador=()=>{
-  const i=selectCol.value;
-  const c=cacheCols[i];
-  if(!c || c.password!==hash(colPass.value)){
-    alert("Contraseña incorrecta");return;
-  }
-  actualIndex=i;
-  ocultar();panelCol.classList.remove('hidden');
-  infoCol.innerHTML=`
-    <b>${c.nombre}</b><br>
-    Zona: ${c.zona}<br>
-    Estatus: ${c.estatus}<br>
-    Fecha alta: ${c.fechaAlta}
-  `;
-}
-
-window.mostrarBenefCol=()=>{
-  ocultar();benefCol.classList.remove('hidden');
-  listarBenefCol();
-}
-
-async function listarBenefCol(){
-  listaBen.innerHTML='';
-  cacheCols[actualIndex].beneficiarios.forEach((b,i)=>{
-    listaBen.innerHTML+=`
-      <div class="list">
-        <b>${b.nombre}</b><br>
-        <span class="small">${b.telefono}</span>
-        <button onclick="eliminarBenef(${i})">Eliminar</button>
-      </div>`;
-  });
-}
-
-window.guardarBenefCol=async ()=>{
-  const c=cacheCols[actualIndex];
-  c.beneficiarios.push({
-    nombre:bNombre.value,
-    telefono:bTel.value,
-    correo:bCorreo.value,
-    direccion:bDir.value,
-    estatus:bEst.value,
-    fechaIngreso:new Date().toLocaleDateString()
-  });
-  await updateDoc(doc(db,"colaboradores",c.id),{beneficiarios:c.beneficiarios});
-  await cargarDesdeFirebase();
-  listarBenefCol();
-}
-
-window.eliminarBenef=async (i)=>{
-  const c=cacheCols[actualIndex];
-  c.beneficiarios.splice(i,1);
-  await updateDoc(doc(db,"colaboradores",c.id),{beneficiarios:c.beneficiarios});
-  await cargarDesdeFirebase();
-  listarBenefCol();
-}
+function eliminarBenef(i){let c=getCols();c[actual].beneficiarios.splice(i,1);setCols(c);listarBenefCol()}
 </script>
+
+</body>
+</html>
+
+
 
