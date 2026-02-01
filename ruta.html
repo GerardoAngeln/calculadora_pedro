@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cobranza Móvil</title>
+
+<style>
+body{
+  margin:0;
+  font-family:'Segoe UI',Arial,sans-serif;
+  background:#f3f4f6;
+}
+.view{display:none}
+header{
+  background:#111827;
+  color:#fff;
+  padding:16px;
+}
+.small{font-size:13px;color:#6b7280}
+.box{
+  background:#fff;
+  margin:16px;
+  padding:16px;
+  border-radius:16px;
+  box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+.btn{
+  width:100%;
+  padding:14px;
+  border:none;
+  border-radius:14px;
+  font-size:16px;
+  margin-top:10px;
+}
+.green{background:#16a34a;color:#fff}
+.gray{background:#e5e7eb}
+.item{
+  padding:14px;
+  border-radius:14px;
+  background:#f9fafb;
+  margin-bottom:10px;
+}
+.dashboard{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+  padding:16px;
+}
+.card{
+  background:#fff;
+  border-radius:16px;
+  padding:14px;
+  box-shadow:0 4px 10px rgba(0,0,0,.06);
+}
+.card span{font-size:13px;color:#6b7280}
+.card strong{font-size:20px}
+.greenLine{border-left:6px solid #16a34a}
+.blueLine{border-left:6px solid #2563eb}
+.orangeLine{border-left:6px solid #f97316}
+.grayLine{border-left:6px solid #6b7280}
+.bottom-nav{
+  position:fixed;
+  bottom:0;
+  left:0;
+  right:0;
+  display:flex;
+  background:#fff;
+  border-top:1px solid #e5e7eb;
+}
+.bottom-nav button{
+  flex:1;
+  padding:12px;
+  border:none;
+  background:none;
+  font-size:14px;
+}
+.exit-btn{
+  margin:80px 16px 16px;
+}
+</style>
+</head>
+
+<body>
+
+<!-- INICIO -->
+<div id="inicioView" class="view">
+  <div class="box" style="text-align:center;margin-top:60px">
+    <h2>PRODUCCIONES CULTURALES DE MÉXICO</h2>
+    <p class="small">Sistema de Cobranza Móvil</p>
+    <button class="btn green" onclick="entrarAdmin()">ADMINISTRADOR</button>
+    <button class="btn gray" onclick="entrarCobrador()">COBRADOR</button>
+  </div>
+</div>
+
+<!-- ADMIN DASHBOARD -->
+<div id="adminView" class="view">
+<header>
+  <strong>Administrador</strong><br>
+  <span class="small">Resumen general</span>
+</header>
+
+<div class="dashboard">
+  <div class="card greenLine">
+    <span>Cobrado hoy</span>
+    <strong>$3,500</strong>
+  </div>
+  <div class="card blueLine">
+    <span>Cobrado mes</span>
+    <strong>$18,200</strong>
+  </div>
+  <div class="card orangeLine">
+    <span>Saldo pendiente</span>
+    <strong>$42,800</strong>
+  </div>
+  <div class="card grayLine">
+    <span>Cobradores activos</span>
+    <strong>2</strong>
+  </div>
+</div>
+
+<div class="box">
+  <h4>Últimos cobros</h4>
+
+  <div class="item">
+    <strong>Juan Pérez</strong><br>
+    $500 · Carlos<br>
+    <span class="small">01/02/2026 10:35</span>
+  </div>
+
+  <div class="item">
+    <strong>Ana López</strong><br>
+    $300 · María<br>
+    <span class="small">01/02/2026 09:50</span>
+  </div>
+</div>
+
+<nav class="bottom-nav">
+  <button>Clientes</button>
+  <button>Cobradores</button>
+  <button>Ventas</button>
+  <button>Reportes</button>
+</nav>
+
+<button class="btn gray exit-btn" onclick="volverInicio()">Salir</button>
+</div>
+
+<!-- RUTA COBRADOR -->
+<div id="rutaView" class="view">
+<header>
+  <strong>Ruta del cobrador</strong><br>
+  <span class="small">Clientes asignados</span>
+</header>
+
+<div class="box">
+  <div class="item" onclick="abrirCobro('Juan Pérez',1200)">
+    <strong>Juan Pérez</strong><br>
+    Saldo: $1,200
+  </div>
+  <div class="item" onclick="abrirCobro('Ana López',800)">
+    <strong>Ana López</strong><br>
+    Saldo: $800
+  </div>
+</div>
+
+<button class="btn gray" onclick="volverInicio()">Salir</button>
+</div>
+
+<!-- COBRO -->
+<div id="cobroView" class="view">
+<header>
+  <strong id="clienteNombre"></strong><br>
+  <span class="small">Cobro</span>
+</header>
+
+<div class="box">
+  <p id="clienteSaldo"></p>
+  <input type="number" id="monto" placeholder="Monto a cobrar" style="width:100%;padding:14px;font-size:18px">
+  <button class="btn green" onclick="cobrar()">COBRAR Y ENVIAR WHATSAPP</button>
+</div>
+
+<button class="btn gray" onclick="volverRuta()">Volver</button>
+</div>
+
+<script>
+function show(id){
+  document.querySelectorAll('.view').forEach(v=>v.style.display='none');
+  document.getElementById(id).style.display='block';
+}
+
+show('inicioView');
+
+function entrarAdmin(){ show('adminView'); }
+function entrarCobrador(){ show('rutaView'); }
+
+let clienteActual="", saldoActual=0;
+
+function abrirCobro(nombre,saldo){
+  clienteActual=nombre;
+  saldoActual=saldo;
+  clienteNombre.innerText=nombre;
+  clienteSaldo.innerText="Saldo pendiente: $" + saldo;
+  show('cobroView');
+}
+
+function cobrar(){
+  const monto=+document.getElementById("monto").value;
+  if(!monto||monto>saldoActual){
+    alert("Monto inválido");
+    return;
+  }
+  const texto=`
+📄 COMPROBANTE DE PAGO
+
+🏢 PRODUCCIONES CULTURALES DE MÉXICO
+
+Cliente: ${clienteActual}
+Monto pagado: $${monto}
+Saldo restante: $${saldoActual-monto}
+Fecha: ${new Date().toLocaleString()}
+`.trim();
+
+  window.open("https://wa.me/5210000000000?text="+encodeURIComponent(texto));
+}
+
+function volverInicio(){ show('inicioView'); }
+function volverRuta(){ show('rutaView'); }
+</script>
+
+</body>
+</html>
