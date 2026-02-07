@@ -14,8 +14,8 @@ header{background:#0d9488;color:white;padding:22px;text-align:center}
 .btn.sec{background:#0f766e}
 .place{padding:12px;border-radius:10px;margin-top:8px;font-size:14px}
 .libre{background:#dcfce7}
-.parcial{background:#fef3c7}
 .ocupado{background:#fee2e2}
+.parcial{background:#fef3c7}
 .alerta{background:#fecaca}
 input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #d1d5db}
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
@@ -30,20 +30,19 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
   <p>Agenda, administración y seguimiento</p>
 </header>
 
-<!-- BOTÓN ADMIN -->
 <div class="container">
   <button class="btn sec" onclick="mostrarAdmin()">📊 Administración</button>
 </div>
 
-<!-- ================== OPERACIÓN ================== -->
+<!-- ================= OPERACIÓN ================= -->
 <div class="container" id="operacion">
 
   <div class="card">
     <strong>📅 Selecciona fecha</strong>
     <input type="date" id="fecha" onchange="revisarFecha()">
 
-    <div class="place libre" id="cv">🏖️ CAMINO VIEJO</div>
-    <div class="place libre" id="art">🏖️ ART-YAD</div>
+    <div id="cv" class="place libre">🏖️ CAMINO VIEJO <strong>DISPONIBLE</strong></div>
+    <div id="art" class="place libre">🏖️ ART-YAD <strong>DISPONIBLE</strong></div>
 
     <button class="btn" id="btnRentar" onclick="mostrarFormulario()">Registrar renta</button>
   </div>
@@ -57,12 +56,12 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
     <input id="total" type="number" placeholder="Total $">
     <input id="anticipo" type="number" placeholder="Anticipo $ (opcional)">
 
-    <button class="btn" onclick="guardarYEnviar()">Enviar WhatsApp</button>
+    <button class="btn" onclick="guardarYEnviar()">Enviar comprobante WhatsApp</button>
   </div>
 
 </div>
 
-<!-- ================== ADMIN ================== -->
+<!-- ================= ADMIN ================= -->
 <div class="container" id="admin" style="display:none">
 
   <div class="card">
@@ -88,6 +87,38 @@ function mostrarFormulario(){
   document.getElementById("formulario").style.display="block";
 }
 
+/* ===== VALIDACIÓN HISTÓRICA POR FECHA ===== */
+function revisarFecha(){
+  const fechaSeleccionada = fecha.value;
+  if(!fechaSeleccionada) return;
+
+  const rentas = JSON.parse(localStorage.getItem("rentas")) || [];
+
+  let cvOcupada = false;
+  let artOcupada = false;
+
+  rentas.forEach(r=>{
+    if(r.fecha === fechaSeleccionada){
+      if(r.espacio === "CAMINO VIEJO") cvOcupada = true;
+      if(r.espacio === "ART-YAD") artOcupada = true;
+    }
+  });
+
+  cv.className = `place ${cvOcupada?'ocupado':'libre'}`;
+  cv.innerHTML = `🏖️ CAMINO VIEJO <strong>${cvOcupada?'OCUPADA':'DISPONIBLE'}</strong>`;
+
+  art.className = `place ${artOcupada?'ocupado':'libre'}`;
+  art.innerHTML = `🏖️ ART-YAD <strong>${artOcupada?'OCUPADA':'DISPONIBLE'}</strong>`;
+
+  espacio.innerHTML = `<option value="">Selecciona el espacio</option>`;
+  if(!cvOcupada) espacio.innerHTML += `<option value="CAMINO VIEJO">CAMINO VIEJO</option>`;
+  if(!artOcupada) espacio.innerHTML += `<option value="ART-YAD">ART-YAD</option>`;
+
+  btnRentar.disabled = cvOcupada && artOcupada;
+  btnRentar.textContent = btnRentar.disabled ? "Fecha no disponible" : "Registrar renta";
+}
+
+/* ===== GUARDAR Y WHATSAPP ===== */
 function guardarYEnviar(){
   const r={
     fecha:fecha.value,
@@ -97,9 +128,15 @@ function guardarYEnviar(){
     total:Number(total.value),
     anticipo:Number(anticipo.value||0)
   };
+
+  if(!r.fecha||!r.cliente||!r.telefono||!r.espacio||!r.total){
+    alert("Completa todos los campos");
+    return;
+  }
+
   r.estado = r.anticipo < r.total ? "SEPARADO" : "LIQUIDADO";
 
-  const rentas=JSON.parse(localStorage.getItem("rentas"))||[];
+  const rentas = JSON.parse(localStorage.getItem("rentas")) || [];
   rentas.push(r);
   localStorage.setItem("rentas",JSON.stringify(rentas));
 
@@ -114,28 +151,7 @@ Saldo: $${r.total-r.anticipo}`;
   window.open(`https://wa.me/52${r.telefono}?text=${encodeURIComponent(msg)}`,"_blank");
 }
 
-function revisarFecha(){
-  const rentas=JSON.parse(localStorage.getItem("rentas"))||[];
-  const f=fecha.value;
-  let cv=false,art=false;
-  rentas.forEach(r=>{
-    if(r.fecha===f){
-      if(r.espacio==="CAMINO VIEJO")cv=true;
-      if(r.espacio==="ART-YAD")art=true;
-    }
-  });
-
-  cv?cvDiv("ocupado"):cvDiv("libre");
-  art?artDiv("ocupado"):artDiv("libre");
-
-  espacio.innerHTML="";
-  if(!cv) espacio.innerHTML+=`<option>CAMINO VIEJO</option>`;
-  if(!art) espacio.innerHTML+=`<option>ART-YAD</option>`;
-}
-
-function cvDiv(c){document.getElementById("cv").className=`place ${c}`;}
-function artDiv(c){document.getElementById("art").className=`place ${c}`;}
-
+/* ===== ADMIN ===== */
 function mostrarAdmin(){
   operacion.style.display="none";
   admin.style.display="block";
@@ -148,25 +164,44 @@ function cerrarAdmin(){
 }
 
 function cargarAdmin(){
-  const rentas=JSON.parse(localStorage.getItem("rentas"))||[];
+  const rentas = JSON.parse(localStorage.getItem("rentas")) || [];
   listaRentas.innerHTML="";
   calendario.innerHTML="";
   alertas.innerHTML="";
 
-  const hoy=new Date();
+  const hoy = new Date();
+  const dias = {};
 
   rentas.forEach(r=>{
-    const d=new Date(r.fecha);
-    const diff=(d-hoy)/(1000*60*60*24);
+    const d = new Date(r.fecha);
+    const diff = Math.ceil((d-hoy)/(1000*60*60*24));
+
     if(diff<=1 && r.anticipo<r.total){
-      alertas.innerHTML+=`🔴 Pendiente de liquidar: ${r.cliente}<br>`;
+      alertas.innerHTML+=`🔴 Pendiente de liquidar: ${r.cliente} (${r.fecha})<br>`;
     }
+
+    dias[r.fecha] = dias[r.fecha] ? dias[r.fecha]+1 : 1;
 
     listaRentas.innerHTML+=`
       <div class="place ${r.anticipo<r.total?'parcial':'libre'}">
-        ${r.fecha} - ${r.espacio}<br>${r.cliente}
+        📅 ${r.fecha}<br>
+        🏖️ ${r.espacio}<br>
+        👤 ${r.cliente}
       </div>`;
   });
+
+  const hoyFecha=new Date();
+  const y=hoyFecha.getFullYear();
+  const m=hoyFecha.getMonth();
+  const ultimo=new Date(y,m+1,0).getDate();
+
+  for(let d=1;d<=ultimo;d++){
+    const f=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
+    let cls="libre";
+    if(dias[f]===1) cls="parcial";
+    if(dias[f]>=2) cls="ocupado";
+    calendario.innerHTML+=`<div class="day ${cls}">${d}</div>`;
+  }
 }
 </script>
 
