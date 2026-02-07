@@ -3,177 +3,172 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Renta Palapas y Albercas</title>
+<title>Palapas & Albercas</title>
 
 <style>
-body{
-  margin:0;
-  font-family: system-ui, sans-serif;
-  background:#f2f4f7;
-  color:#111;
-}
-header{
-  background:#0d9488;
-  color:white;
-  padding:18px;
-  text-align:center;
-}
-header h1{
-  margin:0;
-  font-size:20px;
-}
-header p{
-  margin-top:4px;
-  font-size:14px;
-  opacity:.9;
-}
-.container{
-  padding:16px;
-}
-.card{
-  background:white;
-  border-radius:14px;
-  padding:14px;
-  box-shadow:0 3px 8px rgba(0,0,0,.08);
-  margin-bottom:16px;
-}
-.place{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  padding:12px;
-  border-radius:10px;
-  margin-top:10px;
-  font-size:14px;
-}
-.libre{
-  background:#dcfce7;
-  color:#166534;
-}
-.ocupado{
-  background:#fee2e2;
-  color:#991b1b;
-}
-.place span{
-  font-weight:700;
-}
-.btn{
-  margin-top:14px;
-  width:100%;
-  padding:14px;
-  border:none;
-  border-radius:14px;
-  background:#0d9488;
-  color:white;
-  font-size:16px;
-  font-weight:600;
-}
-.btn:disabled{
-  background:#9ca3af;
-}
-input, select{
-  width:100%;
-  padding:12px;
-  margin-top:10px;
-  border-radius:10px;
-  border:1px solid #d1d5db;
-  font-size:15px;
-}
+body{margin:0;font-family:system-ui,sans-serif;background:#f2f4f7}
+header{background:#0d9488;color:white;padding:22px;text-align:center}
+.container{padding:16px}
+.card{background:white;border-radius:14px;padding:14px;box-shadow:0 3px 8px rgba(0,0,0,.08);margin-bottom:16px}
+.btn{width:100%;padding:14px;border:none;border-radius:14px;background:#0d9488;color:white;font-size:16px;font-weight:600;margin-top:10px}
+.btn.sec{background:#0f766e}
+.place{padding:12px;border-radius:10px;margin-top:8px;font-size:14px}
+.libre{background:#dcfce7}
+.parcial{background:#fef3c7}
+.ocupado{background:#fee2e2}
+.alerta{background:#fecaca}
+input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #d1d5db}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.day{padding:10px;text-align:center;border-radius:8px;font-size:13px}
 </style>
 </head>
 
 <body>
 
 <header>
-  <h1>🏖️ Renta de Palapas & Albercas</h1>
-  <p>Comprobante automático por WhatsApp</p>
+  <h1>🏖️ Palapas & Albercas</h1>
+  <p>Agenda, administración y seguimiento</p>
 </header>
 
+<!-- BOTÓN ADMIN -->
 <div class="container">
+  <button class="btn sec" onclick="mostrarAdmin()">📊 Administración</button>
+</div>
+
+<!-- ================== OPERACIÓN ================== -->
+<div class="container" id="operacion">
 
   <div class="card">
-    <strong>📅 Selecciona la fecha</strong>
-    <input type="date" id="fecha">
+    <strong>📅 Selecciona fecha</strong>
+    <input type="date" id="fecha" onchange="revisarFecha()">
 
-    <div class="place libre">
-      🏖️ PALAPA Y ALBERCA "CAMINO VIEJO"
-      <span>DISPONIBLE</span>
-    </div>
+    <div class="place libre" id="cv">🏖️ CAMINO VIEJO</div>
+    <div class="place libre" id="art">🏖️ ART-YAD</div>
 
-    <div class="place ocupado">
-      🏖️ PALAPA Y ALBERCA "ART-YAD"
-      <span>OCUPADO</span>
-    </div>
-
-    <button class="btn" id="btnRentar">Registrar renta</button>
+    <button class="btn" id="btnRentar" onclick="mostrarFormulario()">Registrar renta</button>
   </div>
 
-  <div class="card" id="formulario" style="display:none;">
+  <div class="card" id="formulario" style="display:none">
     <strong>📝 Datos del cliente</strong>
 
-    <input type="text" id="cliente" placeholder="Nombre del cliente">
-    <input type="tel" id="telefono" placeholder="Teléfono WhatsApp (10 dígitos)" maxlength="10">
+    <input id="cliente" placeholder="Nombre del cliente">
+    <input id="telefono" placeholder="Teléfono WhatsApp (10 dígitos)" maxlength="10">
+    <select id="espacio"></select>
+    <input id="total" type="number" placeholder="Total $">
+    <input id="anticipo" type="number" placeholder="Anticipo $ (opcional)">
 
-    <select id="espacio">
-      <option value="">Selecciona el espacio</option>
-      <option value='PALAPA Y ALBERCA "CAMINO VIEJO"'>PALAPA Y ALBERCA "CAMINO VIEJO"</option>
-      <option value='PALAPA Y ALBERCA "ART-YAD"'>PALAPA Y ALBERCA "ART-YAD"</option>
-    </select>
-
-    <input type="number" id="total" placeholder="Total $">
-    <input type="number" id="anticipo" placeholder="Anticipo $ (opcional)">
-
-    <button class="btn" onclick="enviarWhats()">Enviar comprobante por WhatsApp</button>
+    <button class="btn" onclick="guardarYEnviar()">Enviar WhatsApp</button>
   </div>
 
 </div>
 
+<!-- ================== ADMIN ================== -->
+<div class="container" id="admin" style="display:none">
+
+  <div class="card">
+    <strong>🔔 Alertas</strong>
+    <div id="alertas"></div>
+  </div>
+
+  <div class="card">
+    <strong>📅 Calendario mensual</strong>
+    <div id="calendario" class="grid"></div>
+  </div>
+
+  <div class="card">
+    <strong>📋 Rentas registradas</strong>
+    <div id="listaRentas"></div>
+  </div>
+
+  <button class="btn" onclick="cerrarAdmin()">⬅️ Volver</button>
+</div>
+
 <script>
-const btn = document.getElementById("btnRentar");
-const form = document.getElementById("formulario");
+function mostrarFormulario(){
+  document.getElementById("formulario").style.display="block";
+}
 
-btn.onclick = () => {
-  form.style.display = "block";
-};
+function guardarYEnviar(){
+  const r={
+    fecha:fecha.value,
+    cliente:cliente.value,
+    telefono:telefono.value,
+    espacio:espacio.value,
+    total:Number(total.value),
+    anticipo:Number(anticipo.value||0)
+  };
+  r.estado = r.anticipo < r.total ? "SEPARADO" : "LIQUIDADO";
 
-function enviarWhats(){
-  const cliente = document.getElementById("cliente").value.trim();
-  const telefono = document.getElementById("telefono").value.trim();
-  const fecha = document.getElementById("fecha").value;
-  const espacio = document.getElementById("espacio").value;
-  const total = document.getElementById("total").value;
-  const anticipo = document.getElementById("anticipo").value || 0;
-  const saldo = total - anticipo;
+  const rentas=JSON.parse(localStorage.getItem("rentas"))||[];
+  rentas.push(r);
+  localStorage.setItem("rentas",JSON.stringify(rentas));
 
-  if(!cliente || !telefono || !fecha || !espacio || !total){
-    alert("Completa todos los campos");
-    return;
-  }
+  const msg=`🏖️ COMPROBANTE DE RENTA
+Espacio: ${r.espacio}
+Cliente: ${r.cliente}
+Fecha: ${r.fecha}
+Total: $${r.total}
+Anticipo: $${r.anticipo}
+Saldo: $${r.total-r.anticipo}`;
 
-  if(telefono.length !== 10){
-    alert("El número debe tener 10 dígitos");
-    return;
-  }
+  window.open(`https://wa.me/52${r.telefono}?text=${encodeURIComponent(msg)}`,"_blank");
+}
 
-  const mensaje = `
-🏖️ COMPROBANTE DE RENTA
+function revisarFecha(){
+  const rentas=JSON.parse(localStorage.getItem("rentas"))||[];
+  const f=fecha.value;
+  let cv=false,art=false;
+  rentas.forEach(r=>{
+    if(r.fecha===f){
+      if(r.espacio==="CAMINO VIEJO")cv=true;
+      if(r.espacio==="ART-YAD")art=true;
+    }
+  });
 
-Espacio: ${espacio}
-Cliente: ${cliente}
-Fecha: ${fecha}
+  cv?cvDiv("ocupado"):cvDiv("libre");
+  art?artDiv("ocupado"):artDiv("libre");
 
-Total: $${total}
-Anticipo: $${anticipo}
-Saldo: $${saldo}
+  espacio.innerHTML="";
+  if(!cv) espacio.innerHTML+=`<option>CAMINO VIEJO</option>`;
+  if(!art) espacio.innerHTML+=`<option>ART-YAD</option>`;
+}
 
-Gracias por su preferencia
-`;
+function cvDiv(c){document.getElementById("cv").className=`place ${c}`;}
+function artDiv(c){document.getElementById("art").className=`place ${c}`;}
 
-  const url = `https://wa.me/52${telefono}?text=${encodeURIComponent(mensaje)}`;
-  window.open(url, "_blank");
+function mostrarAdmin(){
+  operacion.style.display="none";
+  admin.style.display="block";
+  cargarAdmin();
+}
+
+function cerrarAdmin(){
+  admin.style.display="none";
+  operacion.style.display="block";
+}
+
+function cargarAdmin(){
+  const rentas=JSON.parse(localStorage.getItem("rentas"))||[];
+  listaRentas.innerHTML="";
+  calendario.innerHTML="";
+  alertas.innerHTML="";
+
+  const hoy=new Date();
+
+  rentas.forEach(r=>{
+    const d=new Date(r.fecha);
+    const diff=(d-hoy)/(1000*60*60*24);
+    if(diff<=1 && r.anticipo<r.total){
+      alertas.innerHTML+=`🔴 Pendiente de liquidar: ${r.cliente}<br>`;
+    }
+
+    listaRentas.innerHTML+=`
+      <div class="place ${r.anticipo<r.total?'parcial':'libre'}">
+        ${r.fecha} - ${r.espacio}<br>${r.cliente}
+      </div>`;
+  });
 }
 </script>
 
 </body>
 </html>
-
