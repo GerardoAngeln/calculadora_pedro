@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -12,14 +13,27 @@ header{background:#0d9488;color:white;padding:22px;text-align:center}
 .card{background:white;border-radius:14px;padding:14px;box-shadow:0 3px 8px rgba(0,0,0,.08);margin-bottom:16px}
 .btn{width:100%;padding:14px;border:none;border-radius:14px;background:#0d9488;color:white;font-size:16px;font-weight:600;margin-top:10px}
 .btn.sec{background:#0f766e}
+input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #d1d5db}
+
+.compact{padding:12px}
+.date-row{display:flex;align-items:center;gap:8px}
+.status-row{display:flex;gap:8px;margin:8px 0}
+.badge{
+  flex:1;text-align:center;padding:8px;
+  border-radius:8px;font-size:13px;font-weight:600
+}
+.badge.libre{background:#dcfce7;color:#166534}
+.badge.ocupado{background:#fee2e2;color:#991b1b}
+
 .place{padding:12px;border-radius:10px;margin-top:8px;font-size:14px}
 .libre{background:#dcfce7}
-.ocupado{background:#fee2e2}
 .parcial{background:#fef3c7}
+.ocupado{background:#fee2e2}
 .alerta{background:#fecaca}
-input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1px solid #d1d5db}
+
 .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
 .day{padding:10px;text-align:center;border-radius:8px;font-size:13px}
+.small{font-size:13px}
 </style>
 </head>
 
@@ -27,7 +41,7 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
 
 <header>
   <h1>🏖️ Palapas & Albercas</h1>
-  <p>Agenda, administración y seguimiento</p>
+  <p>Agenda · Administración · Abonos</p>
 </header>
 
 <div class="container">
@@ -37,16 +51,22 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
 <!-- ================= OPERACIÓN ================= -->
 <div class="container" id="operacion">
 
-  <div class="card">
-    <strong>📅 Selecciona fecha</strong>
-    <input type="date" id="fecha" onchange="revisarFecha()">
+  <!-- PANEL DE FECHA COMPACTO -->
+  <div class="card compact">
+    <div class="date-row">
+      <span>📅</span>
+      <input type="date" id="fecha" onchange="revisarFecha()">
+    </div>
 
-    <div id="cv" class="place libre">🏖️ CAMINO VIEJO <strong>DISPONIBLE</strong></div>
-    <div id="art" class="place libre">🏖️ ART-YAD <strong>DISPONIBLE</strong></div>
+    <div class="status-row">
+      <div id="cv" class="badge libre">CAMINO VIEJO</div>
+      <div id="art" class="badge libre">ART-YAD</div>
+    </div>
 
     <button class="btn" id="btnRentar" onclick="mostrarFormulario()">Registrar renta</button>
   </div>
 
+  <!-- FORMULARIO -->
   <div class="card" id="formulario" style="display:none">
     <strong>📝 Datos del cliente</strong>
 
@@ -54,9 +74,9 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
     <input id="telefono" placeholder="Teléfono WhatsApp (10 dígitos)" maxlength="10">
     <select id="espacio"></select>
     <input id="total" type="number" placeholder="Total $">
-    <input id="anticipo" type="number" placeholder="Anticipo $ (opcional)">
+    <input id="abonadoInicial" type="number" placeholder="Abono inicial $ (opcional)">
 
-    <button class="btn" onclick="guardarYEnviar()">Enviar comprobante WhatsApp</button>
+    <button class="btn" onclick="guardarRenta()">Guardar y enviar WhatsApp</button>
   </div>
 
 </div>
@@ -66,7 +86,7 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
 
   <div class="card">
     <strong>🔔 Alertas</strong>
-    <div id="alertas"></div>
+    <div id="alertas" class="small"></div>
   </div>
 
   <div class="card">
@@ -83,72 +103,75 @@ input,select{width:100%;padding:12px;margin-top:10px;border-radius:10px;border:1
 </div>
 
 <script>
+function obtenerRentas(){
+  return JSON.parse(localStorage.getItem("rentas")) || [];
+}
+function guardarRentas(r){ localStorage.setItem("rentas",JSON.stringify(r)); }
+
 function mostrarFormulario(){
-  document.getElementById("formulario").style.display="block";
+  formulario.style.display="block";
 }
 
-/* ===== VALIDACIÓN HISTÓRICA POR FECHA ===== */
+/* ===== VALIDACIÓN HISTÓRICA ===== */
 function revisarFecha(){
-  const fechaSeleccionada = fecha.value;
-  if(!fechaSeleccionada) return;
+  const f = fecha.value;
+  if(!f) return;
 
-  const rentas = JSON.parse(localStorage.getItem("rentas")) || [];
-
-  let cvOcupada = false;
-  let artOcupada = false;
+  const rentas = obtenerRentas();
+  let cvO=false, artO=false;
 
   rentas.forEach(r=>{
-    if(r.fecha === fechaSeleccionada){
-      if(r.espacio === "CAMINO VIEJO") cvOcupada = true;
-      if(r.espacio === "ART-YAD") artOcupada = true;
+    if(r.fecha===f){
+      if(r.espacio==="CAMINO VIEJO") cvO=true;
+      if(r.espacio==="ART-YAD") artO=true;
     }
   });
 
-  cv.className = `place ${cvOcupada?'ocupado':'libre'}`;
-  cv.innerHTML = `🏖️ CAMINO VIEJO <strong>${cvOcupada?'OCUPADA':'DISPONIBLE'}</strong>`;
+  cv.className=`badge ${cvO?'ocupado':'libre'}`;
+  art.className=`badge ${artO?'ocupado':'libre'}`;
 
-  art.className = `place ${artOcupada?'ocupado':'libre'}`;
-  art.innerHTML = `🏖️ ART-YAD <strong>${artOcupada?'OCUPADA':'DISPONIBLE'}</strong>`;
+  espacio.innerHTML='<option value="">Selecciona el espacio</option>';
+  if(!cvO) espacio.innerHTML+='<option value="CAMINO VIEJO">CAMINO VIEJO</option>';
+  if(!artO) espacio.innerHTML+='<option value="ART-YAD">ART-YAD</option>';
 
-  espacio.innerHTML = `<option value="">Selecciona el espacio</option>`;
-  if(!cvOcupada) espacio.innerHTML += `<option value="CAMINO VIEJO">CAMINO VIEJO</option>`;
-  if(!artOcupada) espacio.innerHTML += `<option value="ART-YAD">ART-YAD</option>`;
-
-  btnRentar.disabled = cvOcupada && artOcupada;
+  btnRentar.disabled = cvO && artO;
   btnRentar.textContent = btnRentar.disabled ? "Fecha no disponible" : "Registrar renta";
 }
 
-/* ===== GUARDAR Y WHATSAPP ===== */
-function guardarYEnviar(){
-  const r={
+/* ===== GUARDAR RENTA ===== */
+function guardarRenta(){
+  const renta={
     fecha:fecha.value,
     cliente:cliente.value,
     telefono:telefono.value,
     espacio:espacio.value,
     total:Number(total.value),
-    anticipo:Number(anticipo.value||0)
+    abonado:Number(abonadoInicial.value||0)
   };
 
-  if(!r.fecha||!r.cliente||!r.telefono||!r.espacio||!r.total){
+  if(!renta.fecha||!renta.cliente||!renta.telefono||!renta.espacio||!renta.total){
     alert("Completa todos los campos");
     return;
   }
 
-  r.estado = r.anticipo < r.total ? "SEPARADO" : "LIQUIDADO";
+  const rentas=obtenerRentas();
+  rentas.push(renta);
+  guardarRentas(rentas);
 
-  const rentas = JSON.parse(localStorage.getItem("rentas")) || [];
-  rentas.push(r);
-  localStorage.setItem("rentas",JSON.stringify(rentas));
+  enviarWhats(
+`🏖️ COMPROBANTE DE RENTA
+Espacio: ${renta.espacio}
+Cliente: ${renta.cliente}
+Fecha: ${renta.fecha}
 
-  const msg=`🏖️ COMPROBANTE DE RENTA
-Espacio: ${r.espacio}
-Cliente: ${r.cliente}
-Fecha: ${r.fecha}
-Total: $${r.total}
-Anticipo: $${r.anticipo}
-Saldo: $${r.total-r.anticipo}`;
+Total: $${renta.total}
+Abonado: $${renta.abonado}
+Saldo: $${renta.total-renta.abonado}`,
+renta.telefono);
+}
 
-  window.open(`https://wa.me/52${r.telefono}?text=${encodeURIComponent(msg)}`,"_blank");
+function enviarWhats(msg,tel){
+  window.open(`https://wa.me/52${tel}?text=${encodeURIComponent(msg)}`,"_blank");
 }
 
 /* ===== ADMIN ===== */
@@ -157,51 +180,81 @@ function mostrarAdmin(){
   admin.style.display="block";
   cargarAdmin();
 }
-
 function cerrarAdmin(){
   admin.style.display="none";
   operacion.style.display="block";
 }
 
 function cargarAdmin(){
-  const rentas = JSON.parse(localStorage.getItem("rentas")) || [];
+  const rentas=obtenerRentas();
   listaRentas.innerHTML="";
   calendario.innerHTML="";
   alertas.innerHTML="";
 
-  const hoy = new Date();
-  const dias = {};
+  const hoy=new Date();
+  const dias={};
 
-  rentas.forEach(r=>{
-    const d = new Date(r.fecha);
-    const diff = Math.ceil((d-hoy)/(1000*60*60*24));
+  rentas.forEach((r,i)=>{
+    const saldo=r.total-r.abonado;
+    const d=new Date(r.fecha);
+    const diff=Math.ceil((d-hoy)/(1000*60*60*24));
 
-    if(diff<=1 && r.anticipo<r.total){
-      alertas.innerHTML+=`🔴 Pendiente de liquidar: ${r.cliente} (${r.fecha})<br>`;
+    let estado="LIQUIDADO";
+    if(saldo>0 && diff<=1){
+      estado="PENDIENTE DE LIQUIDAR";
+      alertas.innerHTML+=`🔴 ${r.cliente} (${r.fecha})<br>`;
+    }else if(saldo>0){
+      estado="SEPARADO";
     }
 
-    dias[r.fecha] = dias[r.fecha] ? dias[r.fecha]+1 : 1;
+    dias[r.fecha]=(dias[r.fecha]||0)+1;
 
     listaRentas.innerHTML+=`
-      <div class="place ${r.anticipo<r.total?'parcial':'libre'}">
+      <div class="place ${estado==="LIQUIDADO"?'libre':estado==="SEPARADO"?'parcial':'alerta'}">
         📅 ${r.fecha}<br>
         🏖️ ${r.espacio}<br>
-        👤 ${r.cliente}
+        👤 ${r.cliente}<br>
+        💰 Total: $${r.total}<br>
+        💵 Abonado: $${r.abonado}<br>
+        💳 Saldo: $${saldo}<br>
+        🔔 Estado: <strong>${estado}</strong>
+        ${saldo>0?`<button class="btn small" onclick="abonar(${i})">➕ Abonar</button>`:""}
       </div>`;
   });
 
-  const hoyFecha=new Date();
-  const y=hoyFecha.getFullYear();
-  const m=hoyFecha.getMonth();
-  const ultimo=new Date(y,m+1,0).getDate();
+  const d=new Date();
+  const y=d.getFullYear(), m=d.getMonth();
+  const ult=new Date(y,m+1,0).getDate();
 
-  for(let d=1;d<=ultimo;d++){
-    const f=`${y}-${String(m+1).padStart(2,"0")}-${String(d).padStart(2,"0")}`;
-    let cls="libre";
-    if(dias[f]===1) cls="parcial";
-    if(dias[f]>=2) cls="ocupado";
-    calendario.innerHTML+=`<div class="day ${cls}">${d}</div>`;
+  for(let i=1;i<=ult;i++){
+    const f=`${y}-${String(m+1).padStart(2,"0")}-${String(i).padStart(2,"0")}`;
+    let c="libre";
+    if(dias[f]===1) c="parcial";
+    if(dias[f]>=2) c="ocupado";
+    calendario.innerHTML+=`<div class="day ${c}">${i}</div>`;
   }
+}
+
+function abonar(i){
+  const m=Number(prompt("Monto del abono:"));
+  if(!m||m<=0) return;
+
+  const rentas=obtenerRentas();
+  rentas[i].abonado+=m;
+  guardarRentas(rentas);
+
+  enviarWhats(
+`💳 Abono registrado
+Cliente: ${rentas[i].cliente}
+Espacio: ${rentas[i].espacio}
+Fecha: ${rentas[i].fecha}
+
+Abono: $${m}
+Total abonado: $${rentas[i].abonado}
+Saldo: $${rentas[i].total-rentas[i].abonado}`,
+rentas[i].telefono);
+
+  cargarAdmin();
 }
 </script>
 
