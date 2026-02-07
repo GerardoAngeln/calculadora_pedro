@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Renta Palapas y Albercas</title>
+
+<style>
+  body{
+    margin:0;
+    font-family: system-ui, sans-serif;
+    background:#f2f4f7;
+    color:#111;
+  }
+
+  header{
+    background:#0d9488;
+    color:white;
+    padding:18px;
+    text-align:center;
+  }
+
+  header h1{
+    margin:0;
+    font-size:20px;
+  }
+
+  header p{
+    margin-top:4px;
+    font-size:14px;
+    opacity:.9;
+  }
+
+  .container{
+    padding:16px;
+  }
+
+  .date-box{
+    background:white;
+    border-radius:14px;
+    padding:14px;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);
+  }
+
+  .place{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    padding:12px;
+    border-radius:10px;
+    margin-top:10px;
+    font-size:14px;
+  }
+
+  .libre{
+    background:#dcfce7;
+    color:#166534;
+  }
+
+  .ocupado{
+    background:#fee2e2;
+    color:#991b1b;
+  }
+
+  .place span{
+    font-weight:700;
+  }
+
+  .btn{
+    margin-top:14px;
+    width:100%;
+    padding:14px;
+    border:none;
+    border-radius:14px;
+    background:#0d9488;
+    color:white;
+    font-size:16px;
+    font-weight:600;
+  }
+
+  .btn:disabled{
+    background:#9ca3af;
+  }
+
+  .form{
+    margin-top:20px;
+    background:white;
+    padding:14px;
+    border-radius:14px;
+    box-shadow:0 3px 8px rgba(0,0,0,.08);
+  }
+
+  input, select{
+    width:100%;
+    padding:12px;
+    margin-top:10px;
+    border-radius:10px;
+    border:1px solid #d1d5db;
+    font-size:15px;
+  }
+
+</style>
+</head>
+
+<body>
+
+<header>
+  <h1>🏖️ Renta de Palapas & Albercas</h1>
+  <p>Selecciona fecha y espacio disponible</p>
+</header>
+
+<div class="container">
+
+  <!-- FECHA -->
+  <div class="date-box">
+    <strong>📅 Fecha seleccionada:</strong><br>
+    <input type="date" id="fecha">
+
+    <!-- ESTADOS -->
+    <div class="place libre" id="cv">
+      🏖️ CAMINO VIEJO
+      <span>DISPONIBLE</span>
+    </div>
+
+    <div class="place ocupado" id="art">
+      🏖️ ART-YAD
+      <span>OCUPADO</span>
+    </div>
+
+    <button class="btn" id="btnRentar">Registrar renta</button>
+  </div>
+
+  <!-- FORMULARIO -->
+  <div class="form" id="formulario" style="display:none;">
+    <strong>📝 Datos de la renta</strong>
+
+    <input type="text" id="cliente" placeholder="Nombre del cliente">
+    <input type="tel" id="telefono" placeholder="Teléfono WhatsApp">
+
+    <select id="espacio">
+      <option value="">Selecciona espacio</option>
+      <option value="CAMINO VIEJO">PALAPA Y ALBERCA "CAMINO VIEJO"</option>
+      <option value="ART-YAD">PALAPA Y ALBERCA "ART-YAD"</option>
+    </select>
+
+    <input type="number" id="total" placeholder="Total $">
+    <input type="number" id="anticipo" placeholder="Anticipo $ (opcional)">
+
+    <button class="btn" onclick="enviarWhats()">Enviar WhatsApp</button>
+  </div>
+
+</div>
+
+<script>
+  const btn = document.getElementById('btnRentar');
+  const form = document.getElementById('formulario');
+
+  // Simulación: una libre y otra ocupada
+  const caminoViejoLibre = true;
+  const artyadLibre = false;
+
+  if(!caminoViejoLibre && !artyadLibre){
+    btn.disabled = true;
+    btn.textContent = "Fecha no disponible";
+  }
+
+  btn.onclick = () => {
+    form.style.display = "block";
+  };
+
+  function enviarWhats(){
+    const cliente = document.getElementById('cliente').value;
+    const telefono = document.getElementById('telefono').value;
+    const fecha = document.getElementById('fecha').value;
+    const espacio = document.getElementById('espacio').value;
+    const total = document.getElementById('total').value;
+    const anticipo = document.getElementById('anticipo').value || 0;
+    const saldo = total - anticipo;
+
+    if(!cliente || !telefono || !fecha || !espacio || !total){
+      alert("Completa todos los campos");
+      return;
+    }
+
+    const mensaje = `
+🏖️ Comprobante de renta
+
+Espacio: ${espacio}
+Cliente: ${cliente}
+Fecha: ${fecha}
+
+Total: $${total}
+Anticipo: $${anticipo}
+Saldo: $${saldo}
+
+Gracias por su preferencia
+`;
+
+    const url = `https://wa.me/52${telefono}?text=${encodeURIComponent(mensaje)}`;
+    window.open(url, '_blank');
+  }
+</script>
+
+</body>
+</html>
