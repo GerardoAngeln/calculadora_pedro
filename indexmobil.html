@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reloj Checador Pro - Infocell Edition</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.25/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.18.0/firebase-database-compat.js"></script>
+
+    <style>
+        :root { 
+            --azul-claro: #3498db; 
+            --verde: #27ae60; 
+            --rojo: #e74c3c; 
+            --gris-fondo: #f4f6f8; 
+            --negro-sidebar: #000000;
+            --dark: #2c3e50;
+        }
+        
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+        body { margin: 0; background: var(--gris-fondo); display: flex; height: 100vh; overflow: hidden; }
+        
+        /* SIDEBAR NEGRO PURO */
+        .sidebar { 
+            width: 260px; 
+            background: var(--negro-sidebar); 
+            color: white; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            justify-content: space-between; 
+            border-right: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo-container { text-align: center; margin-bottom: 20px; min-height: 80px; }
+        .logo-container img { max-width: 100%; max-height: 120px; object-fit: contain; }
+        
+        .sidebar .brand { text-align: center; margin-bottom: 30px; }
+        .sidebar .brand h2 { margin: 0; font-size: 10px; letter-spacing: 2px; opacity: 0.5; text-transform: uppercase; }
+        .sidebar .brand p { margin: 5px 0 0; font-size: 16px; color: var(--azul-claro); font-weight: bold; }
+        
+        .sidebar button { 
+            width: 100%; padding: 14px; margin-bottom: 12px; border: none; border-radius: 10px; 
+            background: rgba(255,255,255,0.05); color: white; cursor: pointer; text-align: left; padding-left: 15px; transition: 0.3s; 
+        }
+        .sidebar button:hover { background: var(--azul-claro); }
+
+        /* PANEL DERECHO BLANCO */
+        .main { flex: 1; padding: 30px; overflow-y: auto; display: flex; flex-direction: column; align-items: center; }
+        
+        .card { 
+            background: white; padding: 35px; border-radius: 20px; 
+            width: 100%; max-width: 480px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+            margin-bottom: 25px; border-top: 5px solid var(--azul-claro);
+        }
+        .card-admin { max-width: 1100px; border-top-color: var(--dark); }
+
+        .reloj { font-size: 64px; text-align: center; color: var(--dark); font-weight: bold; margin: 10px 0; }
+        .fecha-txt { text-align: center; color: #7f8c8d; margin-bottom: 25px; text-transform: capitalize; }
+        
+        input, select { 
+            width: 100%; padding: 14px; margin-bottom: 15px; border-radius: 10px; 
+            border: 1px solid #dfe6e9; background: #fff; color: #333; font-size: 16px; 
+        }
+        button.action { width: 100%; padding: 15px; background: var(--verde); color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; background: white; }
+        th { background: var(--dark); color: white; padding: 12px; font-size: 12px; text-align: center; }
+        td { padding: 12px; border-bottom: 1px solid #eee; text-align: center; font-size: 14px; color: #333; }
+        
+        .mensaje { text-align: center; font-weight: 600; margin-top: 15px; padding: 10px; border-radius: 8px; display: none; }
+        .ok { background: #d4edda; color: var(--verde); }
+        .error { background: #f8d7da; color: var(--rojo); }
+        
+        .adminPanel, .modulo { display: none; }
+        .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 1000; }
+        .modalContent { background: white; padding: 40px; border-radius: 20px; width: 90%; max-width: 400px; text-align: center; }
+        .resumen-caja { background: #f8f9fa; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid var(--azul-claro); display: none; }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar">
+        <div>
+            <div class="logo-container" id="logoSidebar"></div>
+            <div class="brand">
+                <h2>Control de Acceso</h2>
+                <p id="nombreEmpresaSidebar">INFOCELL VICTORIA</p>
+            </div>
+            <button onclick="mostrarChecador()">🏠 Inicio</button>
+            <button onclick="abrirAdmin()">🔑 Administrador</button>
+        </div>
+        <div style="text-align: center; opacity: 0.3; font-size: 10px;">v2.6 - Full Edition</div>
+    </div>
+
+    <div class="main">
+        <div id="contenedorChecador">
+            <div class="card">
+                <div class="reloj" id="reloj">--:--:--</div>
+                <div class="fecha-txt" id="fechaDisplay">Cargando...</div>
+                <input id="passChecar" type="password" placeholder="PIN" style="text-align:center; font-size: 24px; letter-spacing: 5px;" autocomplete="off">
+                <button class="action" onclick="checar()">REGISTRAR ASISTENCIA</button>
+                <div id="mensaje" class="mensaje"></div>
+            </div>
+            <div class="card">
+                <h3 style="color:var(--dark); margin-top:0;">Actividad de Hoy</h3>
+                <div id="listaChecadas"></div>
+            </div>
+        </div>
+
+        <div class="card card-admin adminPanel" id="adminPanel">
+            <div style="display:flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                <h2>Administración General</h2>
+                <button class="action" style="background:var(--rojo); width: auto; padding: 10px 20px;" onclick="resetBaseDeDatos()">🧨 Reiniciar</button>
+            </div>
+            
+            <div style="display:flex; gap:10px; margin-bottom:20px;">
+                <button class="action" style="background:var(--azul-claro)" onclick="mostrarModulo('empleados')">👥 Personal</button>
+                <button class="action" style="background:var(--azul-claro)" onclick="mostrarModulo('reportes')">💰 Nómina</button>
+                <button class="action" style="background:var(--dark)" onclick="mostrarModulo('config')">⚙️ Empresa</button>
+            </div>
+
+            <div id="modEmpleados" class="modulo" style="display:block;">
+                <div style="display: grid; grid-template-columns: 2fr 1fr 1fr 1fr auto; gap: 10px;">
+                    <input id="nombreInput" placeholder="Nombre">
+                    <input id="telefonoInput" placeholder="Tel">
+                    <input id="passwordInput" placeholder="PIN">
+                    <input id="sueldoInput" type="number" placeholder="$ Hora">
+                    <button class="action" onclick="guardarEmpleado()">Guardar</button>
+                </div>
+                <table>
+                    <thead><tr><th>Folio</th><th>Nombre</th><th>Teléfono</th><th>PIN</th><th>$ Hora</th><th>Acciones</th></tr></thead>
+                    <tbody id="tablaEmpleadosCuerpo"></tbody>
+                </table>
+            </div>
+
+            <div id="modReportes" class="modulo">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px;">
+                    <select id="filtroEmpleado"></select>
+                    <input type="date" id="fechaInicio">
+                    <input type="date" id="fechaFin">
+                </div>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <button class="action" style="background:var(--azul-claro);" onclick="calcularNomina()">🔍 Calcular Nómina</button>
+                    <button class="action" style="background:var(--dark);" onclick="generarPDF()">📄 Exportar PDF</button>
+                </div>
+                <div id="resumenNomina" class="resumen-caja">
+                    <p id="txtResumen" style="font-size:18px; margin:0; font-weight:bold; color:var(--dark);"></p>
+                </div>
+                <table>
+                    <thead><tr><th>ID</th><th>Empleado</th><th>Fecha</th><th>Entrada</th><th>Salida</th><th>Horas</th><th>Monto</th></tr></thead>
+                    <tbody id="tablaReportesCuerpo"></tbody>
+                </table>
+            </div>
+
+            <div id="modConfig" class="modulo">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div style="background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #eee;">
+                        <h4>Datos de Empresa</h4>
+                        <input id="empresaInput" placeholder="Nombre">
+                        <input type="file" id="logoFile" accept="image/*">
+                    </div>
+                    <div style="background: #fff; padding: 20px; border-radius: 15px; border: 1px solid #eee;">
+                        <h4>Identidad Visual</h4>
+                        <label>Color de Acento:</label>
+                        <input type="color" id="colorInput" style="height: 45px;">
+                    </div>
+                </div>
+                <button class="action" style="margin-top:20px;" onclick="guardarConfig()">Aplicar Cambios</button>
+            </div>
+            <button class="action" style="background:#95a5a6; margin-top:20px;" onclick="mostrarChecador()">← Regresar</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modalAdmin">
+        <div class="modalContent">
+            <h3>Acceso Administrativo</h3>
+            <input type="password" id="adminPass" placeholder="Clave">
+            <button class="action" onclick="validarAdmin()">Entrar</button>
+            <button style="background:none; border:none; margin-top:10px; cursor:pointer;" onclick="cerrarModal()">Cancelar</button>
+        </div>
+    </div>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyDjW-pIe-v1GYLT-Vwzqm-eAug1fTmsVsQ",
+            authDomain: "relojchecador-fd23f.firebaseapp.com",
+            projectId: "relojchecador-fd23f",
+            databaseURL: "https://relojchecador-fd23f-default-rtdb.firebaseio.com"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
+        let empleados = []; let checadas = []; let editando = null;
+        let configGlobal = { nombre: "INFOCELL VICTORIA", logo: "", color: "#3498db" };
+
+        db.ref('config').on('value', snap => {
+            if(snap.val()) {
+                configGlobal = snap.val();
+                document.getElementById("nombreEmpresaSidebar").textContent = configGlobal.nombre;
+                document.getElementById("empresaInput").value = configGlobal.nombre;
+                document.getElementById("colorInput").value = configGlobal.color || "#3498db";
+                document.documentElement.style.setProperty('--azul-claro', configGlobal.color || "#3498db");
+                const container = document.getElementById("logoSidebar");
+                container.innerHTML = configGlobal.logo ? `<img src="${configGlobal.logo}">` : "";
+            }
+        });
+
+        function actualizarReloj() {
+            const ahora = new Date();
+            document.getElementById("reloj").textContent = ahora.toLocaleTimeString('es-MX', { hour12: false });
+            document.getElementById("fechaDisplay").textContent = ahora.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+        }
+        setInterval(actualizarReloj, 1000);
+
+        db.ref('empleados').on('value', snap => {
+            empleados = snap.val() ? Object.values(snap.val()) : [];
+            renderEmpleados(); cargarFiltroEmpleados();
+        });
+
+        function guardarEmpleado() {
+            const n = document.getElementById("nombreInput").value.trim();
+            const t = document.getElementById("telefonoInput").value.trim();
+            const p = document.getElementById("passwordInput").value.trim();
+            const s = document.getElementById("sueldoInput").value.trim();
+            if (!n || !p || !s) return alert("Faltan datos");
+
+            let clave = editando || "V" + (empleados.reduce((max, e) => Math.max(max, parseInt(e.clave.replace("V",""))), 0) + 1).toString().padStart(5, '0');
+            db.ref('empleados/' + clave).set({ clave, nombre: n, telefono: t, password: p, sueldoHora: parseFloat(s) }).then(() => {
+                ["nombreInput","telefonoInput","passwordInput","sueldoInput"].forEach(id => document.getElementById(id).value = "");
+                editando = null;
+            });
+        }
+
+        db.ref('checadas').on('value', snap => {
+            checadas = snap.val() ? Object.values(snap.val()) : [];
+            renderChecadasHoy();
+        });
+
+        function checar() {
+            const pin = document.getElementById("passChecar").value.trim();
+            const emp = empleados.find(e => e.password === pin);
+            if (!emp) return mostrarMensaje("❌ PIN INCORRECTO", "error");
+            
+            const hoy = new Date().toLocaleDateString('en-CA');
+            const tipo = checadas.filter(c => c.clave === emp.clave && c.fecha === hoy).length % 2 === 0 ? "ENTRADA" : "SALIDA";
+            const ticket = "C" + (checadas.reduce((max, c) => Math.max(max, parseInt((c.ticket||"C0").replace("C",""))), 0) + 1).toString().padStart(4, '0');
+
+            db.ref('checadas').push().set({ ticket, clave: emp.clave, nombre: emp.nombre, fecha: hoy, hora: document.getElementById("reloj").textContent, tipo, timestamp: Date.now() });
+            document.getElementById("passChecar").value = "";
+            mostrarMensaje(`✅ ${tipo}: ${emp.nombre}`, "ok");
+        }
+
+        function renderEmpleados() {
+            const t = document.getElementById("tablaEmpleadosCuerpo"); t.innerHTML = "";
+            empleados.forEach(e => t.innerHTML += `<tr><td>${e.clave}</td><td>${e.nombre}</td><td>${e.telefono}</td><td>${e.password}</td><td>$${e.sueldoHora}</td><td><button onclick="prepararEdicion('${e.clave}','${e.nombre}','${e.telefono}','${e.password}','${e.sueldoHora}')">✏️</button> <button onclick="if(confirm('¿Eliminar?')) db.ref('empleados/${e.clave}').remove()">🗑️</button></td></tr>`);
+        }
+
+        function prepararEdicion(c, n, t, p, s) { 
+            editando = c; 
+            document.getElementById("nombreInput").value = n; 
+            document.getElementById("telefonoInput").value = t; 
+            document.getElementById("passwordInput").value = p; 
+            document.getElementById("sueldoInput").value = s; 
+        }
+
+        function renderChecadasHoy() {
+            const hoy = new Date().toLocaleDateString('en-CA');
+            const l = document.getElementById("listaChecadas"); l.innerHTML = "";
+            const filtro = checadas.filter(c => c.fecha === hoy).reverse().slice(0,5);
+            if(filtro.length === 0) l.innerHTML = "<p style='text-align:center; color:#999;'>Sin actividad hoy</p>";
+            filtro.forEach(c => l.innerHTML += `<div style="padding:12px; border-bottom:1px solid #eee; display:flex; justify-content:space-between;"><div><strong>${c.nombre}</strong><br><small>${c.tipo}</small></div><div style="color:var(--azul-claro); font-weight:bold;">${c.hora}</div></div>`);
+        }
+
+        function calcularNomina() {
+            const empSel = document.getElementById("filtroEmpleado").value;
+            const fI = document.getElementById("fechaInicio").value, fF = document.getElementById("fechaFin").value;
+            if(!fI || !fF) return alert("Seleccione periodo");
+            const cuerpo = document.getElementById("tablaReportesCuerpo"); cuerpo.innerHTML = "";
+            let total = 0; const agrupado = {};
+            checadas.filter(c => (!empSel || c.nombre === empSel) && c.fecha >= fI && c.fecha <= fF).forEach(c => {
+                const k = `${c.clave}_${c.fecha}`;
+                if(!agrupado[k]) agrupado[k] = { e: null, s: null, n: c.nombre, c: c.clave, f: c.fecha, id: c.ticket };
+                if(c.tipo === "ENTRADA") agrupado[k].e = c.hora; else agrupado[k].s = c.hora;
+            });
+            Object.values(agrupado).forEach(r => {
+                let hS = r.s || (r.f === new Date().toLocaleDateString('en-CA') ? "18:00" : null);
+                let h = 0, sub = 0; const info = empleados.find(e => e.clave === r.c);
+                if(r.e && hS) {
+                    const [h1, m1] = r.e.split(':').map(Number); const [h2, m2] = hS.split(':').map(Number);
+                    h = (h2 + m2/60) - (h1 + m1/60); sub = (h > 0 ? h : 0) * (info ? info.sueldoHora : 0);
+                }
+                total += sub;
+                cuerpo.innerHTML += `<tr><td>${r.id}</td><td>${r.n}</td><td>${r.f}</td><td>${r.e || '--'}</td><td>${hS || '--'}</td><td>${h.toFixed(2)}</td><td>$${sub.toFixed(2)}</td></tr>`;
+            });
+            document.getElementById("resumenNomina").style.display = "block";
+            document.getElementById("txtResumen").textContent = `Total: $${total.toFixed(2)}`;
+        }
+
+        function cargarFiltroEmpleados() { const f = document.getElementById("filtroEmpleado"); f.innerHTML = '<option value="">Todos</option>'; empleados.forEach(e => f.innerHTML += `<option value="${e.nombre}">${e.nombre}</option>`); }
+        function mostrarMensaje(t, c) { const m = document.getElementById("mensaje"); m.textContent = t; m.className = "mensaje " + c; m.style.display="block"; setTimeout(()=>m.style.display="none", 2000); }
+        function mostrarModulo(m) { ["modEmpleados","modReportes","modConfig"].forEach(id => document.getElementById(id).style.display = id.toLowerCase().includes(m)?'block':'none'); }
+        function abrirAdmin() { document.getElementById("modalAdmin").style.display="flex"; }
+        function cerrarModal() { document.getElementById("modalAdmin").style.display="none"; }
+        function validarAdmin() { if(document.getElementById("adminPass").value === "1010") { cerrarModal(); document.getElementById("contenedorChecador").style.display="none"; document.getElementById("adminPanel").style.display="block"; } }
+        function mostrarChecador() { document.getElementById("adminPanel").style.display="none"; document.getElementById("contenedorChecador").style.display="block"; }
+        function guardarConfig() { const n = document.getElementById("empresaInput").value, c = document.getElementById("colorInput").value, f = document.getElementById('logoFile').files[0]; if(f) { const r = new FileReader(); r.onloadend = () => db.ref('config').set({ nombre: n, logo: r.result, color: c }); r.readAsDataURL(f); } else db.ref('config').update({ nombre: n, color: c }); alert("Guardado"); }
+        function resetBaseDeDatos() { if(confirm("¿Borrar todo?")) db.ref('/').remove().then(() => location.reload()); }
+        function generarPDF() { const { jsPDF } = window.jspdf; const doc = new jsPDF(); doc.text("Reporte", 15, 15); doc.autoTable({ html: 'table', startY: 25 }); doc.save("Reporte.pdf"); }
+    </script>
+</body>
+</html>
