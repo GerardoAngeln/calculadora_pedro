@@ -1,346 +1,303 @@
+
 <!DOCTYPE html>
 <html lang="es">
 <head>
+
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sistema de Reparación de Equipos</title>
+
+<title>Sistema de Control de Ganado</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
 
 <style>
-body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f2f4f7;}
-header{background:#0d6efd;color:#fff;padding:15px;text-align:center;font-size:18px;font-weight:bold;}
-.container{padding:15px;}
-.btn{width:100%;padding:14px;margin:6px 0;font-size:16px;border:none;border-radius:12px;background:#0d6efd;color:#fff;}
-.btn.secondary{background:#6c757d;}
-.btn.success{background:#198754;}
-.btn.warn{background:#ffc107;color:#000;}
-.btn.danger{background:#dc3545;}
-.card{background:#fff;border-radius:12px;padding:15px;margin-bottom:12px;}
-input,textarea,select{width:100%;padding:10px;margin-top:8px;font-size:15px;border-radius:10px;border:1px solid #ccc;}
-.hidden{display:none;}
-.step{animation:fade .2s ease-in-out;}
-@keyframes fade{from{opacity:0;transform:translateY(6px);}to{opacity:1;transform:translateY(0);}}
-textarea.texto{height:300px;font-family:monospace;}
-.badge{padding:4px 10px;border-radius:12px;font-size:12px;color:#fff;display:inline-block;}
-.ok{background:#198754;}
-.bad{background:#dc3545;}
-.none{background:#6c757d;}
-.search{margin-bottom:10px;}
+
+body{
+font-family:'Poppins',sans-serif;
+background:#f4f6f8;
+margin:0;
+}
+
+header{
+background:#1B5E20;
+color:white;
+text-align:center;
+padding:18px;
+font-size:20px;
+font-weight:600;
+}
+
+.container{
+padding:18px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+input,select{
+width:100%;
+padding:12px;
+margin-top:6px;
+margin-bottom:12px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:16px;
+}
+
+button{
+width:100%;
+padding:14px;
+border:none;
+border-radius:10px;
+background:#43A047;
+color:white;
+font-size:16px;
+margin-top:8px;
+}
+
+.result{
+background:#F1F8E9;
+padding:10px;
+border-radius:8px;
+margin-bottom:10px;
+}
+
+.hidden{
+display:none;
+}
+
+.registro{
+background:white;
+padding:12px;
+border-radius:10px;
+margin-bottom:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
 </style>
+
 </head>
 
 <body>
-<header>SISTEMA PARA REPARACIÓN DE EQUIPOS</header>
+
+<header>
+🐄 SISTEMA DE CONTROL DE GANADO
+</header>
 
 <div class="container">
 
-<!-- INICIO -->
-<div id="inicio" class="step">
-  <button class="btn" onclick="mostrarPaso('cliente')">➕ Nueva Reparación</button>
-  <button class="btn secondary" onclick="mostrarPendientes()">📋 Pendientes</button>
-  <button class="btn secondary" onclick="mostrarEntregados()">📦 Entregados</button>
-  <button class="btn success" onclick="mostrarPaso('respaldo')">💾 Respaldo</button>
+<!-- FORMULARIO -->
+<div id="pantallaRegistro" class="card">
+
+<label>Fecha de llegada</label>
+<input type="date" id="fecha">
+
+<label>Propietario</label>
+<input id="propietario">
+
+<label>Sexo</label>
+<select id="sexo">
+<option>Macho</option>
+<option>Hembra</option>
+</select>
+
+<label>Arete SINIIGA</label>
+<input id="arete1">
+
+<label>Arete Control</label>
+<input id="arete2">
+
+<label>Peso llegada</label>
+<input type="number" id="pesoLlegada" oninput="calcular()">
+
+<label>Peso origen</label>
+<input type="number" id="pesoOrigen" oninput="calcular()">
+
+<div class="result">
+Merma: <span id="merma">0</span>
 </div>
 
-<!-- CLIENTE -->
-<div id="cliente" class="step hidden">
-  <div class="card">
-    <h3>👤 Cliente</h3>
-    <input id="clienteNombre" placeholder="Nombre del cliente">
-    <input id="clienteTelefono" placeholder="Teléfono WhatsApp (10 dígitos)">
-    <button class="btn" onclick="mostrarPaso('equipo')">Siguiente</button>
-  </div>
+<div class="result">
+Porcentaje Merma: <span id="porcentaje">0</span> %
 </div>
 
-<!-- EQUIPO -->
-<div id="equipo" class="step hidden">
-  <div class="card">
-    <h3>📱 Equipo</h3>
-    <input id="marca" placeholder="Marca">
-    <input id="modelo" placeholder="Modelo">
-    <input id="color" placeholder="Color">
-    <input id="imei" placeholder="IMEI (opcional)">
-    <button class="btn" onclick="mostrarPaso('falla')">Siguiente</button>
-  </div>
+<label>Precio</label>
+<input type="number" id="precio" oninput="calcular()">
+
+<div class="result">
+Total: $ <span id="total">0</span>
 </div>
 
-<!-- FALLA -->
-<div id="falla" class="step hidden">
-  <div class="card">
-    <h3>🔧 Falla y Pago</h3>
-    <textarea id="fallaTexto" placeholder="Describe la falla"></textarea>
-    <input id="costo" placeholder="Costo total">
-    <input id="anticipo" placeholder="Anticipo">
-    <button class="btn success" onclick="guardarReparacion()">Guardar reparación</button>
-  </div>
+<label>¿Trae Arete?</label>
+<select id="traeArete" onchange="calcular()">
+<option value="no">No</option>
+<option value="si">Si</option>
+</select>
+
+<label>Precio Arete</label>
+<input type="number" id="precioArete" oninput="calcular()">
+
+<div class="result">
+Total Final: $ <span id="totalFinal">0</span>
 </div>
 
-<!-- COMPROBANTE -->
-<div id="comprobante" class="step hidden">
-  <div class="card">
-    <h3>📄 Comprobante</h3>
-    <textarea id="textoComprobante" class="texto" readonly></textarea>
-    <button class="btn success" onclick="confirmarEnvio()">📩 Enviar por WhatsApp</button>
-    <button class="btn secondary" onclick="mostrarPaso('inicio')">Finalizar</button>
-  </div>
+<button onclick="guardar()">Guardar Registro</button>
+
+<button onclick="verReportes()">Ver Reportes</button>
+
 </div>
 
-<!-- LISTA -->
-<div id="lista" class="step hidden">
-  <input id="buscador" class="search" placeholder="🔍 Buscar por cliente o folio" oninput="filtrar()">
-  <div id="listaItems"></div>
-  <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
-</div>
 
-<!-- DETALLE -->
-<div id="detalle" class="step hidden"></div>
+<!-- REPORTES -->
+<div id="pantallaReportes" class="card hidden">
 
-<!-- RESPALDO -->
-<div id="respaldo" class="step hidden">
-  <div class="card">
-    <h3>💾 Respaldo</h3>
-    <button class="btn success" onclick="exportarDatos()">📤 Exportar respaldo</button>
-    <input type="file" id="importFile" accept=".json" onchange="importarDatos()">
-    <button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>
-  </div>
+<h3>Reportes</h3>
+
+<label>Propietario</label>
+<input id="filtroProp">
+
+<label>Sexo</label>
+<select id="filtroSexo">
+<option value="">Todos</option>
+<option>Macho</option>
+<option>Hembra</option>
+</select>
+
+<button onclick="filtrar()">Filtrar</button>
+
+<hr>
+
+<div id="lista"></div>
+
+<button onclick="volver()">Volver</button>
+
 </div>
 
 </div>
 
 <script>
-let cache=[], idx=null, textoActual="", modo="pendiente", ordenActual=null;
 
-/* ===== FOLIO SEGURO ===== */
-function obtenerFolio(){
-  let f=parseInt(localStorage.getItem("folioActual"),10);
-  if(isNaN(f)||f<1) f=1;
-  localStorage.setItem("folioActual",f+1);
-  return String(f).padStart(3,"0");
+let registros=JSON.parse(localStorage.getItem("ganado")) || []
+
+function calcular(){
+
+let pesoLlegada=parseFloat(document.getElementById("pesoLlegada").value)||0
+let pesoOrigen=parseFloat(document.getElementById("pesoOrigen").value)||0
+let precio=parseFloat(document.getElementById("precio").value)||0
+let precioArete=parseFloat(document.getElementById("precioArete").value)||0
+let trae=document.getElementById("traeArete").value
+
+let merma=pesoOrigen-pesoLlegada
+if(merma<0)merma=0
+
+let porcentaje=0
+if(pesoOrigen>0){
+porcentaje=(merma/pesoOrigen)*100
 }
 
-/* ===== UTIL ===== */
-function mostrarPaso(id){
-  document.querySelectorAll('.step').forEach(s=>s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}
-function fechaHora(){return new Date().toLocaleString();}
+let total=pesoOrigen*precio
 
-/* ===== WHATSAPP ===== */
-function normalizarTelefono(t){
-  let n=t.replace(/\D/g,'');
-  if(n.length===10) n="52"+n;
-  return n;
-}
-function confirmarEnvio(){
-  if(!ordenActual) return;
-  if(confirm("¿Enviar comprobante por WhatsApp?")){
-    window.open("https://wa.me/"+ordenActual.telefono+"?text="+encodeURIComponent(textoActual),"_blank");
-  }
+let totalFinal=total
+if(trae==="si"){
+totalFinal=total+precioArete
 }
 
-/* ===== GARANTÍA ===== */
-function estadoGarantia(r){
-  if(!r.garantia) return `<span class="badge none">SIN GARANTÍA</span>`;
-  return new Date() <= new Date(r.garantia.fin)
-    ? `<span class="badge ok">VIGENTE</span>`
-    : `<span class="badge bad">VENCIDA</span>`;
+document.getElementById("merma").innerText=merma.toFixed(2)
+document.getElementById("porcentaje").innerText=porcentaje.toFixed(2)
+document.getElementById("total").innerText=total.toFixed(2)
+document.getElementById("totalFinal").innerText=totalFinal.toFixed(2)
+
 }
 
-/* ===== TEXTOS ===== */
-function textoRecepcion(r){
-return `📄 RECEPCIÓN DE EQUIPO
+function guardar(){
 
-🆔 Folio: ${r.folio}
-⏰ Fecha: ${r.fecha}
-
-👤 Cliente: ${r.cliente}
-📞 Teléfono: ${r.telefono}
-
-📱 Equipo: ${r.marca} ${r.modelo}
-🎨 Color: ${r.color}
-🔢 IMEI: ${r.imei}
-
-🔧 Falla:
-${r.falla}
-
-💰 Costo: $${r.costo}
-💵 Anticipo: $${r.anticipo}
-💲 Saldo: $${r.costo-r.anticipo}
-`;
+let registro={
+fecha:document.getElementById("fecha").value,
+propietario:document.getElementById("propietario").value,
+sexo:document.getElementById("sexo").value,
+arete1:document.getElementById("arete1").value,
+arete2:document.getElementById("arete2").value,
+pesoLlegada:document.getElementById("pesoLlegada").value,
+pesoOrigen:document.getElementById("pesoOrigen").value,
+precio:document.getElementById("precio").value,
+totalFinal:document.getElementById("totalFinal").innerText
 }
 
-function textoEntrega(r){
-let g=r.garantia;
-return textoRecepcion(r)+`
-📦 ENTREGA DE EQUIPO
-⏰ Fecha entrega: ${r.fechaEntrega}
+registros.push(registro)
 
-🛡️ Garantía:
-${g?`${g.dias} días (vence ${new Date(g.fin).toLocaleDateString()})`:"Sin garantía"}
+localStorage.setItem("ganado",JSON.stringify(registros))
 
-Gracias por su preferencia.`;
+alert("Registro guardado")
+
 }
 
-/* ===== GUARDAR ===== */
-function guardarReparacion(){
-let rep={
-folio:obtenerFolio(),
-fecha:fechaHora(),
-cliente:clienteNombre.value,
-telefono:normalizarTelefono(clienteTelefono.value),
-marca:marca.value,
-modelo:modelo.value,
-color:color.value,
-imei:imei.value||"No proporcionado",
-falla:fallaTexto.value,
-costo:Number(costo.value||0),
-anticipo:Number(anticipo.value||0),
-estatus:"pendiente",
-garantia:null,
-fechaEntrega:null
-};
-let d=JSON.parse(localStorage.getItem("reparaciones")||"[]");
-d.push(rep);
-localStorage.setItem("reparaciones",JSON.stringify(d));
-ordenActual=rep;
-textoActual=textoRecepcion(rep);
-textoComprobante.value=textoActual;
-mostrarPaso("comprobante");
+function verReportes(){
+
+document.getElementById("pantallaRegistro").classList.add("hidden")
+document.getElementById("pantallaReportes").classList.remove("hidden")
+
+mostrarLista(registros)
+
 }
 
-/* ===== LISTAS ===== */
-function mostrarPendientes(){modo="pendiente";cargarLista("pendiente");}
-function mostrarEntregados(){modo="entregado";cargarLista("entregado");}
+function volver(){
 
-function cargarLista(t){
-mostrarPaso("lista");
-let all=JSON.parse(localStorage.getItem("reparaciones")||"[]");
-cache=all.map((r,i)=>({...r,_i:i})).filter(r=>r.estatus===t);
-renderLista();
+document.getElementById("pantallaReportes").classList.add("hidden")
+document.getElementById("pantallaRegistro").classList.remove("hidden")
+
 }
 
-function renderLista(){
-  if(!cache.length){
-    listaItems.innerHTML="<div class='card'>Sin registros</div>";
-    return;
-  }
-  listaItems.innerHTML = cache.map((r,i)=>`
-    <div class="card" onclick="verDetalle(${i})">
-      <strong>${r.cliente}</strong><br>
-      ${r.marca} ${r.modelo}<br>
-      Folio: ${r.folio}<br>
-      ${modo==="entregado" ? `<div style="margin-top:6px">${estadoGarantia(r)}</div>` : ``}
-    </div>
-  `).join("");
+function mostrarLista(datos){
+
+let lista=document.getElementById("lista")
+
+lista.innerHTML=""
+
+datos.forEach(r=>{
+
+lista.innerHTML+=`
+
+<div class="registro">
+
+<b>Fecha:</b> ${r.fecha}<br>
+<b>Propietario:</b> ${r.propietario}<br>
+<b>Sexo:</b> ${r.sexo}<br>
+<b>Arete:</b> ${r.arete1}<br>
+<b>Total Final:</b> $${r.totalFinal}
+
+</div>
+
+`
+
+})
+
 }
 
 function filtrar(){
-let q=buscador.value.toLowerCase();
-let tmp=cache.filter(r=>r.cliente.toLowerCase().includes(q)||r.folio.includes(q));
-listaItems.innerHTML="";
-tmp.forEach((r,i)=>{
-listaItems.innerHTML+=`
-<div class="card" onclick="verDetalle(${i})">
-<strong>${r.cliente}</strong><br>
-${r.marca} ${r.modelo}<br>
-Folio: ${r.folio}<br>
-${modo==="entregado"?estadoGarantia(r):""}
-</div>`;
-});
+
+let prop=document.getElementById("filtroProp").value.toLowerCase()
+let sexo=document.getElementById("filtroSexo").value
+
+let resultado=registros.filter(r=>{
+
+let cumpleProp=r.propietario.toLowerCase().includes(prop)
+let cumpleSexo=!sexo || r.sexo===sexo
+
+return cumpleProp && cumpleSexo
+
+})
+
+mostrarLista(resultado)
+
 }
 
-/* ===== DETALLE ===== */
-function verDetalle(i){
-idx=i;
-let r=cache[i];
-ordenActual=r;
-mostrarPaso("detalle");
-detalle.innerHTML=`
-<div class="card">
-<input id="eCliente" value="${r.cliente}">
-<input id="eTelefono" value="${r.telefono}">
-<input id="eMarca" value="${r.marca}">
-<input id="eModelo" value="${r.modelo}">
-<textarea id="eFalla">${r.falla}</textarea>
-<input id="eCosto" value="${r.costo}">
-<input id="eAnticipo" value="${r.anticipo}">
-</div>
-${r.estatus==="pendiente"?`
-<select id="diasGar">
-<option value="0">Sin garantía</option>
-<option value="15">15 días</option>
-<option value="30">30 días</option>
-<option value="60">60 días</option>
-</select>
-<button class="btn warn" onclick="entregarEquipo()">📦 Entregar</button>`:""}
-<button class="btn success" onclick="guardarEdicion()">💾 Guardar cambios</button>
-<button class="btn danger" onclick="eliminarOrden()">🗑️ Eliminar</button>
-<button class="btn secondary" onclick="mostrarPaso('inicio')">Volver</button>`;
-}
-
-function guardarEdicion(){
-let d=JSON.parse(localStorage.getItem("reparaciones"));
-let r=d[cache[idx]._i];
-r.cliente=eCliente.value;
-r.telefono=normalizarTelefono(eTelefono.value);
-r.marca=eMarca.value;
-r.modelo=eModelo.value;
-r.falla=eFalla.value;
-r.costo=Number(eCosto.value||0);
-r.anticipo=Number(eAnticipo.value||0);
-localStorage.setItem("reparaciones",JSON.stringify(d));
-alert("Actualizado");
-mostrarPaso("inicio");
-}
-
-function eliminarOrden(){
-if(!confirm("¿Eliminar definitivamente?"))return;
-let d=JSON.parse(localStorage.getItem("reparaciones"));
-d.splice(cache[idx]._i,1);
-localStorage.setItem("reparaciones",JSON.stringify(d));
-alert("Eliminada");
-mostrarPaso("inicio");
-}
-
-/* ===== ENTREGA ===== */
-function entregarEquipo(){
-let d=JSON.parse(localStorage.getItem("reparaciones"));
-let r=d[cache[idx]._i];
-let dias=Number(diasGar.value);
-if(dias>0){
-let ini=new Date(),fin=new Date();
-fin.setDate(ini.getDate()+dias);
-r.garantia={dias,inicio:ini.toISOString(),fin:fin.toISOString()};
-}
-r.estatus="entregado";
-r.fechaEntrega=fechaHora();
-localStorage.setItem("reparaciones",JSON.stringify(d));
-ordenActual=r;
-textoActual=textoEntrega(r);
-textoComprobante.value=textoActual;
-mostrarPaso("comprobante");
-}
-
-/* ===== RESPALDO ===== */
-function exportarDatos(){
-let d=localStorage.getItem("reparaciones")||"[]";
-let b=new Blob([d],{type:"application/json"});
-let a=document.createElement("a");
-a.href=URL.createObjectURL(b);
-a.download="respaldo_reparaciones.json";
-a.click();
-}
-function importarDatos(){
-let f=importFile.files[0];
-if(!f)return;
-let r=new FileReader();
-r.onload=e=>{
-localStorage.setItem("reparaciones",e.target.result);
-alert("Restaurado");
-mostrarPaso("inicio");
-};
-r.readAsText(f);
-}
 </script>
 
 </body>
 </html>
+
