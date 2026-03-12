@@ -1,0 +1,317 @@
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Sistema de Control de Ganado</title>
+
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+
+body{
+font-family:'Poppins',sans-serif;
+margin:0;
+background:#f4f6f8;
+color:#333;
+}
+
+header{
+background:#1B5E20;
+color:white;
+text-align:center;
+padding:18px;
+font-size:22px;
+font-weight:600;
+}
+
+.container{
+padding:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:12px;
+box-shadow:0 4px 12px rgba(0,0,0,0.1);
+margin-bottom:20px;
+}
+
+h2{
+margin-top:0;
+}
+
+input,select,textarea{
+width:100%;
+padding:10px;
+margin-top:6px;
+margin-bottom:12px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:14px;
+}
+
+button{
+width:100%;
+padding:12px;
+border:none;
+border-radius:10px;
+background:#43A047;
+color:white;
+font-size:16px;
+cursor:pointer;
+}
+
+button:hover{
+background:#2E7D32;
+}
+
+.menu{
+display:flex;
+gap:10px;
+margin-top:10px;
+}
+
+.menu button{
+flex:1;
+}
+
+.animal{
+background:#fff;
+padding:12px;
+border-radius:10px;
+margin-bottom:10px;
+box-shadow:0 2px 6px rgba(0,0,0,0.1);
+}
+
+.hidden{
+display:none;
+}
+
+</style>
+
+</head>
+
+<body>
+
+<header>
+🐄 SISTEMA DE CONTROL DE GANADO
+</header>
+
+<div class="container">
+
+<!-- INICIO -->
+<div id="inicio" class="card">
+
+<h2>Inicio</h2>
+
+<div class="menu">
+
+<button onclick="mostrar('registro')">
+Registrar Ganado
+</button>
+
+<button onclick="mostrar('reportes')">
+Reportes
+</button>
+
+</div>
+
+</div>
+
+<!-- REGISTRO -->
+<div id="registro" class="card hidden">
+
+<h2>Registro de Ganado</h2>
+
+<label>Arete</label>
+<input id="arete">
+
+<label>Propietario</label>
+<input id="propietario">
+
+<label>Sexo</label>
+<select id="sexo">
+<option>Macho</option>
+<option>Hembra</option>
+</select>
+
+<label>Raza</label>
+<input id="raza">
+
+<label>Peso</label>
+<input id="peso">
+
+<label>Fecha</label>
+<input type="date" id="fecha">
+
+<label>Observaciones</label>
+<textarea id="obs"></textarea>
+
+<button onclick="guardar()">Guardar Registro</button>
+
+<br><br>
+
+<button onclick="mostrar('inicio')">
+Volver
+</button>
+
+</div>
+
+<!-- REPORTES -->
+<div id="reportes" class="card hidden">
+
+<h2>Reportes</h2>
+
+<label>Propietario</label>
+<select id="filtroProp">
+<option value="">Todos</option>
+</select>
+
+<label>Sexo</label>
+<select id="filtroSexo">
+<option value="">Todos</option>
+<option>Macho</option>
+<option>Hembra</option>
+</select>
+
+<button onclick="filtrar()">Filtrar</button>
+
+<hr>
+
+<div id="lista"></div>
+
+<br>
+
+<button onclick="mostrar('inicio')">
+Volver
+</button>
+
+</div>
+
+</div>
+
+<script>
+
+let ganado = JSON.parse(localStorage.getItem("ganado")) || []
+
+function mostrar(seccion){
+
+document.getElementById("inicio").classList.add("hidden")
+document.getElementById("registro").classList.add("hidden")
+document.getElementById("reportes").classList.add("hidden")
+
+document.getElementById(seccion).classList.remove("hidden")
+
+if(seccion==="reportes"){
+cargarPropietarios()
+mostrarLista(ganado)
+}
+
+}
+
+function guardar(){
+
+let arete=document.getElementById("arete").value
+let propietario=document.getElementById("propietario").value
+let sexo=document.getElementById("sexo").value
+let raza=document.getElementById("raza").value
+let peso=document.getElementById("peso").value
+let fecha=document.getElementById("fecha").value
+let obs=document.getElementById("obs").value
+
+if(!arete || !propietario){
+alert("Complete los datos")
+return
+}
+
+ganado.push({
+arete,
+propietario,
+sexo,
+raza,
+peso,
+fecha,
+obs
+})
+
+localStorage.setItem("ganado",JSON.stringify(ganado))
+
+alert("Registro guardado")
+
+limpiar()
+
+}
+
+function limpiar(){
+
+document.getElementById("arete").value=""
+document.getElementById("propietario").value=""
+document.getElementById("raza").value=""
+document.getElementById("peso").value=""
+document.getElementById("fecha").value=""
+document.getElementById("obs").value=""
+
+}
+
+function cargarPropietarios(){
+
+let select=document.getElementById("filtroProp")
+
+let lista=[...new Set(ganado.map(g=>g.propietario))]
+
+select.innerHTML='<option value="">Todos</option>'
+
+lista.forEach(p=>{
+select.innerHTML+=`<option>${p}</option>`
+})
+
+}
+
+function mostrarLista(datos){
+
+let lista=document.getElementById("lista")
+
+lista.innerHTML=""
+
+datos.forEach(g=>{
+
+lista.innerHTML+=`
+
+<div class="animal">
+
+<b>Arete:</b> ${g.arete}<br>
+<b>Propietario:</b> ${g.propietario}<br>
+<b>Sexo:</b> ${g.sexo}<br>
+<b>Raza:</b> ${g.raza}<br>
+<b>Peso:</b> ${g.peso}<br>
+<b>Fecha:</b> ${g.fecha}
+
+</div>
+
+`
+
+})
+
+}
+
+function filtrar(){
+
+let prop=document.getElementById("filtroProp").value
+let sexo=document.getElementById("filtroSexo").value
+
+let resultado=ganado
+.filter(g=>!prop || g.propietario===prop)
+.filter(g=>!sexo || g.sexo===sexo)
+
+mostrarLista(resultado)
+
+}
+
+</script>
+
+</body>
+</html>
+```
